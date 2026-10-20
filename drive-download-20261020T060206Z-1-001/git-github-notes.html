@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git &amp; GitHub — Notes by Sheryians Coding School</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,700;0,900;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:       #0E0F14;
+  --paper:     #F5F2EB;
+  --paper2:    #EDE9DF;
+  --paper3:    #E4DFD3;
+  --rule:      #D4CEBC;
+  --muted:     #6B6455;
+
+  --accent:    #C84B1F;
+  --accent2:   #1A6B4A;
+  --accent3:   #1B4587;
+  --gold:      #B8860B;
+
+  --code-bg:   #1A1C24;
+  --code-text: #E2DCCC;
+
+  --flag-c:    #5BA4CF;
+  --val-c:     #F4A261;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  font-family: 'DM Sans', sans-serif;
+  color: #2A2720;
+}
+
+.layout { display: flex; min-height: 100vh; }
+
+/* ---------- NAV ---------- */
+nav {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--ink);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 32px 0 40px;
+}
+
+.nav-brand { padding: 0 24px 24px; }
+.nav-brand .logo { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: white; }
+.nav-brand .logo span { color: var(--accent); }
+.nav-brand .sub {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  color: rgba(255,255,255,0.35); letter-spacing: 0.06em; margin-top: 4px;
+}
+
+.nav-group-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  color: rgba(255,255,255,0.25); letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 18px 24px 6px;
+}
+
+nav a {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'DM Sans', sans-serif; font-size: 12.5px;
+  color: rgba(255,255,255,0.5); text-decoration: none;
+  padding: 9px 24px; border-left: 2px solid transparent;
+}
+nav a:hover { color: white; background: rgba(255,255,255,0.04); }
+nav a.active { color: white; border-left-color: var(--accent); background: rgba(200,75,31,0.08); }
+
+.nav-num {
+  width: 18px; height: 18px; flex-shrink: 0;
+  background: rgba(255,255,255,0.08); border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.6);
+}
+nav a:hover .nav-num, nav a.active .nav-num { background: var(--accent); color: white; }
+
+/* ---------- MAIN ---------- */
+main {
+  flex: 1;
+  max-width: calc(99% - 256px);
+  padding: 56px 56px 80px;
+}
+
+@media (max-width: 768px) {
+  nav { display: none; }
+  main { padding: 32px 24px 60px; max-width: 100%; }
+}
+
+/* ---------- HERO ---------- */
+.hero { margin-bottom: 64px; padding-bottom: 40px; border-bottom: 1px solid var(--rule); }
+.hero-eyebrow {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px;
+}
+.hero h1 {
+  font-family: 'Fraunces', serif; font-size: clamp(36px, 5vw, 58px);
+  font-weight: 900; line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 18px;
+  color: var(--ink);
+}
+.hero h1 em { font-style: italic; color: var(--accent); }
+.hero-desc { font-family: 'DM Sans', sans-serif; font-size: 16px; color: var(--muted); max-width: 560px; line-height: 1.65; margin-bottom: 18px; }
+.hero-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.hero-tag {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);
+  border: 1px solid var(--rule); border-radius: 20px; padding: 5px 12px;
+}
+
+/* ---------- SECTION ---------- */
+.section { margin-bottom: 72px; animation: fadeUp 0.4s ease both; scroll-margin-top: 24px; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+.section-header { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 28px; }
+.section-num-big { font-family: 'Fraunces', serif; font-size: 48px; font-weight: 900; color: var(--rule); user-select: none; line-height: 1; }
+.section-title { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+.section-subtitle { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+h3 { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--ink); margin: 28px 0 12px; }
+h4 { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin: 20px 0 10px; }
+p { font-family: 'DM Sans', sans-serif; font-size: 14.5px; line-height: 1.7; color: #2A2720; margin-bottom: 12px; }
+ul, ol { font-size: 14.5px; line-height: 1.8; color: #2A2720; padding-left: 20px; margin-bottom: 14px; }
+li { margin-bottom: 4px; }
+strong { color: var(--ink); }
+
+code {
+  font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent);
+  background: var(--paper3); border: 1px solid var(--rule); border-radius: 4px; padding: 1px 6px;
+}
+
+/* ---------- CONCEPT BOX ---------- */
+.concept {
+  background: var(--paper2); border-left: 3px solid var(--accent3);
+  border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 16px 0;
+}
+.concept-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--accent3);
+  text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 6px;
+}
+.concept p { font-size: 14px; color: var(--ink); line-height: 1.65; margin: 0; }
+
+/* ---------- NOTE BOX ---------- */
+.note {
+  background: #FEF9EC; border: 1px solid #EDD97A; border-radius: 8px;
+  padding: 14px 18px; margin: 16px 0; display: flex; gap: 10px; align-items: flex-start;
+}
+.note p { font-size: 13px; color: #5C4A00; margin: 0; }
+.note p strong { color: #3D3000; }
+.note-icon { font-size: 16px; line-height: 1.4; }
+
+/* ---------- WARNING BOX ---------- */
+.warn {
+  background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 8px;
+  padding: 14px 18px; margin: 16px 0; display: flex; gap: 10px; align-items: flex-start;
+}
+.warn p { font-size: 13px; color: #7F1D1D; margin: 0; }
+.warn p strong { color: #7F1D1D; }
+
+/* ---------- STEP LABEL ---------- */
+.step-label {
+  display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+  color: white; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 10px; border-radius: 4px;
+  background: var(--accent); margin: 10px 0 8px;
+}
+.step-label.green { background: var(--accent2); }
+.step-label.blue { background: var(--accent3); }
+.step-label.gold { background: var(--gold); }
+
+/* ---------- CODE BLOCK ---------- */
+.code-wrap { background: var(--code-bg); border-radius: 10px; overflow: hidden; margin: 16px 0; }
+.code-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.code-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; }
+.copy-btn {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.06); border: none; border-radius: 4px; padding: 3px 10px; cursor: pointer;
+}
+.copy-btn:hover { color: white; background: rgba(255,255,255,0.14); }
+.code-wrap pre {
+  margin: 0; padding: 16px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px;
+  color: var(--code-text); line-height: 1.8; overflow-x: auto;
+}
+.c-cmd { color: #87CEEB; font-weight: bold; }
+.c-flag { color: var(--flag-c); }
+.c-val { color: var(--val-c); }
+.c-str { color: #98C379; }
+.c-comment { color: rgba(255,255,255,0.28); font-style: italic; }
+.c-key { color: #C678DD; }
+.c-pipe { color: #E5C07B; }
+
+/* ---------- TABLES ---------- */
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+.flag-table th, .compare th { text-align: left; padding: 10px 14px; }
+.flag-table th { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; background: var(--paper3); }
+.flag-table td { padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+.flag-table tr:hover { background: var(--paper2); }
+.f-name { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--flag-c); }
+.f-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--val-c); }
+.f-desc { font-size: 13px; color: var(--ink); }
+.f-why { font-size: 12px; color: var(--muted); }
+
+.compare th { background: var(--ink); color: white; font-weight: 600; }
+.compare th:first-child { border-radius: 8px 0 0 0; }
+.compare th:last-child { border-radius: 0 8px 0 0; }
+.compare td { padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+.row-label { font-weight: 600; color: var(--ink); }
+.local-val { color: var(--muted); }
+.eks-val { color: var(--accent2); font-weight: 500; }
+
+/* ---------- FLOW DIAGRAM ---------- */
+.flow { margin: 20px 0; }
+.flow-step { display: flex; gap: 16px; }
+.flow-line { display: flex; flex-direction: column; align-items: center; }
+.flow-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.flow-connector { width: 2px; flex: 1; background: var(--rule); min-height: 30px; }
+.flow-content { padding-bottom: 24px; }
+.flow-title { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--ink); }
+.flow-detail { font-family: 'DM Sans', sans-serif; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+/* ---------- SCALE DIAGRAM ---------- */
+.scale-diagram {
+  background: var(--paper2); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 16px 20px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 2; color: var(--muted); margin: 16px 0;
+}
+.scale-diagram .hi { color: var(--ink); font-weight: bold; }
+.scale-diagram .green { color: var(--accent2); }
+.scale-diagram .red { color: var(--accent); }
+
+hr.divider { border: none; border-top: 1px solid var(--rule); margin: 40px 0; }
+
+/* ---------- WATERMARK ---------- */
+.watermark {
+  position: fixed; bottom: 20px; right: 20px;
+  background: rgba(14, 15, 20, 0.90);
+  border: 1px solid rgba(200, 75, 31, 0.3);
+  border-radius: 8px; padding: 6px 12px;
+  backdrop-filter: blur(4px); z-index: 50;
+  display: flex; align-items: center; gap: 8px;
+  pointer-events: none;
+}
+.watermark-logo { width: 16px; height: 16px; border-radius: 3px; }
+.watermark-text {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  color: rgba(255, 255, 255, 0.45); letter-spacing: 0.08em;
+}
+
+footer {
+  border-top: 2px solid var(--rule); margin-top: 40px; padding-top: 16px;
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted);
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav>
+  <div class="nav-brand">
+    <div class="logo">Git<span>.</span>Notes</div>
+    <div class="sub">Sheryians Coding School</div>
+  </div>
+
+  <div class="nav-group-label">Getting Started</div>
+  <a href="#intro"><span class="nav-num">1</span>Git &amp; GitHub Basics</a>
+  <a href="#install"><span class="nav-num">2</span>Install &amp; Configure</a>
+  <a href="#repo"><span class="nav-num">3</span>Repository Basics</a>
+
+  <div class="nav-group-label">Everyday Git</div>
+  <a href="#workflow"><span class="nav-num">4</span>The Git Workflow</a>
+  <a href="#commands"><span class="nav-num">5</span>Core Commands</a>
+  <a href="#files"><span class="nav-num">6</span>File States &amp; .gitignore</a>
+
+  <div class="nav-group-label">Working With GitHub</div>
+  <a href="#remote"><span class="nav-num">7</span>Push, Pull, Clone</a>
+  <a href="#branching"><span class="nav-num">8</span>Branching</a>
+  <a href="#merging"><span class="nav-num">9</span>Merging</a>
+  <a href="#stashing"><span class="nav-num">10</span>Stashing</a>
+
+  <div class="nav-group-label">Team Workflow</div>
+  <a href="#collab"><span class="nav-num">11</span>Collaboration</a>
+  <a href="#pr-raise"><span class="nav-num">12</span>Raising a PR</a>
+  <a href="#pr-review"><span class="nav-num">13</span>Reviewing a PR</a>
+  <a href="#pr-merge"><span class="nav-num">14</span>Merge &amp; Rejected PRs</a>
+
+  <div class="nav-group-label">Fixing Things</div>
+  <a href="#conflicts"><span class="nav-num">15</span>Merge Conflicts</a>
+  <a href="#undo"><span class="nav-num">16</span>Undo Changes</a>
+
+  <div class="nav-group-label">Advanced Git</div>
+  <a href="#rebase"><span class="nav-num">17</span>Rebase &amp; Interactive Rebase</a>
+  <a href="#reflog"><span class="nav-num">18</span>Reflog — Recovering Lost Work</a>
+  <a href="#cherry-pick"><span class="nav-num">19</span>Cherry-Picking Commits</a>
+  <a href="#fork-rulesets"><span class="nav-num">20</span>Forking &amp; Branch Rulesets</a>
+  <a href="#power-tools"><span class="nav-num">21</span>More Power Tools</a>
+
+  <div class="nav-group-label">Wrapping Up</div>
+  <a href="#readme"><span class="nav-num">22</span>README &amp; Docs</a>
+  <a href="#practices"><span class="nav-num">23</span>Best Practices</a>
+</nav>
+
+<main>
+
+  <div class="hero">
+    <div class="hero-eyebrow">Beginner Friendly Notes</div>
+    <h1>Git &amp; GitHub, <em>explained simply.</em></h1>
+    <p class="hero-desc">Everything you need to go from "what is Git" to raising, reviewing, and merging Pull Requests the way real dev teams do — explained with plain words and web-development examples.</p>
+    <div class="hero-tags">
+      <span class="hero-tag">🌱 No prior experience needed</span>
+      <span class="hero-tag">🧠 Simple language</span>
+      <span class="hero-tag">💻 Web-dev examples</span>
+    </div>
+  </div>
+
+  <!-- ================= SECTION 1 ================= -->
+  <section class="section" id="intro">
+    <div class="section-header">
+      <div class="section-num-big">01</div>
+      <div class="section-title-block">
+        <div class="section-title">Git &amp; GitHub Basics</div>
+        <div class="section-subtitle">What they are, why they exist, and how they're different</div>
+      </div>
+    </div>
+
+    <p>Say you're building a personal portfolio site. Every day you tweak the CSS, add a new section, maybe break something by accident. If you're not careful, you end up with a folder like this:</p>
+
+    <div class="scale-diagram">
+      <span class="red">portfolio-final</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      <span class="red">portfolio-final-v2</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      <span class="red">portfolio-final-REAL-final</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      <span class="hi">nobody knows which one actually works 😵</span>
+    </div>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p><strong>Git</strong> is a tool that saves the history of every change you make to your project, so you never need duplicate folders again. <strong>GitHub</strong> is a website that stores a backup of that history online, so you can share it and work with other people.</p>
+    </div>
+
+    <p>Think of Git like the "Version History" feature in Google Docs — every edit is remembered, and you can jump back to any earlier version instantly. GitHub is like uploading that document to Google Drive so your teammates can open it too.</p>
+
+    <h3>Git vs GitHub — the classic interview question</h3>
+    <table class="compare">
+      <thead><tr><th>What</th><th>Git</th><th>GitHub</th></tr></thead>
+      <tbody>
+        <tr><td class="row-label">What is it?</td><td class="local-val">A tool installed on your computer</td><td class="eks-val">A website that hosts Git projects online</td></tr>
+        <tr><td class="row-label">Needs internet?</td><td class="local-val">No — works fully offline</td><td class="eks-val">Yes — it lives on the web</td></tr>
+        <tr><td class="row-label">Made by</td><td class="local-val">Linus Torvalds (2005)</td><td class="eks-val">Owned by Microsoft</td></tr>
+        <tr><td class="row-label">Cost</td><td class="local-val">Free &amp; open source</td><td class="eks-val">Free plan + paid plans</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p><strong>Easy way to remember it:</strong> Git = Camera (takes the snapshot). GitHub = Google Photos (stores it online so others can see it).</p>
+    </div>
+
+    <h3>Why does this matter for a web developer?</h3>
+    <p>Imagine three of you are building a React app together — one person builds the navbar, another the login page, another the footer. Without Git, you'd be emailing zip files back and forth and constantly overwriting each other's work. Git lets everyone edit the same project safely, and GitHub gives you one shared "source of truth" online.</p>
+  </section>
+
+  <!-- ================= SECTION 2 ================= -->
+  <section class="section" id="install">
+    <div class="section-header">
+      <div class="section-num-big">02</div>
+      <div class="section-title-block">
+        <div class="section-title">Install &amp; Configure Git</div>
+        <div class="section-subtitle">Getting your machine ready before your first commit</div>
+      </div>
+    </div>
+
+    <p>Before Git can track anything, it needs two things installed and one thing configured: your identity (name + email). Every change you save gets stamped with "who did this."</p>
+
+    <div class="step-label">Step 1 — Install</div>
+    <p>Download Git from <code>git-scm.com</code> for Windows, or use your terminal on Mac/Linux:</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">macOS</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">brew</span> <span class="c-val">install</span> <span class="c-val">git</span></pre>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Ubuntu / Debian</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">sudo apt</span> <span class="c-val">install</span> <span class="c-val">git</span></pre>
+    </div>
+
+    <div class="step-label green">Step 2 — Verify</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-flag">--version</span>
+<span class="c-comment"># git version 2.51.0 — you're good to go</span></pre>
+    </div>
+
+    <div class="step-label blue">Step 3 — Configure your identity</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git config</span> <span class="c-flag">--global</span> <span class="c-val">user.name</span> <span class="c-str">"Ritik Rajput"</span>
+<span class="c-cmd">git config</span> <span class="c-flag">--global</span> <span class="c-val">user.email</span> <span class="c-str">"ritik@example.com"</span></pre>
+    </div>
+
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">--global</span></td><td><span class="f-val">—</span></td><td class="f-desc">Applies this name/email to every project on your computer, not just one.</td></tr>
+        <tr><td><span class="f-name">user.name</span></td><td><span class="f-val">"Your Name"</span></td><td class="f-desc">Shows up as the author on every commit you make.</td></tr>
+        <tr><td><span class="f-name">user.email</span></td><td><span class="f-val">you@email.com</span></td><td class="f-desc">Use the same one as your GitHub account so commits link back to your profile.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="warn">
+      <div class="note-icon">⚠️</div>
+      <p>If your Git email doesn't match your GitHub email, your commits <strong>won't show up on your GitHub contribution graph</strong> — a common beginner surprise.</p>
+    </div>
+
+    <p>Check what's configured anytime with <code>git config --list</code>, and create a free account at <code>github.com</code> if you haven't already — you'll need it from Section 7 onward.</p>
+  </section>
+
+  <!-- ================= SECTION 3 ================= -->
+  <section class="section" id="repo">
+    <div class="section-header">
+      <div class="section-num-big">03</div>
+      <div class="section-title-block">
+        <div class="section-title">Repository Basics</div>
+        <div class="section-subtitle">Turning an ordinary folder into a Git project</div>
+      </div>
+    </div>
+
+    <p>A <strong>repository</strong> (or "repo") is just a project folder that Git is watching. Say you have a folder for a to-do list app:</p>
+
+    <div class="scale-diagram">
+      todo-app<br>
+      ├── index.html<br>
+      ├── style.css<br>
+      └── script.js
+    </div>
+
+    <p>Right now, Git knows nothing about it. To start tracking it:</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">cd</span> todo-app
+<span class="c-cmd">git</span> <span class="c-val">init</span>
+<span class="c-comment"># Initialized empty Git repository</span></pre>
+    </div>
+
+    <p>This creates a hidden <code>.git</code> folder inside your project. That's where Git quietly stores every commit, branch, and bit of history — your actual files (index.html, etc.) never move or change.</p>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p><strong>.git</strong> is Git's brain for this project. <strong>Deleting it</strong> doesn't delete your code — it just makes Git forget every version you ever saved. Never edit its contents by hand.</p>
+    </div>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Run <code>git init</code> only once per project — right when you start it, or right when you decide to start tracking it.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 4 ================= -->
+  <section class="section" id="workflow">
+    <div class="section-header">
+      <div class="section-num-big">04</div>
+      <div class="section-title-block">
+        <div class="section-title">The Git Workflow</div>
+        <div class="section-subtitle">The four stages every change passes through</div>
+      </div>
+    </div>
+
+    <p>Every file you touch moves through four areas before it's safely part of your project's history:</p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Working Directory</div><div class="flow-detail">Your actual project folder — where you edit index.html, add a new component, etc.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Staging Area</div><div class="flow-detail">A waiting room. You pick exactly which changed files you want saved next.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Local Repository</div><div class="flow-detail">A "commit" locks in a permanent snapshot — saved on your computer.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot" style="background:var(--accent2)"></div></div>
+        <div class="flow-content"><div class="flow-title">Remote Repository (GitHub)</div><div class="flow-detail">A push uploads your commits online so others (and future you) can access them.</div></div>
+      </div>
+    </div>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p>Think of the <strong>Staging Area</strong> like an online shopping cart. Browsing the store = editing files. Adding to cart = <code>git add</code>. Checkout = <code>git commit</code>. Nothing is "bought" (saved forever) until you check out.</p>
+    </div>
+
+    <h3>Example: building a navbar over one day</h3>
+    <div class="scale-diagram">
+      <span class="hi">9 AM — write navbar HTML</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      <span class="green">git add . → git commit -m "Add navbar markup"</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      <span class="hi">2 PM — style the navbar with CSS</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      <span class="green">git add . → git commit -m "Style navbar"</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      <span class="hi">6 PM — push everything to GitHub</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      <span class="green">git push ✅</span>
+    </div>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Commits happen completely offline — you don't need internet until you're ready to <code>push</code>. So you can commit freely on a flight, a train, or with bad Wi-Fi.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 5 ================= -->
+  <section class="section" id="commands">
+    <div class="section-header">
+      <div class="section-num-big">05</div>
+      <div class="section-title-block">
+        <div class="section-title">Core Commands</div>
+        <div class="section-subtitle">The six commands you'll type every single day</div>
+      </div>
+    </div>
+
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">git init</span></td><td><span class="f-val">—</span></td><td class="f-desc">Starts tracking the current folder as a Git repo.</td></tr>
+        <tr><td><span class="f-name">git status</span></td><td><span class="f-val">—</span></td><td class="f-desc">Shows what's changed, staged, or untracked right now.</td></tr>
+        <tr><td><span class="f-name">git add</span></td><td><span class="f-val">file / .</span></td><td class="f-desc">Moves changes into the Staging Area.</td></tr>
+        <tr><td><span class="f-name">git commit -m</span></td><td><span class="f-val">"message"</span></td><td class="f-desc">Saves a permanent snapshot with a message describing it.</td></tr>
+        <tr><td><span class="f-name">git log --oneline</span></td><td><span class="f-val">—</span></td><td class="f-desc">Shows your commit history, one line per commit.</td></tr>
+        <tr><td><span class="f-name">git diff</span></td><td><span class="f-val">—</span></td><td class="f-desc">Shows exactly what lines changed, before you commit.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>A real example: fixing the background color</h3>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">status</span>
+<span class="c-comment"># modified: style.css</span>
+
+<span class="c-cmd">git</span> <span class="c-val">diff</span>
+<span class="c-pipe">- background: white;</span>
+<span class="c-pipe">+ background: #111827;</span>
+
+<span class="c-cmd">git</span> <span class="c-val">add</span> style.css
+<span class="c-cmd">git</span> <span class="c-val">commit</span> <span class="c-flag">-m</span> <span class="c-str">"Switch hero section to dark background"</span></pre>
+    </div>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Good commit message: <code>"Fix mobile navbar overlap"</code>. Bad commit message: <code>"update"</code> or <code>"final"</code>. Describe <strong>what changed</strong>, not that something changed.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 6 ================= -->
+  <section class="section" id="files">
+    <div class="section-header">
+      <div class="section-num-big">06</div>
+      <div class="section-title-block">
+        <div class="section-title">File States &amp; .gitignore</div>
+        <div class="section-subtitle">Untracked, modified, staged — and what Git should never touch</div>
+      </div>
+    </div>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Untracked</div><div class="flow-detail">A brand new file Git has never seen, e.g. a new about.html you just created.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Modified</div><div class="flow-detail">Git already knows this file, but you've changed it since the last commit.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot" style="background:var(--accent2)"></div></div>
+        <div class="flow-content"><div class="flow-title">Staged → Committed</div><div class="flow-detail">You've run git add, then git commit — the change is now locked in.</div></div>
+      </div>
+    </div>
+
+    <h3>.gitignore — telling Git what to skip</h3>
+    <p>In a React or Node project, some folders/files should <strong>never</strong> be uploaded to GitHub — like your <code>node_modules</code> folder (can be 100,000+ files!) or your <code>.env</code> file (which holds secret API keys).</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">.gitignore</span></div>
+      <pre><span class="c-key">node_modules/</span>
+<span class="c-key">.env</span>
+<span class="c-key">dist/</span>
+<span class="c-key">build/</span>
+<span class="c-key">*.log</span></pre>
+    </div>
+
+    <div class="warn">
+      <div class="note-icon">⚠️</div>
+      <p>Never commit a <code>.env</code> file. It usually contains database passwords, API keys, or secret tokens — leaking these on a public GitHub repo is a real security risk.</p>
+    </div>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Create your <code>.gitignore</code> <strong>before</strong> your first commit. Once Git is already tracking a file, adding it to <code>.gitignore</code> later won't make Git stop watching it automatically.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 7 ================= -->
+  <section class="section" id="remote">
+    <div class="section-header">
+      <div class="section-num-big">07</div>
+      <div class="section-title-block">
+        <div class="section-title">Push, Pull &amp; Clone</div>
+        <div class="section-subtitle">Connecting your local project to GitHub</div>
+      </div>
+    </div>
+
+    <p>So far, all your commits live only on your laptop. To back them up (and let others see them), connect your project to a GitHub repository.</p>
+
+    <div class="step-label">Step 1 — Connect</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">remote add</span> origin <span class="c-str">https://github.com/you/todo-app.git</span></pre>
+    </div>
+    <p><code>origin</code> is just a nickname for "the GitHub URL I'm connected to."</p>
+
+    <div class="step-label green">Step 2 — Push (first time)</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">push</span> <span class="c-flag">-u</span> origin main</pre>
+    </div>
+    <p>After this, every future push is as simple as <code>git push</code> — Git remembers where to send it.</p>
+
+    <div class="step-label blue">Cloning someone else's project</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">clone</span> <span class="c-str">https://github.com/friend/react-blog.git</span></pre>
+    </div>
+    <p>This downloads the entire project — files, branches, and full commit history — as if you'd been there from day one.</p>
+
+    <h3>Pull vs Fetch</h3>
+    <table class="compare">
+      <thead><tr><th>What</th><th>git fetch</th><th>git pull</th></tr></thead>
+      <tbody>
+        <tr><td class="row-label">Downloads new changes?</td><td class="local-val">Yes</td><td class="eks-val">Yes</td></tr>
+        <tr><td class="row-label">Updates your files immediately?</td><td class="local-val">No — you review first</td><td class="eks-val">Yes — merges right away</td></tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Think WhatsApp: <strong>fetch</strong> is seeing "5 new messages" without opening them. <strong>pull</strong> is opening and reading them — your view updates instantly.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 8 ================= -->
+  <section class="section" id="branching">
+    <div class="section-header">
+      <div class="section-num-big">08</div>
+      <div class="section-title-block">
+        <div class="section-title">Branching</div>
+        <div class="section-subtitle">Working on new features without breaking what already works</div>
+      </div>
+    </div>
+
+    <p>Say your React app is live and working. Now you want to add a dark mode toggle — but what if it breaks the whole app? You don't experiment directly on <code>main</code>. Instead, you create a <strong>branch</strong>: an independent copy of your project where you can safely try things.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">switch</span> <span class="c-flag">-c</span> dark-mode
+<span class="c-comment"># creates AND switches to the new branch in one step</span></pre>
+    </div>
+
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">git branch</span></td><td><span class="f-val">—</span></td><td class="f-desc">Lists all branches; the current one has a *.</td></tr>
+        <tr><td><span class="f-name">git switch</span></td><td><span class="f-val">name</span></td><td class="f-desc">Moves you into an existing branch.</td></tr>
+        <tr><td><span class="f-name">git switch -c</span></td><td><span class="f-val">name</span></td><td class="f-desc">Creates a new branch and jumps into it immediately.</td></tr>
+        <tr><td><span class="f-name">git branch -d</span></td><td><span class="f-val">name</span></td><td class="f-desc">Deletes a branch once its work is merged in.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p>Changes made on <code>dark-mode</code> stay invisible on <code>main</code> until you merge them. Switch back to <code>main</code> and your dark mode code simply isn't there — safely tucked away in its own branch.</p>
+    </div>
+
+    <h3>Good branch names</h3>
+    <div class="scale-diagram">
+      <span class="green">feature/dark-mode</span> · <span class="green">bugfix/navbar-overlap</span> · <span class="green">docs/readme-update</span><br>
+      <span class="red">test</span> · <span class="red">temp</span> · <span class="red">abc</span> <span class="hi">← avoid these</span>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 9 ================= -->
+  <section class="section" id="merging">
+    <div class="section-header">
+      <div class="section-num-big">09</div>
+      <div class="section-title-block">
+        <div class="section-title">Merging</div>
+        <div class="section-subtitle">Bringing a finished feature branch back into main</div>
+      </div>
+    </div>
+
+    <p>Once dark mode works perfectly on its own branch, it's time to combine it back into <code>main</code>.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">switch</span> main
+<span class="c-cmd">git</span> <span class="c-val">merge</span> dark-mode</pre>
+    </div>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Always switch to the branch you want to merge <strong>into</strong> first (usually <code>main</code>), then run merge with the feature branch's name.</p>
+    </div>
+
+    <h3>Fast-forward vs Three-way merge</h3>
+    <table class="compare">
+      <thead><tr><th>What</th><th>Fast-forward</th><th>Three-way</th></tr></thead>
+      <tbody>
+        <tr><td class="row-label">When it happens</td><td class="local-val">main hasn't changed since you branched</td><td class="eks-val">Both branches got new commits</td></tr>
+        <tr><td class="row-label">Extra "merge commit"?</td><td class="local-val">No — pointer just moves forward</td><td class="eks-val">Yes — Git creates one to combine histories</td></tr>
+      </tbody>
+    </table>
+
+    <p>After merging, delete the now-unneeded branch:</p>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">branch</span> <span class="c-flag">-d</span> dark-mode</pre>
+    </div>
+    <p>Don't worry — your dark mode code stays in <code>main</code>'s history. Only the branch label disappears.</p>
+  </section>
+
+  <!-- ================= SECTION 10 — STASHING ================= -->
+  <section class="section" id="stashing">
+    <div class="section-header">
+      <div class="section-num-big">10</div>
+      <div class="section-title-block">
+        <div class="section-title">Stashing</div>
+        <div class="section-subtitle">Temporarily setting aside unfinished work</div>
+      </div>
+    </div>
+
+    <p>Imagine you're halfway through building a search bar on the <code>feature/search</code> branch — messy, half-working code — when your teammate says "quick, switch to main, there's a bug in production!" You can't commit unfinished, broken code. That's exactly what <strong>stashing</strong> is for.</p>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p><code>git stash</code> takes your uncommitted changes and tucks them away in a hidden "shelf," giving you back a clean working directory — without creating a commit.</p>
+    </div>
+
+    <div class="step-label">Step 1 — Save your unfinished work</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">stash</span>
+<span class="c-comment"># Saved working directory state WIP on feature/search: ...</span></pre>
+    </div>
+
+    <div class="step-label blue">Step 2 — Do the urgent fix</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">switch</span> main
+<span class="c-comment"># fix the bug, commit, push...</span></pre>
+    </div>
+
+    <div class="step-label green">Step 3 — Bring your work back</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">switch</span> feature/search
+<span class="c-cmd">git</span> <span class="c-val">stash pop</span></pre>
+    </div>
+
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">git stash</span></td><td><span class="f-val">—</span></td><td class="f-desc">Shelves your current uncommitted changes.</td></tr>
+        <tr><td><span class="f-name">git stash list</span></td><td><span class="f-val">—</span></td><td class="f-desc">Shows every stash you've saved, most recent first.</td></tr>
+        <tr><td><span class="f-name">git stash pop</span></td><td><span class="f-val">—</span></td><td class="f-desc">Restores the most recent stash and removes it from the shelf.</td></tr>
+        <tr><td><span class="f-name">git stash apply</span></td><td><span class="f-val">—</span></td><td class="f-desc">Restores the stash but keeps a copy on the shelf too.</td></tr>
+        <tr><td><span class="f-name">git stash drop</span></td><td><span class="f-val">—</span></td><td class="f-desc">Deletes a stash you no longer need.</td></tr>
+        <tr><td><span class="f-name">git stash save</span></td><td><span class="f-val">"message"</span></td><td class="f-desc">Same as stash, but with a note so you remember what it was.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Pop vs Apply: <code>pop</code> = "take it off the shelf and use it" (removes it from the stash list). <code>apply</code> = "make a copy from the shelf but leave the original there too" — handy if you want to apply the same stash to two different branches.</p>
+    </div>
+
+    <div class="warn">
+      <div class="note-icon">⚠️</div>
+      <p>Stashes aren't tied to a specific branch — you can stash on one branch and pop it on another. This is powerful, but can also cause confusing conflicts if you're not paying attention to which branch you're on.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 11 ================= -->
+  <section class="section" id="collab">
+    <div class="section-header">
+      <div class="section-num-big">11</div>
+      <div class="section-title-block">
+        <div class="section-title">Collaboration</div>
+        <div class="section-subtitle">How multiple developers safely share one project</div>
+      </div>
+    </div>
+
+    <p>Say four of you are building an e-commerce site: one on login, one on the cart, one on payments, one on the admin dashboard. GitHub gives you two main ways to work together.</p>
+
+    <table class="compare">
+      <thead><tr><th>What</th><th>Collaborator Access</th><th>Fork &amp; PR</th></tr></thead>
+      <tbody>
+        <tr><td class="row-label">Used for</td><td class="local-val">Company / team projects</td><td class="eks-val">Open-source contributions</td></tr>
+        <tr><td class="row-label">How it works</td><td class="local-val">Owner invites you directly to the repo</td><td class="eks-val">You copy the repo to your own account, then propose changes back</td></tr>
+      </tbody>
+    </table>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p>A <strong>fork</strong> is your own personal copy of someone else's repository. You can experiment freely there — the original project stays untouched until you formally ask them to include your changes.</p>
+    </div>
+
+    <p>The golden rule of team collaboration: <strong>never build features directly on <code>main</code></strong>. Each feature gets its own branch, keeping everyone's work isolated until it's reviewed and ready.</p>
+  </section>
+
+  <!-- ================= SECTION 12 — RAISING A PR ================= -->
+  <section class="section" id="pr-raise">
+    <div class="section-header">
+      <div class="section-num-big">12</div>
+      <div class="section-title-block">
+        <div class="section-title">Raising a Pull Request</div>
+        <div class="section-subtitle">Asking the team to review your work before it joins the main project</div>
+      </div>
+    </div>
+
+    <p>You've finished the login feature on your <code>feature/login</code> branch. Should you merge it into <code>main</code> yourself? <strong>No.</strong> Professional teams never let developers merge directly into important branches. Instead, they open a <strong>Pull Request (PR)</strong> — a formal request that says: <em>"I've finished my work, please review it before it becomes part of the main project."</em></p>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p>Think of it like a group assignment. You finish your section, but instead of inserting it straight into the final document, you send it to your teacher first. They review it, suggest corrections, approve it — and only then does it get added. A Pull Request works exactly the same way.</p>
+    </div>
+
+    <h3>Why do we even need Pull Requests?</h3>
+    <p>Imagine 20 developers on one team. If everyone pushed directly into <code>main</code>, bugs would pile up fast, code quality would drop, and a single mistake could break the live site. PRs fix this by forcing every change through <strong>code review, discussion, testing, and approval</strong> before it's safely merged.</p>
+
+    <h3>The full Pull Request workflow</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Create branch</div><div class="flow-detail">git switch -c feature/login</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Develop the feature &amp; commit</div><div class="flow-detail">Build login, commit in small logical chunks.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Push the branch</div><div class="flow-detail">git push origin feature/login</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Create Pull Request</div><div class="flow-detail">login-feature → main, with title + description.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Code review</div><div class="flow-detail">A teammate reads, tests, and comments on it.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot" style="background:var(--accent2)"></div></div>
+        <div class="flow-content"><div class="flow-title">Approve → Merge → Delete branch</div><div class="flow-detail">Once approved, it's merged into main and the feature branch is cleaned up.</div></div>
+      </div>
+    </div>
+
+    <p>This exact cycle is what almost every software company — from small startups to Google and Netflix — runs, every single day.</p>
+
+    <h3>Step-by-step: creating your PR</h3>
+
+    <div class="step-label">Step 1 — Push your branch to GitHub</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">push</span> origin feature/login</pre>
+    </div>
+
+    <div class="step-label blue">Step 2 — Open GitHub</div>
+    <p>GitHub will usually display a banner that says <strong>"Compare &amp; pull request"</strong> right after your push. Click it.</p>
+
+    <div class="step-label green">Step 3 — Fill in the details, then submit</div>
+    <p>Fill in a <strong>Title</strong> and a <strong>Description</strong>, then click <strong>"Create Pull Request."</strong> Done — your PR is now waiting for review.</p>
+
+    <h3>Writing a good PR title</h3>
+    <p>A good title clearly describes the feature — not just that "something" changed. Many teams also prefix the title with the type of change, similar to commit message conventions, so reviewers know what they're looking at before opening it.</p>
+    <div class="scale-diagram">
+      <span class="green">✓ Add User Authentication</span><br>
+      <span class="green">✓ Fix Navbar Alignment</span><br>
+      <span class="green">✓ Implement Dark Mode</span><br>
+      <span class="green">✓ Create Payment API</span><br>
+      <span class="red">✗ Update</span> · <span class="red">✗ Changes</span> · <span class="red">✗ Final</span> · <span class="red">✗ Done</span>
+    </div>
+
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">feat:</span></td><td><span class="f-val">feat: add user authentication</span></td><td class="f-desc">A new feature is being introduced.</td></tr>
+        <tr><td><span class="f-name">fix:</span></td><td><span class="f-val">fix: navbar overlap on mobile</span></td><td class="f-desc">A bug fix, nothing new added.</td></tr>
+        <tr><td><span class="f-name">refactor:</span></td><td><span class="f-val">refactor: simplify auth middleware</span></td><td class="f-desc">Code restructured, behavior unchanged.</td></tr>
+        <tr><td><span class="f-name">docs:</span></td><td><span class="f-val">docs: update setup instructions</span></td><td class="f-desc">Documentation-only changes.</td></tr>
+        <tr><td><span class="f-name">chore:</span></td><td><span class="f-val">chore: bump dependencies</span></td><td class="f-desc">Maintenance work — no feature or fix.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Writing a good PR description</h3>
+    <p>A solid description answers: <strong>what</strong> changed, <strong>why</strong> it changed, and <strong>how</strong> you tested it (screenshots help too). Rather than one paragraph, most teams use a structured, sectioned template — this keeps every PR consistent and makes reviewers' jobs much faster, since they know exactly where to look for each piece of information.</p>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p>Reviewers are busy. A templated description lets them scan straight to "Related Issue" or "Testing" instead of hunting through a wall of text. Many teams save this exact template as a <code>.github/PULL_REQUEST_TEMPLATE.md</code> file, so GitHub auto-fills it into every new PR's description box.</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">PR Description Template</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-key">## Description</span>
+Briefly describe what this PR changes.
+
+<span class="c-key">## Changes Made</span>
+- Added ...
+- Fixed ...
+- Updated ...
+
+<span class="c-key">## Why</span>
+Explain why these changes are needed.
+
+<span class="c-key">## Testing</span>
+- Tested locally
+- No errors found
+
+<span class="c-key">## Screenshots</span>
+(Add if applicable)
+
+<span class="c-key">## Related Issue</span>
+Closes #123
+
+<span class="c-key">## Checklist</span>
+- [x] Code follows project guidelines
+- [x] Tested locally
+- [x] Documentation updated (if needed)
+- [x] Ready for review</pre>
+    </div>
+
+    <h4>What each section is for</h4>
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">## Description</span></td><td><span class="f-val">1–2 sentences</span></td><td class="f-desc">A quick summary a reviewer can read in five seconds to know what this PR is about.</td></tr>
+        <tr><td><span class="f-name">## Changes Made</span></td><td><span class="f-val">bullet list</span></td><td class="f-desc">The concrete list of what was added, fixed, or updated — the "diff" in plain English.</td></tr>
+        <tr><td><span class="f-name">## Why</span></td><td><span class="f-val">short paragraph</span></td><td class="f-desc">The reasoning or motivation — the bug it solves, the feature it enables, or the issue it addresses.</td></tr>
+        <tr><td><span class="f-name">## Testing</span></td><td><span class="f-val">bullet list</span></td><td class="f-desc">How you verified it works — manual testing, automated tests run, edge cases checked.</td></tr>
+        <tr><td><span class="f-name">## Screenshots</span></td><td><span class="f-val">image / gif</span></td><td class="f-desc">Visual proof for UI changes — drag-and-drop an image straight into GitHub's PR description box.</td></tr>
+        <tr><td><span class="f-name">## Related Issue</span></td><td><span class="f-val">Closes #123</span></td><td class="f-desc">Links back to the tracked issue — GitHub auto-closes it when this PR merges.</td></tr>
+        <tr><td><span class="f-name">## Checklist</span></td><td><span class="f-val">- [x] item</span></td><td class="f-desc">Self-review checkboxes confirming the PR is actually ready, not still a work in progress.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>In <code>## Related Issue</code>, keywords like <code>Closes</code>, <code>Fixes</code>, or <code>Resolves</code> followed by an issue number (e.g. <code>Closes #123</code>) aren't just for readability — GitHub detects them and <strong>automatically closes that issue</strong> the moment this PR is merged.</p>
+    </div>
+
+
+    <h3>Before you open a PR — checklist</h3>
+    <ul>
+      <li>Does the project build successfully?</li>
+      <li>Did I test my code myself first?</li>
+      <li>Are my commit messages meaningful?</li>
+      <li>Is my branch up to date with <code>main</code>?</li>
+      <li>Did I remove unnecessary/leftover code (console.logs, commented-out blocks)?</li>
+    </ul>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>If your feature isn't finished yet but you want early feedback, open a <strong>Draft Pull Request</strong> instead. It clearly tells reviewers "still in progress, please don't merge yet."</p>
+    </div>
+
+    <div class="warn">
+      <div class="note-icon">⚠️</div>
+      <p>Two common mistakes when raising a PR: opening it from the <strong>wrong source/target branch</strong> (always double-check which branch merges into which), and submitting a <strong>huge PR</strong> with hundreds of unrelated file changes — keep each PR focused on one feature.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 13 — REVIEWING A PR ================= -->
+  <section class="section" id="pr-review">
+    <div class="section-header">
+      <div class="section-num-big">13</div>
+      <div class="section-title-block">
+        <div class="section-title">Reviewing a Pull Request</div>
+        <div class="section-subtitle">How teams check code quality before it ships</div>
+      </div>
+    </div>
+
+    <p>Now flip roles — you're the reviewer, checking a teammate's <code>feature/cart</code> PR before it becomes part of the shared codebase. One of the biggest advantages of Pull Requests is <strong>Code Review</strong>: another developer checks your code before it's merged. Even experienced developers make mistakes — a second pair of eyes regularly catches bugs, typos, security issues, and performance problems that the original author missed.</p>
+
+    <h3>What happens after a PR is created?</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Reviewer reads the code</div><div class="flow-detail">Goes through every changed file in the "Files changed" tab.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Reviewer tests the feature</div><div class="flow-detail">Pulls the branch locally or checks CI results to confirm it actually works.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Reviewer gives feedback</div><div class="flow-detail">Leaves inline comments directly on the relevant lines of code.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Developer updates the code</div><div class="flow-detail">Commits fixes and pushes to the same branch.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot" style="background:var(--accent2)"></div></div>
+        <div class="flow-content"><div class="flow-title">Reviewer approves → Merge</div><div class="flow-detail">Once satisfied, the reviewer approves and the PR is merged.</div></div>
+      </div>
+    </div>
+
+    <h3>What a good reviewer checks</h3>
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th><th>Why it matters</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">Code Quality</span></td><td><span class="f-val">clean, simple logic</span></td><td class="f-desc">Is the implementation as simple as it can reasonably be?</td><td class="f-why">Simpler code has fewer places for bugs to hide.</td></tr>
+        <tr><td><span class="f-name">Readability</span></td><td><span class="f-val">clear names</span></td><td class="f-desc">Can the next developer understand this in 6 months?</td><td class="f-why">Code is read far more often than it's written.</td></tr>
+        <tr><td><span class="f-name">Performance</span></td><td><span class="f-val">no unnecessary work</span></td><td class="f-desc">Are there obvious slowdowns — e.g. loops inside loops, unneeded re-renders?</td><td class="f-why">Keeps the app fast as it grows.</td></tr>
+        <tr><td><span class="f-name">Bugs / Logic</span></td><td><span class="f-val">edge cases</span></td><td class="f-desc">Does it handle an empty cart, a failed API call, invalid input?</td><td class="f-why">Prevents issues from reaching production.</td></tr>
+        <tr><td><span class="f-name">Security</span></td><td><span class="f-val">no secrets/leaks</span></td><td class="f-desc">No hard-coded API keys, no unsafe handling of user input.</td><td class="f-why">One leaked key can compromise the whole app.</td></tr>
+        <tr><td><span class="f-name">Best Practices</span></td><td><span class="f-val">matches team style</span></td><td class="f-desc">Follows the project's existing conventions and patterns.</td><td class="f-why">Keeps the codebase maintainable long-term.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>The three review outcomes</h3>
+    <div class="step-label green">1. Approve</div>
+    <p>Everything looks good. The reviewer clicks <strong>Approve</strong> — the PR is now ready to merge.</p>
+
+    <div class="step-label gold">2. Request Changes</div>
+    <p>The reviewer found real issues that must be fixed before merging. For example: <em>"Improve variable names," "Fix responsive layout," "Add error handling."</em> The developer updates the branch, and the Pull Request updates automatically.</p>
+
+    <div class="step-label blue">3. Comment</div>
+    <p>The reviewer is simply asking questions or suggesting ideas, without blocking the merge — for example: <em>"Why did you choose this approach?"</em> or <em>"Can we simplify this function?"</em></p>
+
+    <h3>Updating a Pull Request after feedback</h3>
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p>A common beginner misconception: "I have to create a new Pull Request after every change." <strong>Wrong.</strong> Simply make changes, commit, and push to the same branch — the existing PR updates automatically.</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal — author fixing review comments</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">add</span> .
+<span class="c-cmd">git</span> <span class="c-val">commit</span> <span class="c-flag">-m</span> <span class="c-str">"Fix review comments"</span>
+<span class="c-cmd">git</span> <span class="c-val">push</span></pre>
+    </div>
+
+    <h3>Approving and merging</h3>
+    <p>When everything looks good, the reviewer clicks <strong>Approve</strong>. Then, to actually combine the code, someone clicks <strong>"Merge Pull Request"</strong> — GitHub combines the feature branch into the target branch (usually <code>feature/cart → main</code>).</p>
+
+    <table class="compare">
+      <thead><tr><th>What</th><th>Merge</th><th>Close</th></tr></thead>
+      <tbody>
+        <tr><td class="row-label">Result</td><td class="eks-val">Code becomes part of the project</td><td class="local-val">Code is rejected or postponed — no code is merged</td></tr>
+        <tr><td class="row-label">Branch</td><td class="eks-val">Usually deleted after merging</td><td class="local-val">May still exist for later use</td></tr>
+      </tbody>
+    </table>
+
+    <p>Every PR also keeps a full <strong>conversation</strong> — comments, suggestions, reviews, commit history, and changed files — so the whole discussion around a feature lives in one place.</p>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Good review culture: be specific and kind. Instead of "this is wrong," try <em>"This might break if `items` is undefined — could we add a default value?"</em> Never approve code blindly — and always address review comments before requesting another look.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 14 — MERGE & REJECTED ================= -->
+  <section class="section" id="pr-merge">
+    <div class="section-header">
+      <div class="section-num-big">14</div>
+      <div class="section-title-block">
+        <div class="section-title">Merging a PR &amp; Handling Rejection</div>
+        <div class="section-subtitle">How teams finish the review cycle — and what to do if your PR gets turned down</div>
+      </div>
+    </div>
+
+    <h3>Merging, at industry level</h3>
+    <p>Once a PR is approved (often requiring 1–2 approvals, plus passing automated tests/CI), it's ready to merge. GitHub usually offers three merge styles:</p>
+
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th><th>Why it matters</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">Merge commit</span></td><td><span class="f-val">keeps all commits</span></td><td class="f-desc">Adds every commit from the branch, plus one merge commit.</td><td class="f-why">Full history preserved, but can get noisy.</td></tr>
+        <tr><td><span class="f-name">Squash &amp; merge</span></td><td><span class="f-val">one clean commit</span></td><td class="f-desc">Combines all the branch's commits into a single commit on main.</td><td class="f-why">Keeps main's history clean — most companies default to this.</td></tr>
+        <tr><td><span class="f-name">Rebase &amp; merge</span></td><td><span class="f-val">linear history</span></td><td class="f-desc">Replays your commits on top of main, one by one, no merge commit.</td><td class="f-why">Very clean history, used by teams wanting a straight-line log.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Most companies use <strong>Squash &amp; Merge</strong> by default for feature branches — it keeps <code>main</code>'s history readable: one commit per feature, instead of "wip", "fix typo", "oops" scattered everywhere.</p>
+    </div>
+
+    <p>After merging, the standard next step:</p>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">switch</span> main
+<span class="c-cmd">git</span> <span class="c-val">pull</span>
+<span class="c-cmd">git</span> <span class="c-val">branch</span> <span class="c-flag">-d</span> feature/login</pre>
+    </div>
+
+    <hr class="divider">
+
+    <h3>What if your PR gets rejected?</h3>
+    <p>It happens to everyone — even senior engineers. A "rejected" PR usually means one of two things: the reviewer <strong>requested changes</strong>, or the PR was <strong>closed without merging</strong> altogether (maybe the feature isn't needed anymore, or the approach needs rethinking).</p>
+
+    <div class="step-label">Step 1 — Don't take it personally</div>
+    <p>Code review feedback is about the code, not you. Every experienced developer has had PRs sent back for changes — it's a normal, healthy part of shipping good software.</p>
+
+    <div class="step-label blue">Step 2 — Read the feedback carefully</div>
+    <p>Understand <em>why</em> it was rejected. If it's unclear, it's completely fine to ask: <em>"Could you clarify what you mean by this comment?"</em></p>
+
+    <div class="step-label green">Step 3 — Fix and push again</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">switch</span> feature/login
+<span class="c-comment"># make the requested changes</span>
+<span class="c-cmd">git</span> <span class="c-val">add</span> .
+<span class="c-cmd">git</span> <span class="c-val">commit</span> <span class="c-flag">-m</span> <span class="c-str">"Address review feedback: validate email format"</span>
+<span class="c-cmd">git</span> <span class="c-val">push</span></pre>
+    </div>
+    <p>Then re-request a review on GitHub instead of opening a brand new PR — this keeps the whole discussion in one place.</p>
+
+    <div class="step-label gold">If the whole PR was closed (not just changes requested)</div>
+    <p>Talk to your team about the reasoning first. Sometimes the feature direction changed, or a different approach is preferred. If you still want to pursue it, you can branch off the latest <code>main</code> and rebuild with the new feedback in mind:</p>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">switch</span> main
+<span class="c-cmd">git</span> <span class="c-val">pull</span>
+<span class="c-cmd">git</span> <span class="c-val">switch</span> <span class="c-flag">-c</span> feature/login-v2</pre>
+    </div>
+
+    <div class="warn">
+      <div class="note-icon">⚠️</div>
+      <p>Avoid force-pushing over a reviewer's comments or arguing in the PR thread. If you disagree with feedback, discuss it calmly, or loop in a lead/senior developer to help decide the right approach.</p>
+    </div>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p>A rejected or "changes requested" PR isn't the end of your work — it's the review process doing its job. The goal is always a better <code>main</code> branch, not a perfect first attempt.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 15 ================= -->
+  <section class="section" id="conflicts">
+    <div class="section-header">
+      <div class="section-num-big">15</div>
+      <div class="section-title-block">
+        <div class="section-title">Merge Conflicts</div>
+        <div class="section-subtitle">What to do when Git can't decide for you</div>
+      </div>
+    </div>
+
+    <p>Say you changed the header's background to black, and your teammate changed the very same line to blue — on a different branch. When merging, Git has no idea which one you actually want. That's a <strong>merge conflict</strong>.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">style.css — conflict markers</span></div>
+      <pre><span class="c-pipe">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</span>
+background: black;
+<span class="c-pipe">=======</span>
+background: blue;
+<span class="c-pipe">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/header</span></pre>
+    </div>
+
+    <p>Edit the file, delete the markers, and keep whichever version (or combination) you actually want:</p>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">add</span> style.css
+<span class="c-cmd">git</span> <span class="c-val">commit</span></pre>
+    </div>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Conflicts are completely normal — even experienced developers hit them regularly. They just mean two people touched the same line; Git needs a human to pick the final answer.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 16 ================= -->
+  <section class="section" id="undo">
+    <div class="section-header">
+      <div class="section-num-big">16</div>
+      <div class="section-title-block">
+        <div class="section-title">Undo Changes</div>
+        <div class="section-subtitle">Because mistakes should never be permanent</div>
+      </div>
+    </div>
+
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">git restore</span></td><td><span class="f-val">file</span></td><td class="f-desc">Discards uncommitted changes, back to the last commit. Very safe.</td></tr>
+        <tr><td><span class="f-name">git reset --soft</span></td><td><span class="f-val">HEAD~1</span></td><td class="f-desc">Undoes the last commit but keeps your changes staged (great for fixing a bad commit message).</td></tr>
+        <tr><td><span class="f-name">git reset --hard</span></td><td><span class="f-val">HEAD~1</span></td><td class="f-desc">Deletes the last commit AND all its changes completely. Use with caution.</td></tr>
+        <tr><td><span class="f-name">git revert</span></td><td><span class="f-val">HEAD</span></td><td class="f-desc">Creates a new commit that undoes an earlier one — safe for shared branches.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="warn">
+      <div class="note-icon">⚠️</div>
+      <p>Never use <code>git reset --hard</code> on a branch others have already pulled — it rewrites history. On shared branches, always prefer <code>git revert</code>, which preserves history instead of erasing it.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 17 ================= -->
+  <section class="section" id="rebase">
+    <div class="section-header">
+      <div class="section-num-big">17</div>
+      <div class="section-title-block">
+        <div class="section-title">Rebase &amp; Interactive Rebase</div>
+        <div class="section-subtitle">Rewriting history to keep it clean and linear</div>
+      </div>
+    </div>
+
+    <p><strong>Rebase</strong> takes the commits from your branch and replays them one-by-one on top of another branch, instead of creating a merge commit that ties the two histories together. The end result looks as if you'd branched off much later — a straight line, not a web of merges.</p>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p>Merge preserves exactly what happened (including the "join point"). Rebase rewrites what happened, so it <em>looks</em> like your work started from the latest code. Neither is "wrong" — they trade off honesty of history against readability of history.</p>
+    </div>
+
+    <h3>Rebase vs merge, visually</h3>
+    <div class="scale-diagram">
+      <span class="hi">git merge</span> feature into main<br>
+      main:    A---B---C-------<span class="green">M</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\_____/<br>
+      feature:&nbsp;&nbsp;&nbsp;&nbsp;D---E<br>
+      <br>
+      <span class="hi">git rebase</span> feature onto main<br>
+      main:    A---B---C<br>
+      feature:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\---<span class="green">D'</span>---<span class="green">E'</span> <span class="red">(new commit IDs)</span>
+    </div>
+
+    <h3>Basic rebase</h3>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">checkout</span> feature/navbar
+<span class="c-cmd">git</span> <span class="c-val">rebase</span> main <span class="c-comment"># replays feature/navbar's commits on top of latest main</span></pre>
+    </div>
+
+    <h3>Interactive rebase — editing history itself</h3>
+    <p><code>git rebase -i</code> opens an editable list of your last commits, letting you reorder, combine, rename, or drop them before they're finalized. It's the tool for turning "wip", "fix typo", "actually fix typo" into one clean commit.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">rebase</span> <span class="c-flag">-i</span> HEAD~3 <span class="c-comment"># open the last 3 commits for editing</span></pre>
+    </div>
+
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">pick</span></td><td><span class="f-val">(default)</span></td><td class="f-desc">Keep this commit exactly as it is.</td></tr>
+        <tr><td><span class="f-name">reword</span></td><td><span class="f-val">r</span></td><td class="f-desc">Keep the changes, but let you edit the commit message.</td></tr>
+        <tr><td><span class="f-name">squash</span></td><td><span class="f-val">s</span></td><td class="f-desc">Merge this commit into the one above it, combining their messages.</td></tr>
+        <tr><td><span class="f-name">fixup</span></td><td><span class="f-val">f</span></td><td class="f-desc">Like squash, but silently discards this commit's message.</td></tr>
+        <tr><td><span class="f-name">drop</span></td><td><span class="f-val">d</span></td><td class="f-desc">Delete this commit entirely, as if it never happened.</td></tr>
+        <tr><td><span class="f-name">edit</span></td><td><span class="f-val">e</span></td><td class="f-desc">Pause at this commit so you can amend its content, then continue.</td></tr>
+      </tbody>
+    </table>
+
+    <p>After changing a line, save and close the editor. If you marked a commit <code>edit</code>, make your changes and run:</p>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">add</span> .
+<span class="c-cmd">git</span> <span class="c-val">rebase</span> <span class="c-flag">--continue</span></pre>
+    </div>
+
+    <h3>If a rebase hits a conflict</h3>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-comment"># fix the conflicted file(s), then:</span>
+<span class="c-cmd">git</span> <span class="c-val">add</span> &lt;file&gt;
+<span class="c-cmd">git</span> <span class="c-val">rebase</span> <span class="c-flag">--continue</span>
+
+<span class="c-comment"># or bail out completely and go back to how things were:</span>
+<span class="c-cmd">git</span> <span class="c-val">rebase</span> <span class="c-flag">--abort</span></pre>
+    </div>
+
+    <div class="warn">
+      <div class="note-icon">⚠️</div>
+      <p><strong>The golden rule of rebasing:</strong> never rebase commits that have already been pushed and that other people have pulled. Rebase rewrites commit hashes — if teammates already built on the old ones, you'll create a confusing, duplicated history for everyone. Rebase your own local/feature work; merge (or <code>git pull --rebase</code> only on branches solely yours) once it's shared.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 18 ================= -->
+  <section class="section" id="reflog">
+    <div class="section-header">
+      <div class="section-num-big">18</div>
+      <div class="section-title-block">
+        <div class="section-title">Reflog — Recovering Lost Work</div>
+        <div class="section-subtitle">Git's private safety net that almost nothing can defeat</div>
+      </div>
+    </div>
+
+    <p>Every time <code>HEAD</code> moves — a commit, a checkout, a reset, a rebase, even an aborted merge — Git quietly logs it in the <strong>reference log (reflog)</strong>. It's local-only (never pushed, never shared) and it's the reason "I accidentally deleted my commit" is almost never fatal.</p>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p>A "deleted" commit is rarely actually gone — Git just stops pointing at it. As long as it's still in the reflog (default ~90 days for reachable commits, ~30 days for unreachable ones), you can point something back at it and get your work back.</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">reflog</span>
+
+<span class="c-comment"># example output:</span>
+<span class="c-str">a1b2c3d</span> HEAD@{0}: rebase (finish): returning to refs/heads/main
+<span class="c-str">e4f5g6h</span> HEAD@{1}: commit: Add payment validation
+<span class="c-str">i7j8k9l</span> HEAD@{2}: reset: moving to HEAD~1
+<span class="c-str">m0n1o2p</span> HEAD@{3}: commit: Fix login bug</pre>
+    </div>
+
+    <h3>Recovering a "lost" commit</h3>
+    <p>Say a <code>git reset --hard</code> just wiped out a commit you actually needed. Find it in the reflog, then reset back onto it:</p>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">reflog</span> <span class="c-comment"># find the entry right before the mistake, e.g. HEAD@{2}</span>
+<span class="c-cmd">git</span> <span class="c-val">reset</span> <span class="c-flag">--hard</span> HEAD@{2}
+
+<span class="c-comment"># or, if you'd rather not touch your current branch:</span>
+<span class="c-cmd">git</span> <span class="c-val">checkout</span> <span class="c-flag">-b</span> recovered-work HEAD@{2}</pre>
+    </div>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Reflog is your panic button for rebases-gone-wrong, accidental hard resets, deleted branches, and detached-HEAD confusion. Whenever something feels like it "disappeared," check <code>git reflog</code> before assuming it's actually lost.</p>
+    </div>
+
+    <div class="warn">
+      <div class="note-icon">⚠️</div>
+      <p>Reflog is <strong>local to your machine only</strong> — it isn't pushed to GitHub and won't help recover a teammate's history, and it does eventually expire and get garbage-collected. It's a safety net, not permanent storage.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 19 ================= -->
+  <section class="section" id="cherry-pick">
+    <div class="section-header">
+      <div class="section-num-big">19</div>
+      <div class="section-title-block">
+        <div class="section-title">Cherry-Picking Commits</div>
+        <div class="section-subtitle">Grabbing one specific commit without merging everything else</div>
+      </div>
+    </div>
+
+    <p><code>git cherry-pick</code> copies the changes from one specific commit on another branch and applies them as a new commit on your current branch — without pulling in anything else that branch has. Useful for backporting a hotfix, or grabbing just one teammate's commit out of a much bigger feature branch.</p>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">checkout</span> main
+<span class="c-cmd">git</span> <span class="c-val">cherry-pick</span> a1b2c3d <span class="c-comment"># applies just this one commit onto main</span></pre>
+    </div>
+
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">git cherry-pick</span></td><td><span class="f-val">&lt;hash&gt;</span></td><td class="f-desc">Applies that single commit's changes as a new commit here.</td></tr>
+        <tr><td><span class="f-name">git cherry-pick</span></td><td><span class="f-val">A..B</span></td><td class="f-desc">Applies a whole range of commits (exclusive of A), in order.</td></tr>
+        <tr><td><span class="f-name">git cherry-pick</span></td><td><span class="f-val">--no-commit &lt;hash&gt;</span></td><td class="f-desc">Applies the changes to your working directory, but doesn't commit — lets you review or combine first.</td></tr>
+        <tr><td><span class="f-name">git cherry-pick</span></td><td><span class="f-val">--continue</span></td><td class="f-desc">Resumes after you've resolved a conflict from a cherry-pick.</td></tr>
+        <tr><td><span class="f-name">git cherry-pick</span></td><td><span class="f-val">--abort</span></td><td class="f-desc">Cancels the cherry-pick and returns to how things were before.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Because cherry-pick replays a commit's changes elsewhere, it can hit merge conflicts just like a merge or rebase can — resolve the file, <code>git add</code> it, then continue:</p>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">add</span> &lt;file&gt;
+<span class="c-cmd">git</span> <span class="c-val">cherry-pick</span> <span class="c-flag">--continue</span></pre>
+    </div>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Cherry-picked commits get a brand-new commit hash on the destination branch, even though the change is identical — Git treats it as its own, separate commit.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 20 ================= -->
+  <section class="section" id="fork-rulesets">
+    <div class="section-header">
+      <div class="section-num-big">20</div>
+      <div class="section-title-block">
+        <div class="section-title">Forking &amp; Branch Rulesets</div>
+        <div class="section-subtitle">Contributing to repos you don't own, and protecting the ones you do</div>
+      </div>
+    </div>
+
+    <h3>The full fork workflow</h3>
+    <p>A <strong>fork</strong> is your own personal copy of someone else's repository, sitting on your own GitHub account. It's how you contribute to projects you don't have write access to — like most open-source repositories.</p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Fork</div><div class="flow-detail">Click "Fork" on GitHub — creates yourname/project, a full copy under your account.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Clone your fork</div><div class="flow-detail"><code>git clone</code> your fork down to your machine.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Branch, commit, push</div><div class="flow-detail">Do your work on a feature branch, then push it to <em>your</em> fork.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div><div class="flow-connector"></div></div>
+        <div class="flow-content"><div class="flow-title">Open a PR</div><div class="flow-detail">Open a Pull Request from your fork's branch into the original project's <code>main</code>.</div></div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-line"><div class="flow-dot"></div></div>
+        <div class="flow-content"><div class="flow-title">Keep your fork in sync</div><div class="flow-detail">The original project keeps moving — regularly pull its changes into your fork.</div></div>
+      </div>
+    </div>
+
+    <h3>Keeping a fork up to date with the original ("upstream")</h3>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">remote</span> <span class="c-val">add</span> upstream https://github.com/original-owner/project.git
+<span class="c-cmd">git</span> <span class="c-val">fetch</span> upstream
+<span class="c-cmd">git</span> <span class="c-val">checkout</span> main
+<span class="c-cmd">git</span> <span class="c-val">merge</span> upstream/main <span class="c-comment"># or: git rebase upstream/main</span>
+<span class="c-cmd">git</span> <span class="c-val">push</span> origin main <span class="c-comment"># origin = your fork</span></pre>
+    </div>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p><code>origin</code> is a nickname for your fork (where you push); <code>upstream</code> is a nickname you add yourself for the original repo (where you pull updates from). This is what lets you stay current without ever needing write access to the source project.</p>
+    </div>
+
+    <h3>Branch protection rules &amp; Rulesets</h3>
+    <p>On repos you <em>do</em> control, GitHub lets you stop force-pushes, accidental deletions, and unreviewed merges straight into important branches. This started as <strong>Branch Protection Rules</strong> and has since been extended by <strong>Rulesets</strong> — a newer, more flexible layer that can also target tags and apply across multiple branches at once by pattern.</p>
+
+    <table class="compare">
+      <thead><tr><th>What</th><th>Branch Protection Rules</th><th>Rulesets</th></tr></thead>
+      <tbody>
+        <tr><td class="row-label">Scope</td><td class="eks-val">One exact branch name or pattern</td><td class="local-val">Multiple branches/tags, combinable, with include/exclude patterns</td></tr>
+        <tr><td class="row-label">Layering</td><td class="eks-val">One rule set applies at a time</td><td class="local-val">Multiple rulesets can stack on the same branch</td></tr>
+        <tr><td class="row-label">Visibility</td><td class="eks-val">Only visible to admins</td><td class="local-val">Can be marked visible to all contributors, so people see why a push was blocked</td></tr>
+        <tr><td class="row-label">Where it lives</td><td class="eks-val">Settings → Branches</td><td class="local-val">Settings → Rules → Rulesets</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Common rules teams turn on</h3>
+    <ul>
+      <li><strong>Require a pull request before merging</strong> — nobody pushes straight to <code>main</code>, not even admins.</li>
+      <li><strong>Require approvals</strong> — e.g. at least 1–2 reviewers must approve before a PR can merge.</li>
+      <li><strong>Require status checks to pass</strong> — CI tests, linters, or build pipelines must succeed first.</li>
+      <li><strong>Require conversation resolution</strong> — every review comment thread must be marked resolved.</li>
+      <li><strong>Block force pushes</strong> — stops anyone from rewriting the shared branch's history.</li>
+      <li><strong>Restrict deletions</strong> — the branch can't be deleted, even by mistake.</li>
+      <li><strong>Require signed commits</strong> — every commit must be cryptographically signed to prove who really authored it.</li>
+    </ul>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>Protecting <code>main</code> is one of the highest-value, lowest-effort things a team can set up on day one — it turns "please don't push directly to main" from a polite request into something GitHub actually enforces.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 21 ================= -->
+  <section class="section" id="power-tools">
+    <div class="section-header">
+      <div class="section-num-big">21</div>
+      <div class="section-title-block">
+        <div class="section-title">More Power Tools</div>
+        <div class="section-subtitle">Lesser-known commands that pay off once projects get bigger</div>
+      </div>
+    </div>
+
+    <h3>git bisect — binary-searching for the commit that broke things</h3>
+    <p>When something used to work and now doesn't, but you don't know which of 50 commits caused it, <code>bisect</code> does a binary search through history for you, halving the search space each time.</p>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">bisect</span> start
+<span class="c-cmd">git</span> <span class="c-val">bisect</span> bad <span class="c-comment"># current commit is broken</span>
+<span class="c-cmd">git</span> <span class="c-val">bisect</span> good v1.2.0 <span class="c-comment"># this old tag was fine</span>
+<span class="c-comment"># Git checks out a commit halfway between — test it, then say:</span>
+<span class="c-cmd">git</span> <span class="c-val">bisect</span> good <span class="c-comment"># or: git bisect bad</span>
+<span class="c-comment"># repeat until Git names the exact first-bad commit</span>
+<span class="c-cmd">git</span> <span class="c-val">bisect</span> reset <span class="c-comment"># done — return to where you started</span></pre>
+    </div>
+
+    <h3>git tag — marking release points</h3>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">tag</span> v1.0.0 <span class="c-comment"># lightweight tag — just a name on a commit</span>
+<span class="c-cmd">git</span> <span class="c-val">tag</span> <span class="c-flag">-a</span> v1.0.0 <span class="c-flag">-m</span> <span class="c-str">"First stable release"</span> <span class="c-comment"># annotated — stores author, date, message</span>
+<span class="c-cmd">git</span> <span class="c-val">push</span> origin v1.0.0 <span class="c-comment"># tags aren't pushed automatically</span></pre>
+    </div>
+
+    <h3>git worktree — multiple branches checked out at once</h3>
+    <p>Normally you can only have one branch checked out per repo folder. <code>worktree</code> gives you a second working directory linked to the same repo, so you can have two branches open side-by-side without stashing or cloning twice.</p>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">worktree</span> add ../hotfix-dir hotfix/urgent-bug</pre>
+    </div>
+
+    <h3>git submodule — a repo inside a repo</h3>
+    <p>Lets one Git repository include another repository as a subdirectory, pinned to a specific commit — common for shared libraries kept in their own repo.</p>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">submodule</span> add https://github.com/org/shared-ui.git libs/shared-ui
+<span class="c-cmd">git</span> <span class="c-val">clone</span> <span class="c-flag">--recurse-submodules</span> https://github.com/org/project.git <span class="c-comment"># clone with submodules included</span></pre>
+    </div>
+
+    <h3>Git hooks — automation on every commit or push</h3>
+    <p>Hooks are scripts stored in <code>.git/hooks/</code> that Git runs automatically at points like <code>pre-commit</code> or <code>pre-push</code> — commonly used to run linters or tests before a commit is allowed through.</p>
+
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">git bisect</span></td><td><span class="f-val">good / bad</span></td><td class="f-desc">Binary-searches commit history to find exactly where a bug was introduced.</td></tr>
+        <tr><td><span class="f-name">git tag</span></td><td><span class="f-val">-a v1.0.0</span></td><td class="f-desc">Marks a specific commit as a named release point.</td></tr>
+        <tr><td><span class="f-name">git worktree</span></td><td><span class="f-val">add &lt;path&gt; &lt;branch&gt;</span></td><td class="f-desc">Checks out another branch into a separate folder at the same time.</td></tr>
+        <tr><td><span class="f-name">git submodule</span></td><td><span class="f-val">add &lt;url&gt;</span></td><td class="f-desc">Nests another Git repo inside this one, pinned to a commit.</td></tr>
+        <tr><td><span class="f-name">git blame</span></td><td><span class="f-val">file</span></td><td class="f-desc">Shows who last changed each line of a file, and in which commit.</td></tr>
+        <tr><td><span class="f-name">git log</span></td><td><span class="f-val">--graph --oneline --all</span></td><td class="f-desc">Draws a compact ASCII graph of all branches and how they connect.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>You won't need most of these day-to-day — but knowing they exist means that when a specific hard problem shows up (which commit broke this? which branch touches this bug? I need two branches open at once), you'll recognize the right tool instead of reaching for a workaround.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 22 ================= -->
+  <section class="section" id="readme">
+    <div class="section-header">
+      <div class="section-num-big">22</div>
+      <div class="section-title-block">
+        <div class="section-title">README &amp; Documentation</div>
+        <div class="section-subtitle">The first thing anyone sees when they open your repo</div>
+      </div>
+    </div>
+
+    <p>A recruiter opens your GitHub repo. If all they see is <code>index.html</code>, <code>style.css</code>, <code>script.js</code> with no explanation, they'll likely close the tab in 10 seconds. A good <code>README.md</code> changes that completely — it's usually the <strong>first file people read</strong>, and GitHub automatically displays it on your repository's homepage.</p>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p>Historically, developers named this file <code>README</code> to literally tell people "read me first." Today the standard filename is <strong>README.md</strong> — the <code>.md</code> extension stands for <strong>Markdown</strong>, a simple text format GitHub automatically turns into nicely styled documentation.</p>
+    </div>
+
+    <p>Think of it like buying a new washing machine — the manual inside the box explains setup, features, usage, and troubleshooting. Your README is that manual, but for your project.</p>
+
+    <h3>How to add a README to your repo</h3>
+    <div class="step-label">Step 1 — Create the file</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">touch</span> README.md</pre>
+    </div>
+    <p>Place it in the root of your project folder — the same level as <code>package.json</code> or <code>index.html</code>.</p>
+
+    <div class="step-label blue">Step 2 — Write your content using Markdown</div>
+    <p>Fill it in using the Markdown syntax below (see the reference table), then save it.</p>
+
+    <div class="step-label green">Step 3 — Commit and push it like any other file</div>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-cmd">git</span> <span class="c-val">add</span> README.md
+<span class="c-cmd">git</span> <span class="c-val">commit</span> <span class="c-flag">-m</span> <span class="c-str">"Add project README"</span>
+<span class="c-cmd">git</span> <span class="c-val">push</span></pre>
+    </div>
+    <p>GitHub will now automatically render it on your repository's homepage — no extra setup needed.</p>
+
+    <h3>Basic Markdown syntax reference</h3>
+    <table class="flag-table">
+      <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="f-name">Headings</span></td><td><span class="f-val"># ## ###</span></td><td class="f-desc">One <code>#</code> for the biggest heading, more <code>#</code>s for smaller ones — e.g. <code># Heading 1</code>, <code>## Heading 2</code>.</td></tr>
+        <tr><td><span class="f-name">Bold</span></td><td><span class="f-val">**text**</span></td><td class="f-desc">Renders as <strong>text</strong>.</td></tr>
+        <tr><td><span class="f-name">Italic</span></td><td><span class="f-val">*text*</span></td><td class="f-desc">Renders as <em>text</em>.</td></tr>
+        <tr><td><span class="f-name">Bold + Italic</span></td><td><span class="f-val">***text***</span></td><td class="f-desc">Renders bold and italic together.</td></tr>
+        <tr><td><span class="f-name">Bullet List</span></td><td><span class="f-val">- item</span></td><td class="f-desc">One dash per line creates an unordered list.</td></tr>
+        <tr><td><span class="f-name">Numbered List</span></td><td><span class="f-val">1. item</span></td><td class="f-desc">Numbers followed by a period create an ordered list.</td></tr>
+        <tr><td><span class="f-name">Code Block</span></td><td><span class="f-val">```javascript</span></td><td class="f-desc">Triple backticks (optionally with a language name) create a formatted code block.</td></tr>
+        <tr><td><span class="f-name">Inline Code</span></td><td><span class="f-val">`git clone`</span></td><td class="f-desc">Single backticks highlight a short code snippet inline with text.</td></tr>
+        <tr><td><span class="f-name">Link</span></td><td><span class="f-val">[text](url)</span></td><td class="f-desc">Creates a clickable hyperlink.</td></tr>
+        <tr><td><span class="f-name">Image</span></td><td><span class="f-val">![alt](path)</span></td><td class="f-desc">Displays an image inline — same as a link, with a <code>!</code> in front.</td></tr>
+        <tr><td><span class="f-name">Horizontal Line</span></td><td><span class="f-val">---</span></td><td class="f-desc">Three dashes on their own line create a divider between sections.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">Markdown syntax examples</span><button class="copy-btn" onclick="copyCode(this)">copy</button></div>
+      <pre><span class="c-key"># Heading 1</span>
+<span class="c-key">## Heading 2</span>
+
+<span class="c-key">**GitHub**</span>        <span class="c-comment"># bold</span>
+<span class="c-key">*Git*</span>             <span class="c-comment"># italic</span>
+<span class="c-key">***Git***</span>         <span class="c-comment"># bold + italic</span>
+
+- HTML
+- CSS
+- JavaScript
+
+1. Install
+2. Run
+3. Enjoy
+
+<span class="c-key">`git clone`</span>       <span class="c-comment"># inline code</span>
+<span class="c-key">[GitHub](https://github.com)</span>
+<span class="c-key">![Portfolio](image.png)</span>
+
+---</pre>
+    </div>
+
+    <h3>Structure of a professional README</h3>
+    <div class="scale-diagram">
+      <span class="hi">Project Title</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      Description<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      Features<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      Tech Stack<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      Installation<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      Usage<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      Folder Structure<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      Screenshots / Live Demo<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+      <span class="green">Author &amp; License</span>
+    </div>
+
+    <h3>A complete example</h3>
+    <div class="code-wrap">
+      <div class="code-header"><span class="code-label">README.md</span></div>
+      <pre><span class="c-key"># Portfolio Website</span>
+
+A personal portfolio website built using HTML, CSS and JavaScript.
+
+<span class="c-key">## Features</span>
+- Responsive Design
+- Dark Mode
+- Smooth Animations
+
+<span class="c-key">## Tech Stack</span>
+- HTML
+- CSS
+- JavaScript
+
+<span class="c-key">## Installation</span>
+<span class="c-cmd">git</span> <span class="c-val">clone</span> https://github.com/you/portfolio.git
+
+<span class="c-key">## Author</span>
+Ritik Rajput</pre>
+    </div>
+    <p>Simple, clean, professional — and exactly the kind of thing a recruiter (or teammate) can understand in ten seconds.</p>
+
+    <h3>README vs Wiki vs Documentation</h3>
+    <table class="compare">
+      <thead><tr><th>What</th><th>README</th><th>Wiki / Docs</th></tr></thead>
+      <tbody>
+        <tr><td class="row-label">Length</td><td class="eks-val">One file, quick overview</td><td class="local-val">Multiple pages, in-depth</td></tr>
+        <tr><td class="row-label">Where it lives</td><td class="eks-val">Repository homepage</td><td class="local-val">Separate documentation section</td></tr>
+        <tr><td class="row-label">Best for</td><td class="eks-val">First impressions, setup steps</td><td class="local-val">API references, deployment guides, FAQs</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <div class="note-icon">💡</div>
+      <p>A good README should always include: project name, description, features, tech stack, installation steps, usage instructions, and author info. Screenshots, a live demo link, and a license are optional but make a strong extra impression.</p>
+    </div>
+
+    <div class="warn">
+      <div class="note-icon">⚠️</div>
+      <p>Avoid a one-line README like <code>"My Project"</code> — it tells readers nothing. And remember to update it whenever the project changes significantly; an outdated README can be more confusing than none at all.</p>
+    </div>
+  </section>
+
+  <!-- ================= SECTION 23 ================= -->
+  <section class="section" id="practices">
+    <div class="section-header">
+      <div class="section-num-big">23</div>
+      <div class="section-title-block">
+        <div class="section-title">Best Practices</div>
+        <div class="section-subtitle">The habits that separate professional Git usage from chaos</div>
+      </div>
+    </div>
+
+    <ul>
+      <li>Write commit messages that describe <strong>what</strong> changed — <code>"Fix mobile navbar overlap"</code>, not <code>"update"</code>.</li>
+      <li>Keep <code>main</code> stable — always build features on a separate branch.</li>
+      <li><code>git pull</code> before you start working, to avoid unnecessary conflicts.</li>
+      <li>Keep Pull Requests small and focused — one feature at a time.</li>
+      <li>Never commit <code>.env</code>, API keys, or passwords.</li>
+      <li>Delete branches once they've been merged in.</li>
+      <li>Keep your <code>README.md</code> up to date as the project grows.</li>
+    </ul>
+
+    <div class="concept">
+      <div class="concept-label">Key Concept</div>
+      <p>Git rewards small, frequent, well-described commits and branches. The habits in this section are exactly what separates a messy solo project from a codebase a whole team can work in together.</p>
+    </div>
+
+    <footer>
+      <span>Sheryians Coding School · Git &amp; GitHub Notes</span>
+      <span>Made for beginners, one commit at a time 🌱</span>
+    </footer>
+  </section>
+
+</main>
+</div>
+
+<div class="watermark">
+  <img src="https://sheryians.com/favicon.ico" alt="" class="watermark-logo" onerror="this.style.display='none'">
+  <span class="watermark-text">Sheryians Coding School</span>
+</div>
+
+<script>
+function copyCode(btn) {
+  const pre = btn.closest('.code-wrap').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    const original = btn.textContent;
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = original, 1500);
+  });
+}
+
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('.section');
+const navLinks = document.querySelectorAll('nav a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(sec => {
+    const rect = sec.getBoundingClientRect();
+    if (rect.top <= 120) current = sec.id;
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+});
+</script>
+</body>
+</html>

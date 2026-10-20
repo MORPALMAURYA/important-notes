@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Google Auth with Passport.js — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,700;0,900;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Design Tokens ── */
+:root {
+  --ink:       #0E0F14;
+  --paper:     #F5F2EB;
+  --paper2:    #EDE9DF;
+  --paper3:    #E4DFD3;
+  --rule:      #D4CEBC;
+  --muted:     #6B6455;
+  --accent:    #C84B1F;
+  --accent2:   #1A6B4A;
+  --accent3:   #1B4587;
+  --gold:      #B8860B;
+  --code-bg:   #1A1C24;
+  --code-text: #E2DCCC;
+  --flag-c:    #5BA4CF;
+  --val-c:     #F4A261;
+  /* surface tokens (light = design-system values) */
+  --body-text:   #2A2720;
+  --nav-bg:      #0E0F14;
+  --dark-bg:     #0E0F14;
+  --note-bg:     #FEF9EC;
+  --note-border: #EDD97A;
+  --note-text:   #5C4A00;
+  --note-strong: #3D3000;
+  --warn-bg:     #FEF2F2;
+  --warn-border: #FCA5A5;
+  --warn-text:   #7F1D1D;
+  --card:        #FFFFFF;
+
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink:#ECE7DB; --paper:#14151B; --paper2:#1B1D25; --paper3:#23262F; --rule:#323543; --muted:#9C9585;
+    --accent:#E0643A; --accent2:#33A274; --accent3:#6B97DD; --gold:#D4A23A;
+    --body-text:#D6D0C2; --nav-bg:#0A0B0F; --dark-bg:#0A0B0F;
+    --note-bg:#29230F; --note-border:#5C4D1A; --note-text:#E8D79A; --note-strong:#F7E8B4;
+    --warn-bg:#2A1515; --warn-border:#6B2A2A; --warn-text:#F2B8B8; --card:#1B1D25;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ink:#ECE7DB; --paper:#14151B; --paper2:#1B1D25; --paper3:#23262F; --rule:#323543; --muted:#9C9585;
+  --accent:#E0643A; --accent2:#33A274; --accent3:#6B97DD; --gold:#D4A23A;
+  --body-text:#D6D0C2; --nav-bg:#0A0B0F; --dark-bg:#0A0B0F;
+  --note-bg:#29230F; --note-border:#5C4D1A; --note-text:#E8D79A; --note-strong:#F7E8B4;
+  --warn-bg:#2A1515; --warn-border:#6B2A2A; --warn-text:#F2B8B8; --card:#1B1D25;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: env(safe-area-inset-top, 0px); background: var(--paper); }
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+}
+img, svg { max-width: 100%; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dataFlow { from { stroke-dashoffset: 200; } to { stroke-dashoffset: 0; } }
+.animate-fade-up { animation: fadeUp 0.4s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ── Layout ── */
+.layout-container { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 260px; flex-shrink: 0;
+  background-color: var(--nav-bg);
+  position: sticky; top: env(safe-area-inset-top, 0px);
+  height: 100vh; overflow-y: auto;
+  padding: 32px 0 40px;
+}
+.main-content { flex: 1; min-width: 0; max-width: calc(100% - 260px); padding: 56px 56px 80px; }
+.main-inner { max-width: 860px; }
+
+/* ── Sidebar ── */
+.nav-brand { padding: 0 24px; margin-bottom: 24px; }
+.nav-brand .logo { font-family: 'Fraunces', Georgia, serif; font-size: 18px; font-weight: 700; color: #FFFFFF; }
+.nav-brand .logo .accent-dot { color: var(--accent); }
+.nav-brand .sub { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.06em; margin-top: 2px; }
+.nav-group-label { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; color: rgba(255,255,255,0.25); letter-spacing: 0.12em; text-transform: uppercase; padding: 0 24px; margin-top: 16px; margin-bottom: 4px; }
+.nav-link {
+  display: flex; align-items: center; gap: 8px; padding: 10px 24px;
+  font-family: 'DM Sans', system-ui, sans-serif; font-size: 12.5px;
+  color: rgba(255,255,255,0.5); border-left: 2px solid transparent; text-decoration: none;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+.nav-link:hover { color: #FFFFFF; background-color: rgba(255,255,255,0.04); }
+.nav-link.active { color: #FFFFFF; border-left-color: var(--accent); background-color: rgba(200,75,31,0.08); }
+.nav-num {
+  width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  background-color: rgba(255,255,255,0.08); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; border-radius: 4px; color: inherit;
+}
+.nav-link:hover .nav-num, .nav-link.active .nav-num { background-color: var(--accent); color: #FFFFFF; }
+
+/* ── Hero ── */
+.hero { margin-bottom: 64px; padding-bottom: 40px; border-bottom: 1px solid var(--rule); }
+.hero-eyebrow { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px; }
+.hero h1 { font-family: 'Fraunces', Georgia, serif; font-size: clamp(36px, 5vw, 58px); font-weight: 900; color: var(--ink); line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 18px; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero-desc { font-size: 16px; color: var(--muted); max-width: 560px; line-height: 1.65; margin: 0 0 20px; }
+.hero-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.hero-tag { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--muted); border: 1px solid var(--rule); border-radius: 9999px; padding: 2px 12px; }
+
+/* ── Sections ── */
+.section-block { margin-bottom: 72px; }
+.section-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 28px; }
+.section-header-text { padding-top: 4px; }
+.section-num-big { font-family: 'Fraunces', Georgia, serif; font-size: 48px; font-weight: 900; color: var(--rule); user-select: none; line-height: 1; }
+.section-title { font-family: 'Fraunces', Georgia, serif; font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+.section-subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
+h3 { font-family: 'Fraunces', Georgia, serif; font-size: 18px; font-weight: 600; color: var(--ink); margin-top: 28px; margin-bottom: 12px; }
+h4 { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin: 24px 0 8px; font-weight: 500; }
+p { font-size: 14.5px; color: var(--body-text); line-height: 1.7; margin: 0 0 12px; }
+ul.plain { margin: 0 0 12px; padding-left: 20px; color: var(--body-text); font-size: 14.5px; }
+ul.plain li { margin-bottom: 6px; }
+code, .inline-code { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: var(--accent); background-color: var(--paper3); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 4px; }
+.divider { border: none; border-top: 1px solid var(--rule); margin: 40px 0; }
+
+/* ── Boxes ── */
+.concept-box { background-color: var(--paper2); border-left: 3px solid var(--accent3); border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 16px 0; }
+.concept-box-label { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; color: var(--accent3); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
+.concept-box-text { font-size: 14px; color: var(--ink); line-height: 1.65; margin: 0; }
+.note-box, .warning-box { border-radius: 8px; padding: 12px 16px; margin: 16px 0; display: flex; gap: 12px; align-items: flex-start; }
+.note-box { background-color: var(--note-bg); border: 1px solid var(--note-border); }
+.warning-box { background-color: var(--warn-bg); border: 1px solid var(--warn-border); }
+.note-box-icon, .warning-box-icon { font-size: 18px; line-height: 1; margin-top: 2px; }
+.note-box-text { font-size: 13px; color: var(--note-text); margin: 0; }
+.note-box-text strong { color: var(--note-strong); }
+.warning-box-text { font-size: 13px; color: var(--warn-text); margin: 0; }
+.note-box-text code, .warning-box-text code { font-size: 11px; }
+
+/* ── Badges ── */
+.badge { display: inline-block; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 10px; border-radius: 4px; }
+.badge-accent { background-color: var(--accent); }
+.badge-green  { background-color: var(--accent2); }
+.badge-blue   { background-color: var(--accent3); }
+.badge-gold   { background-color: var(--gold); }
+.step-head { margin: 28px 0 8px; }
+
+/* ── Code ── */
+.code-block { border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); margin: 16px 0; }
+.code-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background-color: #13141A; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.code-label { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; }
+.code-copy-btn { background: none; border: none; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; transition: color 150ms ease; }
+.code-copy-btn:hover { color: rgba(255,255,255,0.7); }
+.code-pre { background-color: var(--code-bg); color: var(--code-text); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12.5px; line-height: 1.75; padding: 16px 20px; overflow-x: auto; margin: 0; }
+.token-command  { color: #87CEEB; font-weight: bold; }
+.token-flag     { color: #5BA4CF; }
+.token-val      { color: #F4A261; }
+.token-string   { color: #98C379; }
+.token-comment  { color: rgba(255,255,255,0.3); font-style: italic; }
+.token-yaml-key { color: #C678DD; }
+.token-operator { color: #E5C07B; }
+
+/* ── Tables ── */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+.flag-table, .compare-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.flag-table th { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; background-color: var(--paper3); text-align: left; padding: 8px 12px; border: 1px solid var(--rule); font-weight: 500; }
+.flag-table td { padding: 8px 12px; border: 1px solid var(--rule); color: var(--body-text); font-size: 13.5px; vertical-align: top; }
+.flag-table tbody tr, .compare-table tbody tr { transition: background-color 100ms ease; }
+.flag-table tbody tr:hover, .compare-table tbody tr:hover { background-color: var(--paper2); }
+.flag-name { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; font-weight: 600; color: var(--flag-c); white-space: nowrap; }
+.flag-val { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--val-c); }
+.compare-table { border-radius: 8px; overflow: hidden; }
+.compare-table th { background-color: var(--dark-bg); color: #FFFFFF; font-size: 13px; font-weight: 600; text-align: left; padding: 12px 16px; border: 1px solid var(--dark-bg); }
+.compare-table td { font-size: 13px; padding: 12px 16px; border: 1px solid var(--rule); color: var(--body-text); vertical-align: top; }
+.compare-table .cell-title { font-weight: 600; color: var(--ink); }
+.compare-table .cell-muted { color: var(--muted); }
+.compare-table .cell-highlight { color: var(--accent2); font-weight: 500; }
+
+/* ── Flow diagram ── */
+.flow-diagram { display: flex; flex-direction: column; margin: 16px 0; }
+.flow-step { display: flex; gap: 16px; }
+.flow-connector { display: flex; flex-direction: column; align-items: center; }
+.flow-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+.flow-dot-accent { background-color: var(--accent); }
+.flow-dot-green  { background-color: var(--accent2); }
+.flow-dot-blue   { background-color: var(--accent3); }
+.flow-line { width: 2px; background-color: var(--rule); flex: 1; margin: 4px 0; }
+.flow-content { padding-bottom: 16px; }
+.flow-title { font-size: 14px; font-weight: 600; color: var(--ink); }
+.flow-desc { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.flow-branch { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.flow-branch > div { border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; background: var(--paper2); }
+.flow-branch .bt { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+
+/* ── Scale diagram ── */
+.scale-diagram { background-color: var(--paper2); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 20px; margin: 16px 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; line-height: 2; color: var(--muted); overflow-x: auto; white-space: nowrap; }
+.scale-diagram .highlight { color: var(--ink); font-weight: bold; }
+.scale-diagram .green { color: var(--accent2); }
+.scale-diagram .red { color: var(--accent); }
+
+/* ── Sequence diagram (step-through) ── */
+.seq-wrap { border: 1px solid var(--rule); border-radius: 12px; background: var(--paper2); margin: 20px 0; overflow: hidden; }
+.seq-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--rule); }
+.seq-toolbar-label { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.seg button { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; padding: 6px 12px; background: transparent; color: var(--muted); border: none; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button.on { background: var(--dark-bg); color: #FFFFFF; }
+.seq-scroll { overflow-x: auto; padding: 8px 8px 0; }
+.seq-svg { display: block; min-width: 660px; width: 100%; height: auto; }
+.seq-svg .actor-box { fill: var(--card); stroke: var(--rule); stroke-width: 1.2; transition: stroke 200ms ease; }
+.seq-svg .actor.on .actor-box { stroke: var(--accent); stroke-width: 2; }
+.seq-svg .actor-name { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 15px; fill: var(--ink); }
+.seq-svg .actor-sub { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; fill: var(--muted); }
+.seq-svg .lifeline { stroke: var(--rule); stroke-width: 1.5; stroke-dasharray: 4 5; }
+.seq-svg .row { cursor: pointer; }
+.seq-svg .row-hit { fill: transparent; }
+.seq-svg .row:hover .row-hit { fill: var(--paper3); opacity: 0.6; }
+.seq-svg .arrow { stroke-width: 1.8; fill: none; }
+.seq-svg .lbl { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; paint-order: stroke; stroke: var(--paper2); stroke-width: 5px; stroke-linejoin: round; }
+.seq-svg .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; }
+.seq-svg .past .arrow { stroke: var(--muted); }
+.seq-svg .past .lbl, .seq-svg .past .num { fill: var(--muted); }
+.seq-svg .future .arrow { stroke: var(--rule); }
+.seq-svg .future .lbl, .seq-svg .future .num { fill: var(--rule); }
+.seq-svg .current .arrow { stroke: var(--accent); stroke-width: 2.4; stroke-dasharray: 8 5; animation: dataFlow 1.5s linear infinite; }
+.seq-svg .current .lbl { fill: var(--ink); font-weight: 600; }
+.seq-svg .current .num { fill: var(--accent); font-weight: 600; }
+.seq-svg .mk-past { fill: var(--muted); }
+.seq-svg .mk-future { fill: var(--rule); }
+.seq-svg .mk-current { fill: var(--accent); }
+.seq-panel { border-top: 1px solid var(--rule); background: var(--paper); padding: 18px 20px 20px; }
+.seq-panel-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+.seq-title { font-family: 'Fraunces', Georgia, serif; font-size: 18px; font-weight: 600; color: var(--ink); margin: 4px 0 6px; }
+.seq-desc { font-size: 14px; color: var(--body-text); margin: 0 0 10px; min-height: 48px; }
+.seq-code { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; background: var(--code-bg); color: var(--code-text); border-radius: 6px; padding: 10px 14px; margin: 0 0 14px; overflow-x: auto; white-space: pre; }
+.seq-nav { display: flex; align-items: center; gap: 12px; }
+.seq-btn { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--rule); background: var(--card); color: var(--ink); cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease; }
+.seq-btn:hover:not(:disabled) { border-color: var(--accent); }
+.seq-btn.primary { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
+.seq-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.seq-counter { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: var(--muted); min-width: 64px; text-align: center; }
+
+/* ── Interview Q&A ── */
+.qa { border: 1px solid var(--rule); border-radius: 8px; margin: 10px 0; background: var(--paper); transition: background-color 150ms ease; }
+.qa[open] { background: var(--paper2); }
+.qa summary { list-style: none; cursor: pointer; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; font-weight: 500; color: var(--ink); }
+.qa summary::-webkit-details-marker { display: none; }
+.qa .qn { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: #FFFFFF; background: var(--accent3); border-radius: 4px; padding: 2px 6px; margin-top: 3px; flex-shrink: 0; }
+.qa .qlvl { margin-left: auto; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: var(--muted); border: 1px solid var(--rule); border-radius: 9999px; padding: 1px 8px; flex-shrink: 0; margin-top: 2px; }
+.qa .qa-body { padding: 0 16px 14px 52px; }
+.qa .qa-body p { font-size: 14px; }
+
+/* ── Quiz ── */
+.quiz-box { background-color: var(--dark-bg); border-radius: 12px; padding: 24px; margin: 32px 0; border: 1px solid rgba(255,255,255,0.08); }
+.quiz-question { font-size: 15px; color: #FFFFFF; font-weight: 500; line-height: 1.6; margin-bottom: 20px; }
+.quiz-options { display: flex; flex-direction: column; gap: 12px; }
+.quiz-option { text-align: left; font-family: 'DM Sans', system-ui, sans-serif; font-size: 13.5px; color: rgba(255,255,255,0.7); background: transparent; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 200ms ease; }
+.quiz-option:hover:not(:disabled) { border-color: var(--accent); color: #FFFFFF; background-color: rgba(200,75,31,0.08); }
+.quiz-option:disabled { cursor: not-allowed; }
+.quiz-option.correct { border-color: var(--accent2) !important; background-color: rgba(26,107,74,0.15) !important; color: #FFFFFF !important; opacity: 1 !important; }
+.quiz-option.incorrect { border-color: var(--accent) !important; background-color: rgba(200,75,31,0.15) !important; color: #FFFFFF !important; opacity: 1 !important; }
+.quiz-feedback { margin-top: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.quiz-feedback.correct { color: #3FBF8A; }
+.quiz-feedback.incorrect { color: #F08A63; }
+.quiz-feedback.hidden { display: none; }
+.quiz-explain { color: rgba(255,255,255,0.6); text-transform: none; letter-spacing: 0; font-family: 'DM Sans', system-ui, sans-serif; font-size: 13px; display: block; margin-top: 6px; }
+
+/* ── Footer ── */
+.site-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--muted); border-top: 2px solid var(--rule); padding-top: 16px; margin-top: 64px; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .layout-container { flex-direction: column; }
+  .sidebar { width: 100%; height: auto; position: relative; top: 0; padding: 20px 0 12px; display: flex; flex-direction: column; }
+  .sidebar .nav-links { display: flex; overflow-x: auto; gap: 0; padding-bottom: 6px; }
+  .sidebar .nav-group-label { display: none; }
+  .nav-link { white-space: nowrap; border-left: none; border-bottom: 2px solid transparent; padding: 8px 14px; }
+  .nav-link.active { border-bottom-color: var(--accent); }
+  .main-content { max-width: 100%; padding: 32px 24px 64px; }
+  .flow-branch { grid-template-columns: 1fr; }
+  .qa .qa-body { padding-left: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="layout-container">
+
+  <!-- ═════════ SIDEBAR ═════════ -->
+  <nav class="sidebar" aria-label="Sections">
+    <div class="nav-brand">
+      <div class="logo">Auth<span class="accent-dot">.</span>Google</div>
+      <div class="sub">Sheryians Coding School</div>
+    </div>
+    <div class="nav-links">
+      <div class="nav-group-label">Foundations</div>
+      <a href="#why-oauth" class="nav-link active"><span class="nav-num">1</span>Why OAuth exists</a>
+      <a href="#vocab" class="nav-link"><span class="nav-num">2</span>OAuth vocabulary</a>
+      <a href="#passport" class="nav-link"><span class="nav-num">3</span>What is Passport.js</a>
+      <div class="nav-group-label">The flow</div>
+      <a href="#flow" class="nav-link"><span class="nav-num">4</span>The full flow</a>
+      <a href="#find-or-create" class="nav-link"><span class="nav-num">5</span>Login or register</a>
+      <div class="nav-group-label">Build it</div>
+      <a href="#console" class="nav-link"><span class="nav-num">6</span>Google Cloud setup</a>
+      <a href="#setup" class="nav-link"><span class="nav-num">7</span>Project setup</a>
+      <a href="#strategy" class="nav-link"><span class="nav-num">8</span>Model &amp; strategy</a>
+      <a href="#routes" class="nav-link"><span class="nav-num">9</span>Auth routes</a>
+      <a href="#session-jwt" class="nav-link"><span class="nav-num">10</span>Session vs JWT</a>
+      <a href="#frontend" class="nav-link"><span class="nav-num">11</span>Frontend &amp; guards</a>
+      <div class="nav-group-label">Ship it</div>
+      <a href="#security" class="nav-link"><span class="nav-num">12</span>Security &amp; prod gotchas</a>
+      <div class="nav-group-label">Interview</div>
+      <a href="#interview" class="nav-link"><span class="nav-num">13</span>Interview questions</a>
+      <a href="#revision" class="nav-link"><span class="nav-num">14</span>Revision sheet</a>
+    </div>
+  </nav>
+
+  <!-- ═════════ MAIN ═════════ -->
+  <main class="main-content">
+   <div class="main-inner">
+
+    <header class="hero animate-fade-up">
+      <div class="hero-eyebrow">Backend · Authentication</div>
+      <h1>Login with <em>Google</em>, built from first principles</h1>
+      <p class="hero-desc">What OAuth actually is, what Passport.js does for you, and how one click turns into a logged-in user — with the "already registered? log in : register" logic wired up in Express and MongoDB.</p>
+      <div class="hero-tags">
+        <span class="hero-tag">Node.js</span>
+        <span class="hero-tag">Express</span>
+        <span class="hero-tag">Passport.js</span>
+        <span class="hero-tag">OAuth 2.0 / OIDC</span>
+        <span class="hero-tag">MongoDB</span>
+        <span class="hero-tag">JWT</span>
+      </div>
+    </header>
+
+    <!-- ── 01 ── -->
+    <section class="section-block" id="why-oauth">
+      <div class="section-header">
+        <div class="section-num-big">01</div>
+        <div class="section-header-text">
+          <div class="section-title">Why OAuth exists</div>
+          <div class="section-subtitle">The problem first — then the protocol makes sense</div>
+        </div>
+      </div>
+
+      <p>Imagine a photo-printing app that wants your Google Photos. The naive way: you type your Google email and password into the printing app. Now that app can read your Gmail, delete your Drive, change your password — everything. And you can't take access back without changing your password everywhere.</p>
+      <p>OAuth fixes this. Instead of sharing your password, Google hands the app a <strong>limited, revocable key</strong> — "this app may read your photos, nothing else, until you revoke it." Your password only ever goes to Google.</p>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text"><strong>OAuth 2.0</strong> is a <strong>delegated authorization</strong> framework: it lets an app act on a user's behalf with limited permissions, without ever seeing the user's password. Think of a hotel key card — it opens your room for three nights, not the whole hotel forever.</p>
+      </div>
+
+      <h3>Authentication vs Authorization</h3>
+      <div class="table-wrap">
+      <table class="compare-table">
+        <thead><tr><th>What</th><th>Authentication (AuthN)</th><th>Authorization (AuthZ)</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-title">Question</td><td class="cell-muted">Who are you?</td><td class="cell-muted">What are you allowed to do?</td></tr>
+          <tr><td class="cell-title">Example</td><td class="cell-muted">Showing your ID at the gate</td><td class="cell-muted">Your ticket says Gate B, Seat 14</td></tr>
+          <tr><td class="cell-title">Protocol</td><td class="cell-highlight">OpenID Connect (OIDC) ✓</td><td class="cell-highlight">OAuth 2.0 ✓</td></tr>
+          <tr><td class="cell-title">Token</td><td class="cell-muted"><code>id_token</code> (a JWT about the user)</td><td class="cell-muted"><code>access_token</code> (key to call APIs)</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text"><strong>"Login with Google" is technically OpenID Connect</strong> — a thin identity layer built on top of OAuth 2.0. When you request the <code>openid</code>/<code>profile</code>/<code>email</code> scopes, Google also tells you <em>who</em> the user is. Most people (and most interviewers) just say "OAuth", but knowing this distinction is an instant plus point.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">OAuth 2.0, on its own, is primarily a framework for…</p>
+        <div class="quiz-options" id="quiz-why-1">
+          <button onclick="answerQuiz('quiz-why-1', this, false, 'Identity is added by OpenID Connect on top of OAuth.')" class="quiz-option">A &nbsp;—&nbsp; Authentication (proving who the user is)</button>
+          <button onclick="answerQuiz('quiz-why-1', this, true, 'OAuth delegates access. OIDC adds the identity part.')" class="quiz-option">B &nbsp;—&nbsp; Authorization (delegating limited access)</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-why-1-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ── 02 ── -->
+    <section class="section-block" id="vocab">
+      <div class="section-header">
+        <div class="section-num-big">02</div>
+        <div class="section-header-text">
+          <div class="section-title">OAuth vocabulary</div>
+          <div class="section-subtitle">Every word you'll see in docs, code and interviews</div>
+        </div>
+      </div>
+
+      <h3>The four roles</h3>
+      <div class="table-wrap">
+      <table class="flag-table">
+        <thead><tr><th>Role</th><th>In our app</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><span class="flag-name">Resource Owner</span></td><td><span class="flag-val">The user</span></td><td>Owns the Google account and decides whether to grant access.</td></tr>
+          <tr><td><span class="flag-name">Client</span></td><td><span class="flag-val">Our Express server</span></td><td>The app asking for access. Holds the <code>client_id</code> and <code>client_secret</code>.</td></tr>
+          <tr><td><span class="flag-name">Authorization Server</span></td><td><span class="flag-val">accounts.google.com</span></td><td>Shows the login + consent screen, issues the code and tokens.</td></tr>
+          <tr><td><span class="flag-name">Resource Server</span></td><td><span class="flag-val">Google APIs (userinfo)</span></td><td>Accepts the access token and returns protected data (name, email, photo).</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>The terms</h3>
+      <div class="table-wrap">
+      <table class="flag-table">
+        <thead><tr><th>Term</th><th>Example</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><span class="flag-name">client_id</span></td><td><span class="flag-val">1234-abc.apps.googleusercontent.com</span></td><td>Public identifier of our app. Safe to appear in URLs.</td></tr>
+          <tr><td><span class="flag-name">client_secret</span></td><td><span class="flag-val">GOCSPX-…</span></td><td>Our app's password with Google. Lives only on the server, never in the browser or Git.</td></tr>
+          <tr><td><span class="flag-name">redirect_uri</span></td><td><span class="flag-val">/auth/google/callback</span></td><td>Where Google sends the user back. Must exactly match a URI registered in Google Cloud.</td></tr>
+          <tr><td><span class="flag-name">scope</span></td><td><span class="flag-val">profile email</span></td><td>What we're asking permission for. Ask for the minimum you need.</td></tr>
+          <tr><td><span class="flag-name">state</span></td><td><span class="flag-val">random string</span></td><td>CSRF protection. We send it, Google echoes it back, we check it matches.</td></tr>
+          <tr><td><span class="flag-name">authorization code</span></td><td><span class="flag-val">?code=4/0Ab…</span></td><td>Short-lived, single-use ticket. Worthless without the client secret.</td></tr>
+          <tr><td><span class="flag-name">access_token</span></td><td><span class="flag-val">ya29.a0…</span></td><td>Key to call Google APIs on the user's behalf. Expires in ~1 hour.</td></tr>
+          <tr><td><span class="flag-name">refresh_token</span></td><td><span class="flag-val">1//0g…</span></td><td>Gets new access tokens without asking the user again. Only issued for offline access.</td></tr>
+          <tr><td><span class="flag-name">id_token</span></td><td><span class="flag-val">eyJhbGci…</span></td><td>OIDC JWT that describes the user (<code>sub</code>, email, name).</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>Grant types (flows)</h3>
+      <div class="table-wrap">
+      <table class="compare-table">
+        <thead><tr><th>Flow</th><th>Used by</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-title">Authorization Code</td><td class="cell-muted">Server-side apps that can keep a secret (our Express app)</td><td class="cell-highlight">What we're building ✓</td></tr>
+          <tr><td class="cell-title">Auth Code + PKCE</td><td class="cell-muted">SPAs and mobile apps (can't hide a secret)</td><td class="cell-highlight">Recommended for public clients ✓</td></tr>
+          <tr><td class="cell-title">Client Credentials</td><td class="cell-muted">Machine-to-machine, no user involved</td><td class="cell-muted">Valid, different use case</td></tr>
+          <tr><td class="cell-title">Implicit</td><td class="cell-muted">Old SPAs — token returned directly in the URL</td><td class="cell-muted">Deprecated, don't use</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Which of these values must never reach the browser?</p>
+        <div class="quiz-options" id="quiz-vocab-1">
+          <button onclick="answerQuiz('quiz-vocab-1', this, false, 'client_id is public — it is literally in the redirect URL.')" class="quiz-option">A &nbsp;—&nbsp; client_id</button>
+          <button onclick="answerQuiz('quiz-vocab-1', this, true, 'Anyone with the secret can exchange codes as your app.')" class="quiz-option">B &nbsp;—&nbsp; client_secret</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-vocab-1-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ── 03 ── -->
+    <section class="section-block" id="passport">
+      <div class="section-header">
+        <div class="section-num-big">03</div>
+        <div class="section-header-text">
+          <div class="section-title">What is Passport.js</div>
+          <div class="section-subtitle">Authentication middleware that hides the OAuth plumbing</div>
+        </div>
+      </div>
+
+      <p>You <em>could</em> implement OAuth by hand: build the Google URL, generate and verify <code>state</code>, POST the code to Google's token endpoint, call the userinfo API, handle every error. Passport.js does all of that for you and gives you one place to write <em>your</em> logic.</p>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text"><strong>Passport.js</strong> is authentication middleware for Express. Each login method is a plug-in called a <strong>strategy</strong> — <code>passport-local</code> for email/password, <code>passport-google-oauth20</code> for Google, and 500+ others. Passport does <strong>not</strong> store users. It hands you the verified Google profile, and <strong>you</strong> decide what to do with your database.</p>
+      </div>
+
+      <h3>The four pieces you'll touch</h3>
+      <div class="flow-diagram">
+        <div class="flow-step"><div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content"><div class="flow-title"><code>passport.use(new GoogleStrategy(options, verify))</code></div><div class="flow-desc">Register the strategy once with your client ID, secret and callback URL.</div></div></div>
+        <div class="flow-step"><div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content"><div class="flow-title"><code>passport.authenticate('google')</code></div><div class="flow-desc">Route middleware. Without a <code>?code</code> it redirects to Google; with a <code>?code</code> it exchanges it and fetches the profile.</div></div></div>
+        <div class="flow-step"><div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content"><div class="flow-title">The verify callback — <code>(accessToken, refreshToken, profile, done)</code></div><div class="flow-desc">Your code. This is where "registered? log in : register" lives. Call <code>done(null, user)</code> when finished.</div></div></div>
+        <div class="flow-step"><div class="flow-connector"><div class="flow-dot flow-dot-green"></div></div>
+          <div class="flow-content"><div class="flow-title"><code>req.user</code></div><div class="flow-desc">Whatever you passed to <code>done()</code> is attached here for the next handler.</div></div></div>
+      </div>
+
+      <h3>By hand vs with Passport</h3>
+      <div class="table-wrap">
+      <table class="compare-table">
+        <thead><tr><th>Job</th><th>By hand</th><th>With Passport</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-title">Build consent URL</td><td class="cell-muted">Manually assemble query params</td><td class="cell-highlight">Automatic ✓</td></tr>
+          <tr><td class="cell-title">Exchange code → tokens</td><td class="cell-muted">POST to oauth2.googleapis.com/token</td><td class="cell-highlight">Automatic ✓</td></tr>
+          <tr><td class="cell-title">Fetch profile</td><td class="cell-muted">GET userinfo with Bearer token</td><td class="cell-highlight">Automatic, normalized ✓</td></tr>
+          <tr><td class="cell-title">Find / create user</td><td class="cell-muted">Your code</td><td class="cell-muted">Still your code (verify callback)</td></tr>
+          <tr><td class="cell-title">Issue session / JWT</td><td class="cell-muted">Your code</td><td class="cell-muted">Passport sessions, or your JWT</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Does Passport.js save your users to a database?</p>
+        <div class="quiz-options" id="quiz-pass-1">
+          <button onclick="answerQuiz('quiz-pass-1', this, false, 'Passport has no storage. It only verifies and hands you the profile.')" class="quiz-option">A &nbsp;—&nbsp; Yes, Passport keeps its own user store</button>
+          <button onclick="answerQuiz('quiz-pass-1', this, true, 'You save the user yourself inside the verify callback.')" class="quiz-option">B &nbsp;—&nbsp; No, you save them yourself inside the verify callback</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-pass-1-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ── 04 ── -->
+    <section class="section-block" id="flow">
+      <div class="section-header">
+        <div class="section-num-big">04</div>
+        <div class="section-header-text">
+          <div class="section-title">The full flow</div>
+          <div class="section-subtitle">User → our server → database → Google, one step at a time</div>
+        </div>
+      </div>
+
+      <p>Step through the whole journey. Switch between a <strong>new user</strong> (gets registered) and a <strong>returning user</strong> (just logged in) to see exactly where the paths split. You can also click any arrow, or use the ← → keys.</p>
+
+      <div class="seq-wrap" id="seq">
+        <div class="seq-toolbar">
+          <span class="seq-toolbar-label">Scenario</span>
+          <div class="seg" role="group" aria-label="Scenario">
+            <button type="button" class="on" data-scenario="new" aria-pressed="true">New user · register</button>
+            <button type="button" data-scenario="old" aria-pressed="false">Returning user · login</button>
+          </div>
+        </div>
+        <div class="seq-scroll">
+          <svg class="seq-svg" id="seq-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence diagram of Google OAuth login"></svg>
+        </div>
+        <div class="seq-panel" aria-live="polite">
+          <div class="seq-panel-top">
+            <span class="badge badge-accent" id="seq-badge">Step 1</span>
+            <span class="badge" id="seq-channel">Front-channel</span>
+          </div>
+          <div class="seq-title" id="seq-title"></div>
+          <p class="seq-desc" id="seq-desc"></p>
+          <pre class="seq-code" id="seq-code"></pre>
+          <div class="seq-nav">
+            <button type="button" class="seq-btn" id="seq-back">← Back</button>
+            <span class="seq-counter" id="seq-counter">01 / 15</span>
+            <button type="button" class="seq-btn primary" id="seq-next">Forward →</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text"><strong>Front-channel</strong> = messages that travel through the user's browser via redirects (visible in the URL bar, history, logs). <strong>Back-channel</strong> = our server talking to Google directly. That's why Google only puts a short-lived <strong>code</strong> in the front-channel and hands out the real tokens on the back-channel, where the <code>client_secret</code> proves it's really us.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Who exchanges the authorization code for an access token?</p>
+        <div class="quiz-options" id="quiz-flow-1">
+          <button onclick="answerQuiz('quiz-flow-1', this, false, 'The browser never sees the secret, so it cannot do the exchange.')" class="quiz-option">A &nbsp;—&nbsp; The browser, right after the redirect</button>
+          <button onclick="answerQuiz('quiz-flow-1', this, true, 'Server-to-server, using the client_secret (step 7).')" class="quiz-option">B &nbsp;—&nbsp; Our server, directly with Google</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-flow-1-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ── 05 ── -->
+    <section class="section-block" id="find-or-create">
+      <div class="section-header">
+        <div class="section-num-big">05</div>
+        <div class="section-header-text">
+          <div class="section-title">Login or register — the core logic</div>
+          <div class="section-subtitle">One endpoint, two outcomes, decided inside the verify callback</div>
+        </div>
+      </div>
+
+      <p>With Google login there's no separate "Sign up" and "Sign in" button. The user clicks one button, and our server decides: <strong>seen this Google account before? Log in. Never seen it? Register, then log in.</strong> This pattern is called <em>find-or-create</em>.</p>
+
+      <div class="flow-diagram">
+        <div class="flow-step"><div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content"><div class="flow-title">Google profile arrives</div><div class="flow-desc"><code>profile.id</code>, <code>profile.displayName</code>, <code>profile.emails[0].value</code>, <code>profile.photos[0].value</code></div></div></div>
+        <div class="flow-step"><div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+          <div class="flow-content"><div class="flow-title"><code>User.findOne({ googleId: profile.id })</code></div><div class="flow-desc">Look up by Google's stable ID — not by name, and not by email alone.</div>
+            <div class="flow-branch">
+              <div><div class="bt" style="color:var(--accent2)">Found → registered</div><div class="flow-desc">Skip creation. This is a login.</div></div>
+              <div><div class="bt" style="color:var(--accent)">null → not registered</div><div class="flow-desc"><code>User.create({ googleId, email, name, avatar })</code></div></div>
+            </div>
+          </div></div>
+        <div class="flow-step"><div class="flow-connector"><div class="flow-dot flow-dot-green"></div></div>
+          <div class="flow-content"><div class="flow-title"><code>done(null, user)</code></div><div class="flow-desc">Both paths end the same way: we have a user document. Issue a session or JWT and redirect.</div></div></div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">verify callback — find-or-create</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="js">async (accessToken, refreshToken, profile, done) => {
+  try {
+    // 1. Already registered? → log in
+    let user = await User.findOne({ googleId: profile.id });
+    if (user) return done(null, user);
+
+    // 2. Not registered → register
+    user = await User.create({
+      googleId: profile.id,
+      email: profile.emails[0].value,
+      name: profile.displayName,
+      avatar: profile.photos?.[0]?.value,
+    });
+    return done(null, user);
+  } catch (err) {
+    return done(err);
+  }
+}</pre>
+      </div>
+
+      <h3>Level up: account linking</h3>
+      <p>What if Riya signed up last month with email + password, and today clicks "Continue with Google" with the same Gmail? The code above would try to create a second user and crash on the unique email index. The fix: if there's no <code>googleId</code> match, check for a <strong>verified</strong> email match and attach the Google ID to that existing account.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">find → link → create</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="js">let user = await User.findOne({ googleId: profile.id });
+
+if (!user) {
+  const email = profile.emails?.[0]?.value;
+  const emailVerified = profile._json?.email_verified;
+
+  // Same verified email registered earlier with a password? Link it.
+  if (email &amp;&amp; emailVerified) user = await User.findOne({ email });
+
+  if (user) {
+    user.googleId = profile.id;
+    await user.save();
+  } else {
+    user = await User.create({ googleId: profile.id, email, name: profile.displayName });
+  }
+}
+return done(null, user);</pre>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>Never link accounts on an unverified email.</strong> If you trust any email a provider sends, an attacker could create an account elsewhere with the victim's email and take over their account in your app.</p>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text"><strong>Race condition:</strong> two quick double-clicks can both see <code>null</code> and both try to create. The <code>unique</code> index on <code>googleId</code> makes the second insert fail instead of creating a duplicate. For a fully atomic version, use <code>findOneAndUpdate({ googleId }, { $setOnInsert: {...} }, { upsert: true, new: true })</code>.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">What should you use to decide whether a Google user is already registered?</p>
+        <div class="quiz-options" id="quiz-foc-1">
+          <button onclick="answerQuiz('quiz-foc-1', this, true, 'profile.id (the OIDC \u201csub\u201d) is stable and unique per Google account.')" class="quiz-option">A &nbsp;—&nbsp; profile.id, stored as googleId</button>
+          <button onclick="answerQuiz('quiz-foc-1', this, false, 'Names are not unique and can change any time.')" class="quiz-option">B &nbsp;—&nbsp; profile.displayName</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-foc-1-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ── 06 ── -->
+    <section class="section-block" id="console">
+      <div class="section-header">
+        <div class="section-num-big">06</div>
+        <div class="section-header-text">
+          <div class="section-title">Google Cloud Console setup</div>
+          <div class="section-subtitle">Getting a client ID and secret for our app</div>
+        </div>
+      </div>
+
+      <div class="step-head"><span class="badge badge-accent">Step 1 — Create a project</span></div>
+      <p>Open <code>console.cloud.google.com</code>, create a new project (e.g. <em>auth-demo</em>) and select it.</p>
+
+      <div class="step-head"><span class="badge badge-accent">Step 2 — Configure the consent screen</span></div>
+      <p>Go to <strong>APIs &amp; Services → OAuth consent screen</strong>. Choose <em>External</em>, add the app name, support email and the scopes <code>email</code>, <code>profile</code>, <code>openid</code>. While the app is in <em>Testing</em> mode, add your own Gmail under <strong>Test users</strong> — only those accounts can log in.</p>
+
+      <div class="step-head"><span class="badge badge-accent">Step 3 — Create credentials</span></div>
+      <p><strong>Credentials → Create credentials → OAuth client ID → Web application.</strong> Under <em>Authorized redirect URIs</em> add:</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">Authorized redirect URIs</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="plain">http://localhost:3000/auth/google/callback
+https://api.yourdomain.com/auth/google/callback</pre>
+      </div>
+
+      <div class="step-head"><span class="badge badge-green">Verify</span></div>
+      <p>Google shows a <strong>Client ID</strong> and <strong>Client secret</strong>. Copy both into <code>.env</code>.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">.env</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="env">PORT=3000
+MONGO_URI=mongodb://127.0.0.1:27017/auth-demo
+GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-xxxx
+GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
+JWT_SECRET=replace-with-a-long-random-string
+CLIENT_URL=http://localhost:5173</pre>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong><code>redirect_uri_mismatch</code></strong> is the #1 error students hit. The callback URL in your code must match the registered one <strong>character for character</strong> — protocol (<code>http</code> vs <code>https</code>), port, path and trailing slash all count.</p>
+      </div>
+    </section>
+
+    <!-- ── 07 ── -->
+    <section class="section-block" id="setup">
+      <div class="section-header">
+        <div class="section-num-big">07</div>
+        <div class="section-header-text">
+          <div class="section-title">Project setup</div>
+          <div class="section-subtitle">Packages and folder structure</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">Terminal</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="sh">npm install express passport passport-google-oauth20 mongoose jsonwebtoken cookie-parser cors dotenv
+# only if you choose server-side sessions instead of JWT
+npm install express-session connect-mongo</pre>
+      </div>
+
+      <div class="table-wrap">
+      <table class="flag-table">
+        <thead><tr><th>Package</th><th>Why we need it</th></tr></thead>
+        <tbody>
+          <tr><td><span class="flag-name">passport</span></td><td>The core middleware engine.</td></tr>
+          <tr><td><span class="flag-name">passport-google-oauth20</span></td><td>The Google strategy (OAuth 2.0 + profile fetch).</td></tr>
+          <tr><td><span class="flag-name">jsonwebtoken</span></td><td>Sign our own JWT after Google confirms the user.</td></tr>
+          <tr><td><span class="flag-name">cookie-parser</span></td><td>Read that JWT back from the cookie on later requests.</td></tr>
+          <tr><td><span class="flag-name">cors</span></td><td>Let the React app (different port) send cookies to the API.</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">Folder structure</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="plain">src/
+├── config/passport.js          # strategy + verify callback
+├── models/user.model.js        # User schema
+├── routes/auth.routes.js       # /auth/google, /callback, /me, /logout
+├── middlewares/auth.middleware.js
+└── app.js</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">src/app.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="js">require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const passport = require('./config/passport');
+const authRoutes = require('./routes/auth.routes');
+
+const app = express();
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(express.json());
+app.use(cookieParser());
+app.use(passport.initialize());
+
+app.use('/auth', authRoutes);
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => app.listen(process.env.PORT, () => console.log('API on', process.env.PORT)));</pre>
+      </div>
+    </section>
+
+    <!-- ── 08 ── -->
+    <section class="section-block" id="strategy">
+      <div class="section-header">
+        <div class="section-num-big">08</div>
+        <div class="section-header-text">
+          <div class="section-title">User model &amp; Google strategy</div>
+          <div class="section-subtitle">Where the find-or-create logic plugs in</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">src/models/user.model.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="js">const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+  googleId: { type: String, unique: true, sparse: true }, // sparse: password users have no googleId
+  email:    { type: String, required: true, unique: true, lowercase: true },
+  name:     String,
+  avatar:   String,
+  password: { type: String, select: false },              // only for email/password users
+}, { timestamps: true });
+
+module.exports = mongoose.model('User', userSchema);</pre>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text"><strong>Why <code>sparse: true</code>?</strong> A normal unique index treats a missing field as <code>null</code>, so the second password-only user would clash with the first. Sparse indexes skip documents that don't have the field.</p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">src/config/passport.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="js">const passport = require('passport');
+const { Strategy: GoogleStrategy } = require('passport-google-oauth20');
+const User = require('../models/user.model');
+
+passport.use(new GoogleStrategy(
+  {
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL,
+  },
+  // Runs AFTER Passport exchanged the code and fetched the profile
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      let user = await User.findOne({ googleId: profile.id });
+      if (user) return done(null, user);                 // registered → login
+
+      user = await User.create({                         // new → register
+        googleId: profile.id,
+        email: profile.emails[0].value,
+        name: profile.displayName,
+        avatar: profile.photos?.[0]?.value,
+      });
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }
+));
+
+module.exports = passport;</pre>
+      </div>
+
+      <h3>Strategy options</h3>
+      <div class="table-wrap">
+      <table class="flag-table">
+        <thead><tr><th>Option</th><th>Value used</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><span class="flag-name">clientID</span></td><td><span class="flag-val">env</span></td><td>Identifies our app to Google.</td></tr>
+          <tr><td><span class="flag-name">clientSecret</span></td><td><span class="flag-val">env</span></td><td>Used only in the back-channel code exchange.</td></tr>
+          <tr><td><span class="flag-name">callbackURL</span></td><td><span class="flag-val">/auth/google/callback</span></td><td>Sent as <code>redirect_uri</code>. Must match the console.</td></tr>
+          <tr><td><span class="flag-name">proxy</span></td><td><span class="flag-val">true</span></td><td>Trust <code>X-Forwarded-Proto</code> behind a load balancer so the callback becomes <code>https</code>.</td></tr>
+          <tr><td><span class="flag-name">state</span></td><td><span class="flag-val">true</span></td><td>Generates and verifies the CSRF <code>state</code> (needs a session store).</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <!-- ── 09 ── -->
+    <section class="section-block" id="routes">
+      <div class="section-header">
+        <div class="section-num-big">09</div>
+        <div class="section-header-text">
+          <div class="section-title">Auth routes</div>
+          <div class="section-subtitle">Two routes start and finish the dance, two more use the result</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">src/routes/auth.routes.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="js">const router = require('express').Router();
+const jwt = require('jsonwebtoken');
+const passport = require('../config/passport');
+const { requireAuth } = require('../middlewares/auth.middleware');
+
+// Steps 1–2: start the flow → Passport redirects to Google
+router.get('/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    prompt: 'select_account',
+    session: false,
+  })
+);
+
+// Steps 6–15: Google sends the user back with ?code=
+router.get('/google/callback',
+  passport.authenticate('google', {
+    session: false,
+    failureRedirect: `${process.env.CLIENT_URL}/login?error=google`,
+  }),
+  (req, res) => {
+    // req.user = whatever the verify callback passed to done(null, user)
+    const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    res.redirect(`${process.env.CLIENT_URL}/dashboard`);
+  }
+);
+
+router.get('/me', requireAuth, (req, res) => res.json({ user: req.user }));
+
+router.post('/logout', (req, res) => {
+  res.clearCookie('token');
+  res.json({ message: 'Logged out' });
+});
+
+module.exports = router;</pre>
+      </div>
+
+      <h3><code>passport.authenticate()</code> options</h3>
+      <div class="table-wrap">
+      <table class="flag-table">
+        <thead><tr><th>Option</th><th>Value used</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><span class="flag-name">scope</span></td><td><span class="flag-val">['profile','email']</span></td><td>Permissions requested. Shown on the consent screen.</td></tr>
+          <tr><td><span class="flag-name">prompt</span></td><td><span class="flag-val">'select_account'</span></td><td>Always show the account picker — handy when users have multiple Gmails.</td></tr>
+          <tr><td><span class="flag-name">session</span></td><td><span class="flag-val">false</span></td><td>Don't create a Passport login session — we issue our own JWT.</td></tr>
+          <tr><td><span class="flag-name">failureRedirect</span></td><td><span class="flag-val">CLIENT_URL/login</span></td><td>Where to go if the user clicks Cancel or verification fails.</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text"><strong>Same middleware, two jobs.</strong> On <code>/auth/google</code> there's no <code>?code</code>, so Passport redirects to Google. On the callback there <em>is</em> a <code>?code</code>, so Passport exchanges it, fetches the profile and runs your verify callback.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Both routes call <code>passport.authenticate('google')</code>. How does Passport know which job to do?</p>
+        <div class="quiz-options" id="quiz-routes-1">
+          <button onclick="answerQuiz('quiz-routes-1', this, true, 'No code → redirect to Google. Code present → exchange it.')" class="quiz-option">A &nbsp;—&nbsp; It checks whether the request has a ?code= query param</button>
+          <button onclick="answerQuiz('quiz-routes-1', this, false, 'It is the same strategy — the presence of ?code decides.')" class="quiz-option">B &nbsp;—&nbsp; The callback route registers a different strategy</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-routes-1-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ── 10 ── -->
+    <section class="section-block" id="session-jwt">
+      <div class="section-header">
+        <div class="section-num-big">10</div>
+        <div class="section-header-text">
+          <div class="section-title">Session vs JWT</div>
+          <div class="section-subtitle">What happens after Google says "yes, this is Riya"</div>
+        </div>
+      </div>
+
+      <p>Google's job ends once we know who the user is. Keeping them logged in on <em>our</em> app is our job, and there are two common ways.</p>
+
+      <div class="table-wrap">
+      <table class="compare-table">
+        <thead><tr><th>What</th><th>Passport sessions</th><th>JWT in httpOnly cookie</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-title">Where state lives</td><td class="cell-muted">Server (session store, e.g. MongoDB/Redis)</td><td class="cell-muted">Inside the signed token</td></tr>
+          <tr><td class="cell-title">Cookie holds</td><td class="cell-muted">A random session ID</td><td class="cell-muted">The JWT itself</td></tr>
+          <tr><td class="cell-title">Needs serialize/deserialize</td><td class="cell-muted">Yes</td><td class="cell-highlight">No ✓</td></tr>
+          <tr><td class="cell-title">Instant logout / revoke</td><td class="cell-highlight">Easy — delete the session ✓</td><td class="cell-muted">Hard until it expires (needs a denylist)</td></tr>
+          <tr><td class="cell-title">Scaling across pods</td><td class="cell-muted">Shared store required</td><td class="cell-highlight">Stateless ✓</td></tr>
+          <tr><td class="cell-title">Fits best</td><td class="cell-muted">Server-rendered apps</td><td class="cell-highlight">MERN with a separate React app ✓</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h3>If you choose sessions</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">session-based setup</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="js">const session = require('express-session');
+const MongoStore = require('connect-mongo');
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
+  cookie: { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' },
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// After login: what to store in the session → just the id
+passport.serializeUser((user, done) => done(null, user.id));
+
+// On every request: id from session → full user on req.user
+passport.deserializeUser(async (id, done) => {
+  try { done(null, await User.findById(id)); }
+  catch (err) { done(err); }
+});</pre>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text"><strong>serializeUser</strong> runs once at login and decides what goes <em>into</em> the session (keep it tiny — the id). <strong>deserializeUser</strong> runs on every later request and turns that id <em>back</em> into a full user on <code>req.user</code>.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">You use <code>session: false</code> and issue your own JWT. Which Passport functions can you skip?</p>
+        <div class="quiz-options" id="quiz-sess-1">
+          <button onclick="answerQuiz('quiz-sess-1', this, true, 'No Passport session means nothing to serialize.')" class="quiz-option">A &nbsp;—&nbsp; serializeUser and deserializeUser</button>
+          <button onclick="answerQuiz('quiz-sess-1', this, false, 'The verify callback is where the user is found or created — always needed.')" class="quiz-option">B &nbsp;—&nbsp; The verify callback</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-sess-1-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ── 11 ── -->
+    <section class="section-block" id="frontend">
+      <div class="section-header">
+        <div class="section-num-big">11</div>
+        <div class="section-header-text">
+          <div class="section-title">Frontend &amp; protected routes</div>
+          <div class="section-subtitle">Starting the login from React and guarding APIs</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">React — login button</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="js">// ✅ Full-page navigation — the browser follows every redirect
+&lt;a href="http://localhost:3000/auth/google"&gt;Continue with Google&lt;/a&gt;
+
+// ✅ Same thing from a click handler
+window.location.href = 'http://localhost:3000/auth/google';
+
+// ❌ Will NOT work
+axios.get('http://localhost:3000/auth/google');</pre>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>Never start OAuth with axios/fetch.</strong> The response is a 302 to Google's login <em>page</em>. An XHR can't render that page for the user, and the cross-origin redirect fails CORS. OAuth needs a real top-level browser navigation.</p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">React — who's logged in?</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="js">// On app load / dashboard mount
+const { data } = await axios.get('http://localhost:3000/auth/me', {
+  withCredentials: true, // send the httpOnly cookie
+});
+setUser(data.user);</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">src/middlewares/auth.middleware.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="js">const jwt = require('jsonwebtoken');
+const User = require('../models/user.model');
+
+async function requireAuth(req, res, next) {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ message: 'Not logged in' });
+
+  try {
+    const { id } = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(id);
+    if (!req.user) return res.status(401).json({ message: 'User not found' });
+    next();
+  } catch {
+    res.status(401).json({ message: 'Invalid or expired token' });
+  }
+}
+
+// Session version is one line: if (req.isAuthenticated()) return next();
+module.exports = { requireAuth };</pre>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">How should the React app start Google login?</p>
+        <div class="quiz-options" id="quiz-fe-1">
+          <button onclick="answerQuiz('quiz-fe-1', this, false, 'XHR cannot show Google\u2019s login page and fails CORS on the redirect.')" class="quiz-option">A &nbsp;—&nbsp; axios.get('/auth/google') and read the response</button>
+          <button onclick="answerQuiz('quiz-fe-1', this, true, 'A top-level navigation lets the browser follow the redirects.')" class="quiz-option">B &nbsp;—&nbsp; An &lt;a href&gt; link or window.location to /auth/google</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-fe-1-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ── 12 ── -->
+    <section class="section-block" id="security">
+      <div class="section-header">
+        <div class="section-num-big">12</div>
+        <div class="section-header-text">
+          <div class="section-title">Security &amp; production gotchas</div>
+          <div class="section-subtitle">The things that work on localhost and break in prod</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+      <table class="flag-table">
+        <thead><tr><th>Risk</th><th>Fix</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td><span class="flag-name">Login CSRF</span></td><td><span class="flag-val">state: true</span></td><td>Stops an attacker from completing the flow with <em>their</em> code in your browser, silently logging you into their account.</td></tr>
+          <tr><td><span class="flag-name">Leaked secret</span></td><td><span class="flag-val">.env + .gitignore</span></td><td>With the secret, anyone can exchange codes as your app. Rotate it immediately if pushed.</td></tr>
+          <tr><td><span class="flag-name">Token theft (XSS)</span></td><td><span class="flag-val">httpOnly cookie</span></td><td>JavaScript can't read it, unlike <code>localStorage</code>.</td></tr>
+          <tr><td><span class="flag-name">Cookie over HTTP</span></td><td><span class="flag-val">secure: true</span></td><td>Cookie only travels over HTTPS in production.</td></tr>
+          <tr><td><span class="flag-name">Cross-site requests</span></td><td><span class="flag-val">sameSite: 'lax'</span></td><td>Sent on the top-level redirect back from Google, blocked on most cross-site requests.</td></tr>
+          <tr><td><span class="flag-name">Over-asking</span></td><td><span class="flag-val">minimal scopes</span></td><td>Only <code>profile email</code> for login. Scary consent screens lose users.</td></tr>
+          <tr><td><span class="flag-name">Stored Google tokens</span></td><td><span class="flag-val">discard or encrypt</span></td><td>For login only, you don't need them. If you call Google APIs later, encrypt the refresh token at rest.</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text"><strong>About <code>state</code> with JWT:</strong> Passport stores the <code>state</code> value in <code>req.session</code>. So if you enable <code>state: true</code> while using <code>session: false</code>, add <code>express-session</code> just for the OAuth handshake — or use a custom state store.</p>
+      </div>
+
+      <h3>Behind a load balancer (EKS, Render, Nginx)</h3>
+      <p>Your Node app receives plain HTTP from the load balancer, even though the user is on HTTPS. Passport then builds <code>http://…/callback</code>, Google sees a URI you never registered, and you get <code>redirect_uri_mismatch</code> — only in production.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">production fix</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+<pre class="code-pre" data-lang="js">app.set('trust proxy', 1); // believe X-Forwarded-Proto from the LB / ingress
+
+new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: '/auth/google/callback', // relative…
+  proxy: true,                           // …resolved using the forwarded https
+}, verify);</pre>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>Frontend and API on different sites?</strong> (e.g. <code>app.vercel.app</code> + <code>api.render.com</code>) Browsers treat that cookie as third-party and increasingly block it. Put both on the same parent domain — <code>app.yourdomain.com</code> and <code>api.yourdomain.com</code> — and set <code>domain: '.yourdomain.com'</code> on the cookie.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">The <code>state</code> parameter mainly protects against…</p>
+        <div class="quiz-options" id="quiz-sec-1">
+          <button onclick="answerQuiz('quiz-sec-1', this, true, 'It ties the callback to the browser that started the flow.')" class="quiz-option">A &nbsp;—&nbsp; CSRF / login forgery on the callback</button>
+          <button onclick="answerQuiz('quiz-sec-1', this, false, 'XSS is handled by escaping output and httpOnly cookies.')" class="quiz-option">B &nbsp;—&nbsp; XSS stealing the access token</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-sec-1-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ── 13 ── -->
+    <section class="section-block" id="interview">
+      <div class="section-header">
+        <div class="section-num-big">13</div>
+        <div class="section-header-text">
+          <div class="section-title">Interview questions</div>
+          <div class="section-subtitle">Tap a question, answer it out loud first, then check</div>
+        </div>
+      </div>
+
+      <h4>Fundamentals</h4>
+
+      <details class="qa"><summary><span class="qn">Q1</span>What is OAuth 2.0? Is it authentication or authorization?<span class="qlvl">Basic</span></summary>
+        <div class="qa-body"><p>OAuth 2.0 is an <strong>authorization</strong> framework: it lets a third-party app get limited, revocable access to a user's resources without the user sharing their password. Authentication (who the user is) comes from <strong>OpenID Connect</strong>, a layer on top that adds the <code>id_token</code>. "Login with Google" is OIDC in practice.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q2</span>Walk me through the Authorization Code flow end to end.<span class="qlvl">Basic</span></summary>
+        <div class="qa-body"><p>User clicks login → our server redirects to Google with <code>client_id</code>, <code>redirect_uri</code>, <code>scope</code>, <code>state</code> → user logs in and consents → Google redirects back with a short-lived <code>code</code> → our server POSTs the code + <code>client_secret</code> to Google's token endpoint → gets an access token (and id_token) → fetches the profile → finds or creates the user in our DB → issues our own session/JWT → redirects to the dashboard.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q3</span>Why does Google send a code instead of the access token directly?<span class="qlvl">Medium</span></summary>
+        <div class="qa-body"><p>The redirect travels through the browser (front-channel), where URLs end up in history, logs and Referer headers. The code is single-use, expires in minutes, and is useless without the <code>client_secret</code>. The real token is only handed out on the back-channel, server-to-server, where the secret proves the caller is really our app. (That's exactly why the old Implicit flow is deprecated.)</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q4</span>Access token vs refresh token vs id_token?<span class="qlvl">Basic</span></summary>
+        <div class="qa-body"><p><strong>Access token</strong>: short-lived key to call Google APIs. <strong>Refresh token</strong>: long-lived, used to get new access tokens without user interaction (only with offline access). <strong>id_token</strong>: a signed JWT from OIDC that describes the user — meant for <em>our</em> app to read, not to call APIs with.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q5</span>What is the redirect_uri and why must it be pre-registered exactly?<span class="qlvl">Basic</span></summary>
+        <div class="qa-body"><p>It's where Google sends the user (and the code) after consent. If Google accepted any URI, an attacker could craft a login link with <em>their</em> redirect URI and steal the code. Exact matching means codes only ever go to URLs we control.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q6</span>What is the state parameter for?<span class="qlvl">Medium</span></summary>
+        <div class="qa-body"><p>CSRF protection. We generate a random value, store it in the user's session and send it to Google. Google echoes it back on the callback, and we reject the request if it doesn't match. Without it, an attacker can make your browser finish <em>their</em> OAuth flow, silently logging you into the attacker's account.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q7</span>What is PKCE and when do you need it?<span class="qlvl">Advanced</span></summary>
+        <div class="qa-body"><p>Proof Key for Code Exchange. The client creates a random <code>code_verifier</code>, sends its hash (<code>code_challenge</code>) in the first redirect, and sends the raw verifier during the token exchange. Even if the code is intercepted, it can't be redeemed without the verifier. It's required for SPAs and mobile apps that can't keep a secret, and is now recommended for all clients.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q8</span>What are scopes? Which ones do you need for login?<span class="qlvl">Basic</span></summary>
+        <div class="qa-body"><p>Scopes are the permissions the app requests, shown on the consent screen. For login: <code>openid</code>, <code>profile</code>, <code>email</code>. Follow least privilege — asking for Drive or Gmail access just to log in scares users and invites stricter Google verification.</p></div></details>
+
+      <h4>Passport.js</h4>
+
+      <details class="qa"><summary><span class="qn">Q9</span>What is Passport.js and what is a strategy?<span class="qlvl">Basic</span></summary>
+        <div class="qa-body"><p>Passport is authentication middleware for Express with a pluggable design. A strategy is one login mechanism packaged as a plug-in — local, Google, GitHub, JWT. Passport standardizes the interface: every strategy ends by calling your verify callback and putting the result on <code>req.user</code>.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q10</span>What does the verify callback do, and what is <code>done</code>?<span class="qlvl">Medium</span></summary>
+        <div class="qa-body"><p>It runs after Passport has verified the user with Google and receives <code>(accessToken, refreshToken, profile, done)</code>. It's where we map the Google identity to our own user (find-or-create). <code>done(err, user, info)</code> tells Passport the result: <code>done(err)</code> for a server error, <code>done(null, false)</code> to reject login, <code>done(null, user)</code> for success.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q11</span>Explain serializeUser and deserializeUser.<span class="qlvl">Medium</span></summary>
+        <div class="qa-body"><p>Only used with sessions. <code>serializeUser</code> runs at login and decides what minimal data goes into the session — usually just the user id. <code>deserializeUser</code> runs on every subsequent request, takes that id from the session and loads the full user onto <code>req.user</code>.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q12</span>How do you use Passport without sessions?<span class="qlvl">Medium</span></summary>
+        <div class="qa-body"><p>Pass <code>session: false</code> to <code>passport.authenticate</code>, skip <code>passport.session()</code> and serialize/deserialize. In the callback handler, sign your own JWT with <code>req.user._id</code>, set it as an httpOnly cookie and redirect. Later requests are verified by a JWT middleware.</p></div></details>
+
+      <h4>Scenarios &amp; design</h4>
+
+      <details class="qa"><summary><span class="qn">Q13</span>How do you decide whether to log in or register a Google user?<span class="qlvl">Basic</span></summary>
+        <div class="qa-body"><p>Find-or-create inside the verify callback: <code>findOne({ googleId: profile.id })</code>. If found, it's a login. If not, create a user with the Google profile data and treat it as login too. One button, one endpoint, two outcomes. Back it with a unique index on <code>googleId</code> to prevent duplicates.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q14</span>Why look up by googleId and not by email?<span class="qlvl">Medium</span></summary>
+        <div class="qa-body"><p><code>profile.id</code> (the OIDC <code>sub</code>) is permanent and unique per Google account. Emails can change, Workspace accounts can be renamed or deleted and recycled. Email is still useful as a secondary lookup for account linking — but only when Google marks it verified.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q15</span>A user signed up with email/password and now clicks "Continue with Google" with the same email. What happens?<span class="qlvl">Advanced</span></summary>
+        <div class="qa-body"><p>A naive find-or-create tries to insert a second user and fails with a duplicate-key error on <code>email</code>. The right approach is account linking: no <code>googleId</code> match → check <code>email_verified</code> → find by email → attach <code>googleId</code> to the existing user. Some apps ask the user to log in with their password first to confirm the link.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q16</span>Two requests try to register the same new user at once. How do you avoid duplicates?<span class="qlvl">Advanced</span></summary>
+        <div class="qa-body"><p>Both can see <code>null</code> and both insert. A unique index on <code>googleId</code> makes the DB reject the second insert (E11000) — catch it and re-fetch. Or make it atomic with <code>findOneAndUpdate({ googleId }, { $setOnInsert: {...} }, { upsert: true, new: true })</code>.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q17</span>Where do you store the JWT after Google login, and why?<span class="qlvl">Medium</span></summary>
+        <div class="qa-body"><p>In an <code>httpOnly</code>, <code>secure</code>, <code>sameSite</code> cookie. <code>localStorage</code> is readable by any JavaScript on the page, so a single XSS bug leaks every user's token. httpOnly cookies can't be read by JS; pair them with <code>sameSite</code> (and CSRF tokens for risky actions if needed).</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q18</span>Why can't the React app call <code>/auth/google</code> with axios?<span class="qlvl">Medium</span></summary>
+        <div class="qa-body"><p>The endpoint answers with a 302 to Google's HTML login page. An XHR would try to follow that cross-origin redirect silently, hit CORS, and even if it didn't, there's no way to render Google's page for the user. OAuth needs a top-level navigation: <code>&lt;a href&gt;</code> or <code>window.location</code>.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q19</span>It works on localhost but gives redirect_uri_mismatch in production. Why?<span class="qlvl">Advanced</span></summary>
+        <div class="qa-body"><p>Usually one of: the production callback URL isn't registered in Google Cloud; or the app sits behind a load balancer/ingress that terminates TLS, so Express sees <code>http</code> and Passport builds <code>http://…/callback</code>. Fix with <code>app.set('trust proxy', 1)</code> and <code>proxy: true</code> on the strategy, or an absolute <code>https</code> callback URL.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q20</span>Do you need to store Google's access token in your database?<span class="qlvl">Medium</span></summary>
+        <div class="qa-body"><p>Not for login. Once you've identified the user and issued your own session/JWT, Google's tokens can be discarded. Store them only if you'll call Google APIs later (Calendar, Drive) — and then encrypt the refresh token at rest, since it's a long-lived credential.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q21</span>When a Google user clicks Logout in your app, are they logged out of Google?<span class="qlvl">Basic</span></summary>
+        <div class="qa-body"><p>No. Logging out clears <em>our</em> session or JWT cookie only — their Google session is separate. Next login, Google may skip the password and just show the account picker. If you stored tokens, you can also revoke them via Google's revoke endpoint.</p></div></details>
+
+      <details class="qa"><summary><span class="qn">Q22</span>Your JWT is valid for 7 days. How do you force-logout a user right now?<span class="qlvl">Advanced</span></summary>
+        <div class="qa-body"><p>Stateless JWTs can't be "deleted". Options: short-lived access tokens + refresh tokens stored server-side (revoke the refresh token), a denylist of token IDs in Redis checked by the middleware, or a <code>tokenVersion</code> field on the user that you bump and compare on every request.</p></div></details>
+    </section>
+
+    <!-- ── 14 ── -->
+    <section class="section-block" id="revision">
+      <div class="section-header">
+        <div class="section-num-big">14</div>
+        <div class="section-header-text">
+          <div class="section-title">Revision sheet</div>
+          <div class="section-subtitle">The whole topic in one screen, the night before the interview</div>
+        </div>
+      </div>
+
+      <div class="scale-diagram">
+        <span class="highlight">Click "Continue with Google"</span> → GET /auth/google<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="highlight">302 to Google</span> with client_id · redirect_uri · scope · state<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="highlight">User logs in on Google</span> <span class="green">(password never touches our server)</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="highlight">302 back</span> to /auth/google/callback?code=…&amp;state=…<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="highlight">Server ↔ Google</span> code + secret → tokens → profile <span class="green">(Passport does this)</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="highlight">findOne({ googleId })</span> → <span class="green">found: login</span> / <span class="red">null: create</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="green">Set httpOnly cookie → redirect /dashboard ✅</span>
+      </div>
+
+      <div class="table-wrap">
+      <table class="compare-table">
+        <thead><tr><th>Remember</th><th>One-liner</th></tr></thead>
+        <tbody>
+          <tr><td class="cell-title">OAuth vs OIDC</td><td class="cell-muted">OAuth = access, OIDC = identity on top</td></tr>
+          <tr><td class="cell-title">Why a code</td><td class="cell-muted">Front-channel is leaky; tokens only on the back-channel with the secret</td></tr>
+          <tr><td class="cell-title">Passport's job</td><td class="cell-muted">The OAuth plumbing. Your job: find-or-create + session/JWT</td></tr>
+          <tr><td class="cell-title">Lookup key</td><td class="cell-muted"><code>googleId</code>, unique index; email only for verified linking</td></tr>
+          <tr><td class="cell-title">Start login</td><td class="cell-muted">Top-level navigation, never axios</td></tr>
+          <tr><td class="cell-title">Prod bug #1</td><td class="cell-muted">redirect_uri_mismatch → trust proxy + <code>proxy: true</code></td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">A returning user logs in with Google. Which database call happens?</p>
+        <div class="quiz-options" id="quiz-rev-1">
+          <button onclick="answerQuiz('quiz-rev-1', this, false, 'Create only runs when findOne returns null.')" class="quiz-option">A &nbsp;—&nbsp; findOne, then always create</button>
+          <button onclick="answerQuiz('quiz-rev-1', this, true, 'Found → done(null, user). No insert.')" class="quiz-option">B &nbsp;—&nbsp; Only findOne — the user is found, so no create</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-rev-1-feedback"></div>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Which flow should a server-side Express app with a client secret use?</p>
+        <div class="quiz-options" id="quiz-rev-2">
+          <button onclick="answerQuiz('quiz-rev-2', this, false, 'Implicit is deprecated — it puts tokens in the URL.')" class="quiz-option">A &nbsp;—&nbsp; Implicit flow</button>
+          <button onclick="answerQuiz('quiz-rev-2', this, true, 'Code flow, tokens exchanged on the back-channel.')" class="quiz-option">B &nbsp;—&nbsp; Authorization Code flow</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-rev-2-feedback"></div>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <span>Sheryians Coding School · Google Auth Notes</span>
+      <span>Stack: Express · Passport · MongoDB · JWT</span>
+    </footer>
+
+   </div>
+  </main>
+</div>
+
+<script>
+/* ── Quiz ── */
+function answerQuiz(quizId, btn, isCorrect, explain) {
+  const container = document.getElementById(quizId);
+  const feedback = document.getElementById(quizId + '-feedback');
+  container.querySelectorAll('.quiz-option').forEach(b => { b.disabled = true; b.style.opacity = '0.6'; });
+  btn.classList.add(isCorrect ? 'correct' : 'incorrect');
+  feedback.className = 'quiz-feedback ' + (isCorrect ? 'correct' : 'incorrect');
+  feedback.textContent = isCorrect ? '✓ Correct!' : '✗ Not quite — try reviewing that section.';
+  if (explain) {
+    const s = document.createElement('span');
+    s.className = 'quiz-explain';
+    s.textContent = explain;
+    feedback.appendChild(s);
+  }
+}
+
+/* ── Copy ── */
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  const text = pre.textContent;
+  const done = () => { btn.textContent = 'copied'; setTimeout(() => btn.textContent = 'copy', 1400); };
+  try {
+    navigator.clipboard.writeText(text).then(done, () => fallback());
+  } catch (e) { fallback(); }
+  function fallback() {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove(); done();
+    } catch (e) {}
+  }
+}
+
+/* ── Syntax highlighting ── */
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+const JS_RE = /(\/\/[^\n]*|#[^\n]*$)|(`(?:\\[\s\S]|[^`\\])*`|'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*")|\b(const|let|var|function|async|await|return|if|else|new|require|module|exports|try|catch|throw|null|true|false)\b|\b(\d+(?:\.\d+)?)\b|([A-Za-z_$][\w$]*)(?=\s*:(?!:)\s)/gm;
+function hlJS(src) {
+  let out = '', last = 0;
+  src.replace(JS_RE, (m, c, s, k, n, key, off) => {
+    out += esc(src.slice(last, off));
+    const cls = c ? 'token-comment' : s ? 'token-string' : k ? 'token-command' : n ? 'token-val' : 'token-yaml-key';
+    out += '<span class="' + cls + '">' + esc(m) + '</span>';
+    last = off + m.length;
+    return m;
+  });
+  return out + esc(src.slice(last));
+}
+function hlSh(src) {
+  return src.split('\n').map(line => {
+    if (/^\s*#/.test(line)) return '<span class="token-comment">' + esc(line) + '</span>';
+    return line.split(' ').map((w, i) => {
+      if (i === 0) return '<span class="token-command">' + esc(w) + '</span>';
+      if (w.startsWith('-')) return '<span class="token-flag">' + esc(w) + '</span>';
+      if (i === 1) return '<span class="token-flag">' + esc(w) + '</span>';
+      return '<span class="token-val">' + esc(w) + '</span>';
+    }).join(' ');
+  }).join('\n');
+}
+function hlEnv(src) {
+  return src.split('\n').map(line => {
+    const m = line.match(/^(\w+)=(.*)$/);
+    if (!m) return esc(line);
+    return '<span class="token-yaml-key">' + esc(m[1]) + '</span><span class="token-operator">=</span><span class="token-val">' + esc(m[2]) + '</span>';
+  }).join('\n');
+}
+function hlPlain(src) {
+  return src.split('\n').map(line => {
+    const i = line.indexOf('#');
+    if (i === -1) return esc(line);
+    return esc(line.slice(0, i)) + '<span class="token-comment">' + esc(line.slice(i)) + '</span>';
+  }).join('\n');
+}
+document.querySelectorAll('pre.code-pre[data-lang]').forEach(pre => {
+  const src = pre.textContent;
+  const lang = pre.dataset.lang;
+  pre.innerHTML = lang === 'js' ? hlJS(src) : lang === 'sh' ? hlSh(src) : lang === 'env' ? hlEnv(src) : hlPlain(src);
+});
+
+/* ── Sequence diagram ── */
+(function () {
+  const ACTORS = [
+    { id: 'U', name: 'User', sub: 'Browser', x: 110 },
+    { id: 'S', name: 'Our Server', sub: 'Express + Passport', x: 330 },
+    { id: 'D', name: 'Database', sub: 'MongoDB', x: 550 },
+    { id: 'G', name: 'Google', sub: 'OAuth 2.0 server', x: 770 },
+  ];
+  const AX = Object.fromEntries(ACTORS.map(a => [a.id, a.x]));
+
+  const STEPS = [
+    { f: 'U', t: 'S', ch: 'front', label: 'GET /auth/google',
+      title: 'User clicks "Continue with Google"',
+      desc: 'A plain link (not axios) navigates the browser to our server. One button for both sign up and sign in — the user doesn\u2019t need to know which one it is.',
+      code: '<a href="http://localhost:3000/auth/google">Continue with Google</a>' },
+    { f: 'S', t: 'U', ch: 'front', label: '302 → accounts.google.com',
+      title: 'Passport builds the Google URL and redirects',
+      desc: 'passport.authenticate(\'google\') sees no ?code, so it responds with a 302 to Google\u2019s consent page, attaching our client_id, redirect_uri, requested scopes and a random state value.',
+      code: 'Location: https://accounts.google.com/o/oauth2/v2/auth\n  ?client_id=1234.apps.googleusercontent.com\n  &redirect_uri=http://localhost:3000/auth/google/callback\n  &response_type=code&scope=profile email&state=x7Fq…' },
+    { f: 'U', t: 'G', ch: 'front', label: 'GET /o/oauth2/v2/auth?…',
+      title: 'Browser lands on Google',
+      desc: 'The browser follows the redirect. From here the user is on google.com — our server is out of the picture until Google sends them back.',
+      code: '' },
+    { f: 'U', t: 'G', ch: 'front', label: 'login + "Allow" consent',
+      title: 'User signs in and approves',
+      desc: 'The user types their Google password (and 2FA) on Google\u2019s own page, then sees "Our App wants to see your name, email and photo". The password never touches our server.',
+      code: '' },
+    { f: 'G', t: 'U', ch: 'front', label: '302 → /callback?code=…&state=…',
+      title: 'Google redirects back with a code',
+      desc: 'Google sends the browser to our registered redirect_uri with a short-lived, single-use authorization code and the same state we sent.',
+      code: 'Location: http://localhost:3000/auth/google/callback\n  ?code=4/0AbCD…&state=x7Fq…' },
+    { f: 'U', t: 'S', ch: 'front', label: 'GET /auth/google/callback?code',
+      title: 'Browser delivers the code to our server',
+      desc: 'Our callback route runs passport.authenticate(\'google\') again. This time a ?code is present, so Passport switches into exchange mode (and checks that state matches).',
+      code: "router.get('/google/callback', passport.authenticate('google', { session: false }), handler)" },
+    { f: 'S', t: 'G', ch: 'back', label: 'POST /token (code + secret)',
+      title: 'Server exchanges the code for tokens',
+      desc: 'Server-to-server, not through the browser. The client_secret proves this request really comes from our app, so a stolen code alone is useless.',
+      code: 'POST https://oauth2.googleapis.com/token\ncode=4/0AbCD…&client_id=…&client_secret=GOCSPX-…\n&redirect_uri=…&grant_type=authorization_code' },
+    { f: 'G', t: 'S', ch: 'back', label: 'access_token + id_token',
+      title: 'Google returns tokens',
+      desc: 'An access_token (to call Google APIs, ~1 hour) and an id_token (a signed JWT about the user). A refresh_token only comes if offline access was requested.',
+      code: '{ "access_token": "ya29.a0…", "expires_in": 3599,\n  "id_token": "eyJhbGciOi…", "token_type": "Bearer" }' },
+    { f: 'S', t: 'G', ch: 'back', label: 'GET /userinfo (Bearer token)',
+      title: 'Server asks for the user\u2019s profile',
+      desc: 'Passport uses the access token to fetch the profile automatically. You don\u2019t write this request yourself.',
+      code: 'GET https://www.googleapis.com/oauth2/v3/userinfo\nAuthorization: Bearer ya29.a0…' },
+    { f: 'G', t: 'S', ch: 'back', label: 'profile { id, name, email, photo }',
+      title: 'Profile arrives → your verify callback runs',
+      desc: 'Passport normalizes Google\u2019s response into a profile object and calls your verify callback. Everything after this point is your code.',
+      code: "profile.id            // '10769150350006150715113'\nprofile.displayName   // 'Riya Sharma'\nprofile.emails[0].value // 'riya@gmail.com'" },
+    { f: 'S', t: 'D', ch: 'db', label: 'findOne({ googleId })',
+      title: 'Is this user already registered?',
+      desc: 'Look up by Google\u2019s permanent ID, not by name. This single query decides whether this is a login or a registration.',
+      code: 'let user = await User.findOne({ googleId: profile.id });' },
+    { f: 'D', t: 'S', ch: 'db', label: 'null → not registered', only: 'new',
+      title: 'Not found → this is a new user',
+      desc: 'No document matches this googleId. Instead of failing, we register them on the spot — Google has already verified who they are.',
+      code: 'if (user) return done(null, user); // skipped — user is null' },
+    { f: 'D', t: 'S', ch: 'db', label: 'user doc → registered', only: 'old',
+      title: 'Found → this is a returning user',
+      desc: 'A document exists, so there\u2019s nothing to create. We hand it straight to Passport — this is a plain login.',
+      code: 'if (user) return done(null, user); // ✅ returns here' },
+    { f: 'S', t: 'D', ch: 'db', label: 'User.create({ googleId, email, … })', only: 'new',
+      title: 'Register the user',
+      desc: 'Save the Google identity plus whatever profile data we want to show in our app. No password field — Google handles that.',
+      code: 'user = await User.create({\n  googleId: profile.id, email: profile.emails[0].value,\n  name: profile.displayName, avatar: profile.photos?.[0]?.value,\n});' },
+    { f: 'D', t: 'S', ch: 'db', label: 'saved user', only: 'new',
+      title: 'New user saved',
+      desc: 'MongoDB returns the created document with its _id. We pass it to done(), and Passport puts it on req.user.',
+      code: 'return done(null, user);' },
+    { f: 'S', t: 'U', ch: 'front', label: 'Set-Cookie: token + 302 /dashboard',
+      title: 'Issue our own JWT and redirect',
+      desc: 'Google\u2019s part is over. We sign our own JWT, store it in an httpOnly cookie and send the user to the React dashboard — logged in, whether they just registered or were returning.',
+      code: "const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });\nres.cookie('token', token, { httpOnly: true, sameSite: 'lax' });\nres.redirect(CLIENT_URL + '/dashboard');" },
+  ];
+
+  const CH = {
+    front: { text: 'Front-channel · via browser', cls: 'badge-blue' },
+    back:  { text: 'Back-channel · server ↔ Google', cls: 'badge-green' },
+    db:    { text: 'Internal · server ↔ database', cls: 'badge-gold' },
+  };
+
+  const svg = document.getElementById('seq-svg');
+  const el = id => document.getElementById(id);
+  let scenario = 'new', idx = 0, steps = [];
+  const NS = 'http://www.w3.org/2000/svg';
+  const TOP = 104, ROW = 42, W = 880;
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function render() {
+    steps = STEPS.filter(s => !s.only || s.only === scenario);
+    if (idx > steps.length - 1) idx = steps.length - 1;
+    const H = TOP + steps.length * ROW + 16;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    const cur = steps[idx];
+
+    let h = '<defs>' + ['past', 'future', 'current'].map(k =>
+      '<marker id="mk-' + k + '" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-' + k + '" d="M0,0 L10,5 L0,10 z"/></marker>').join('') + '</defs>';
+
+    ACTORS.forEach(a => {
+      const on = cur.f === a.id || cur.t === a.id;
+      h += '<line class="lifeline" x1="' + a.x + '" y1="66" x2="' + a.x + '" y2="' + (H - 8) + '"/>';
+      h += '<g class="actor' + (on ? ' on' : '') + '"><rect class="actor-box" x="' + (a.x - 92) + '" y="12" width="184" height="54" rx="8"/>' +
+           '<text class="actor-name" x="' + a.x + '" y="36" text-anchor="middle">' + a.name + '</text>' +
+           '<text class="actor-sub" x="' + a.x + '" y="54" text-anchor="middle">' + esc(a.sub) + '</text></g>';
+    });
+
+    steps.forEach((s, i) => {
+      const y = TOP + i * ROW + 14;
+      const x1 = AX[s.f], x2 = AX[s.t];
+      const dir = x2 > x1 ? 1 : -1;
+      const sx = x1 + dir * 6, ex = x2 - dir * 4;
+      const state = i < idx ? 'past' : i === idx ? 'current' : 'future';
+      h += '<g class="row ' + state + '" data-i="' + i + '">' +
+           '<rect class="row-hit" x="0" y="' + (y - 24) + '" width="' + W + '" height="' + ROW + '" rx="4"/>' +
+           '<text class="num" x="14" y="' + (y + 4) + '">' + pad(i + 1) + '</text>' +
+           '<line class="arrow" x1="' + sx + '" y1="' + y + '" x2="' + ex + '" y2="' + y + '" marker-end="url(#mk-' + state + ')"/>' +
+           '<text class="lbl" x="' + ((x1 + x2) / 2) + '" y="' + (y - 8) + '" text-anchor="middle">' + esc(s.label) + '</text></g>';
+    });
+    svg.innerHTML = h;
+
+    svg.querySelectorAll('.row').forEach(r => r.addEventListener('click', () => { idx = +r.dataset.i; render(); }));
+
+    el('seq-badge').textContent = 'Step ' + (idx + 1);
+    const ch = CH[cur.ch];
+    const chEl = el('seq-channel');
+    chEl.textContent = ch.text;
+    chEl.className = 'badge ' + ch.cls;
+    el('seq-title').textContent = cur.title;
+    el('seq-desc').textContent = cur.desc;
+    const codeEl = el('seq-code');
+    codeEl.textContent = cur.code || '';
+    codeEl.style.display = cur.code ? 'block' : 'none';
+    el('seq-counter').textContent = pad(idx + 1) + ' / ' + pad(steps.length);
+    el('seq-back').disabled = idx === 0;
+    el('seq-next').disabled = idx === steps.length - 1;
+  }
+
+  el('seq-back').addEventListener('click', () => { if (idx > 0) { idx--; render(); } });
+  el('seq-next').addEventListener('click', () => { if (idx < steps.length - 1) { idx++; render(); } });
+
+  document.querySelectorAll('[data-scenario]').forEach(b => b.addEventListener('click', () => {
+    const prevStep = steps[idx];
+    scenario = b.dataset.scenario;
+    document.querySelectorAll('[data-scenario]').forEach(x => {
+      const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on);
+    });
+    const next = STEPS.filter(s => !s.only || s.only === scenario);
+    const keep = next.indexOf(prevStep);
+    idx = keep >= 0 ? keep : Math.min(idx, 10);
+    render();
+  }));
+
+  const seq = el('seq');
+  let inView = false;
+  try {
+    new IntersectionObserver(es => { inView = es[0].isIntersecting; }, { threshold: 0.3 }).observe(seq);
+  } catch (e) { inView = true; }
+  document.addEventListener('keydown', e => {
+    if (!inView || /input|textarea|select/i.test(e.target.tagName)) return;
+    if (e.key === 'ArrowRight') { el('seq-next').click(); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') { el('seq-back').click(); e.preventDefault(); }
+  });
+
+  render();
+})();
+
+/* ── Active nav on scroll ── */
+(function () {
+  const links = [...document.querySelectorAll('.nav-link')];
+  const map = new Map(links.map(l => [l.getAttribute('href').slice(1), l]));
+  try {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (en.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          const l = map.get(en.target.id);
+          if (l) l.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-30% 0px -60% 0px' });
+    document.querySelectorAll('section[id]').forEach(s => obs.observe(s));
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>

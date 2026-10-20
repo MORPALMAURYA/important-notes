@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Payment Gateway — Who paid for what?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,700;0,900;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Design Tokens ── */
+:root {
+  --ink:       #0E0F14;
+  --paper:     #F5F2EB;
+  --paper2:    #EDE9DF;
+  --paper3:    #E4DFD3;
+  --rule:      #D4CEBC;
+  --muted:     #6B6455;
+  --accent:    #C84B1F;
+  --accent2:   #1A6B4A;
+  --accent3:   #1B4587;
+  --gold:      #B8860B;
+  --code-bg:   #1A1C24;
+  --code-text: #E2DCCC;
+  --flag-c:    #5BA4CF;
+  --val-c:     #F4A261;
+
+  /* derived tokens so the page also works in dark viewers */
+  --body-text:   #2A2720;
+  --nav-bg:      #0E0F14;
+  --panel:       #0E0F14;
+  --surface:     #FBF9F4;
+  --note-bg:     #FEF9EC;
+  --note-bd:     #EDD97A;
+  --note-tx:     #5C4A00;
+  --note-strong: #3D3000;
+  --warn-bg:     #FEF2F2;
+  --warn-bd:     #FCA5A5;
+  --warn-tx:     #7F1D1D;
+  --accent-soft: rgba(200, 75, 31, 0.10);
+  --green-soft:  rgba(26, 107, 74, 0.12);
+  --gold-soft:   rgba(184, 134, 11, 0.14);
+  --blue-soft:   rgba(27, 69, 135, 0.10);
+
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #EDE9DF; --paper: #121319; --paper2: #1A1C23; --paper3: #23252E; --rule: #33353F;
+    --muted: #A39B8A; --accent: #E2663B; --accent2: #3FA57A; --accent3: #7EA3E0; --gold: #D9A62E;
+    --body-text: #D9D4C7; --nav-bg: #0A0B0F; --panel: #0A0B0F; --surface: #16171E;
+    --note-bg: #29230F; --note-bd: #5E4F1C; --note-tx: #EAD68F; --note-strong: #F7E7A6;
+    --warn-bg: #2B1515; --warn-bd: #6E2B2B; --warn-tx: #F3BCBC;
+    --accent-soft: rgba(226, 102, 59, 0.14); --green-soft: rgba(63, 165, 122, 0.16);
+    --gold-soft: rgba(217, 166, 46, 0.16); --blue-soft: rgba(126, 163, 224, 0.14);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #EDE9DF; --paper: #121319; --paper2: #1A1C23; --paper3: #23252E; --rule: #33353F;
+  --muted: #A39B8A; --accent: #E2663B; --accent2: #3FA57A; --accent3: #7EA3E0; --gold: #D9A62E;
+  --body-text: #D9D4C7; --nav-bg: #0A0B0F; --panel: #0A0B0F; --surface: #16171E;
+  --note-bg: #29230F; --note-bd: #5E4F1C; --note-tx: #EAD68F; --note-strong: #F7E7A6;
+  --warn-bg: #2B1515; --warn-bd: #6E2B2B; --warn-tx: #F3BCBC;
+  --accent-soft: rgba(226, 102, 59, 0.14); --green-soft: rgba(63, 165, 122, 0.16);
+  --gold-soft: rgba(217, 166, 46, 0.16); --blue-soft: rgba(126, 163, 224, 0.14);
+  color-scheme: dark;
+}
+
+/* ── Typography & Resets ── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+}
+img, svg { max-width: 100%; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── Keyframe Animations ── */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes floatPulse { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes dataFlow { from { stroke-dashoffset: 200; } to { stroke-dashoffset: 0; } }
+
+.animate-fade-up { animation: fadeUp 0.4s ease both; }
+.animate-slide-left { animation: slideInLeft 0.5s ease both; }
+.animate-slide-right { animation: slideInRight 0.5s ease both; }
+.animate-float-pulse { animation: floatPulse 2.5s ease-in-out infinite; }
+.animate-data-flow { animation: dataFlow 1.5s linear infinite; }
+
+/* ── Layout ── */
+.layout-container { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 260px; flex-shrink: 0; background-color: var(--nav-bg);
+  position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; overflow-y: auto; padding: 32px 0 40px;
+}
+.main-content { flex: 1; max-width: calc(100% - 260px); padding: 56px 56px 80px; }
+.main-inner { max-width: 940px; }
+
+/* ── Sidebar ── */
+.nav-brand { padding: 0 24px; margin-bottom: 24px; }
+.nav-brand .logo { font-family: 'Fraunces', Georgia, serif; font-size: 18px; font-weight: 700; color: #FFFFFF; }
+.nav-brand .logo .accent-dot { color: var(--accent); }
+.nav-brand .sub { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.06em; margin-top: 2px; }
+.nav-group-label {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; color: rgba(255,255,255,0.25);
+  letter-spacing: 0.12em; text-transform: uppercase; padding: 0 24px; margin-top: 16px; margin-bottom: 4px;
+}
+.nav-link {
+  display: flex; align-items: center; gap: 8px; padding: 10px 24px;
+  font-family: 'DM Sans', system-ui, sans-serif; font-size: 12.5px; color: rgba(255,255,255,0.5);
+  border-left: 2px solid transparent; text-decoration: none;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+.nav-link:hover { color: #FFFFFF; background-color: rgba(255,255,255,0.04); }
+.nav-link.active { color: #FFFFFF; border-left-color: var(--accent); background-color: rgba(200,75,31,0.08); }
+.nav-num {
+  width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  background-color: rgba(255,255,255,0.08); font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 9px; border-radius: 4px; color: inherit;
+}
+.nav-link:hover .nav-num, .nav-link.active .nav-num { background-color: var(--accent); color: #FFFFFF; }
+
+/* ── Hero ── */
+.hero { margin-bottom: 64px; padding-bottom: 40px; border-bottom: 1px solid var(--rule); }
+.hero-eyebrow { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px; }
+.hero h1 { font-family: 'Fraunces', Georgia, serif; font-size: clamp(36px, 5vw, 58px); font-weight: 900; color: var(--ink); line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 18px; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero-desc { font-size: 16px; color: var(--muted); max-width: 560px; line-height: 1.65; margin: 0 0 20px; }
+.hero-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.hero-tag { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--muted); border: 1px solid var(--rule); border-radius: 9999px; padding: 2px 12px; }
+
+/* ── Section ── */
+.section-block { margin-bottom: 72px; }
+.section-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 28px; }
+.section-header-text { padding-top: 4px; }
+.section-num-big { font-family: 'Fraunces', Georgia, serif; font-size: 48px; font-weight: 900; color: var(--rule); user-select: none; line-height: 1; }
+.section-title { font-family: 'Fraunces', Georgia, serif; font-size: 26px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+.section-subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
+h3 { font-family: 'Fraunces', Georgia, serif; font-size: 18px; font-weight: 600; color: var(--ink); margin-top: 28px; margin-bottom: 12px; }
+h4 { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; margin: 0 0 12px; }
+p { font-size: 14.5px; color: var(--body-text); line-height: 1.7; margin: 0 0 12px; }
+p strong, li strong { color: var(--ink); }
+ul.plain { margin: 0 0 12px; padding-left: 20px; }
+ul.plain li { font-size: 14.5px; color: var(--body-text); margin-bottom: 6px; }
+code.inline-code, p code, li code, td code {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; color: var(--accent);
+  background-color: var(--paper3); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 4px;
+  word-break: break-word;
+}
+.divider { border: none; border-top: 1px solid var(--rule); margin: 40px 0; }
+
+/* ── Concept / Note / Warning ── */
+.concept-box { background-color: var(--paper2); border-left: 3px solid var(--accent3); border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 16px 0; }
+.concept-box-label { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; color: var(--accent3); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
+.concept-box-text { font-size: 14px; color: var(--ink); line-height: 1.65; margin: 0; }
+.note-box, .warning-box { border-radius: 8px; padding: 12px 16px; margin: 16px 0; display: flex; gap: 12px; align-items: flex-start; }
+.note-box { background-color: var(--note-bg); border: 1px solid var(--note-bd); }
+.warning-box { background-color: var(--warn-bg); border: 1px solid var(--warn-bd); }
+.note-box-icon, .warning-box-icon { font-size: 18px; line-height: 1; margin-top: 2px; }
+.note-box-text { font-size: 13px; color: var(--note-tx); margin: 0; }
+.note-box-text strong { color: var(--note-strong); }
+.warning-box-text { font-size: 13px; color: var(--warn-tx); margin: 0; }
+.warning-box-text strong { color: var(--warn-tx); }
+.note-box-text code, .warning-box-text code { font-size: 11.5px; }
+
+/* ── Badges ── */
+.badge { display: inline-block; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 10px; border-radius: 4px; }
+.badge-accent { background-color: var(--accent); }
+.badge-green  { background-color: var(--accent2); }
+.badge-blue   { background-color: var(--accent3); }
+.badge-gold   { background-color: var(--gold); }
+.badge-row { margin: 24px 0 8px; }
+
+/* ── Code block ── */
+.code-block { border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); margin: 16px 0; background: var(--code-bg); }
+.code-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background-color: #13141A; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.code-label { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; }
+.code-copy-btn { background: none; border: none; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; transition: color 150ms ease; padding: 2px 4px; }
+.code-copy-btn:hover { color: rgba(255,255,255,0.7); }
+.code-pre { background-color: var(--code-bg); color: var(--code-text); font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12.5px; line-height: 1.75; padding: 16px 20px; overflow-x: auto; margin: 0; tab-size: 2; }
+.token-command  { color: #87CEEB; font-weight: bold; }
+.token-flag     { color: #5BA4CF; }
+.token-val      { color: #F4A261; }
+.token-string   { color: #98C379; }
+.token-comment  { color: rgba(255,255,255,0.32); font-style: italic; }
+.token-yaml-key { color: #C678DD; }
+.token-operator { color: #E5C07B; }
+
+/* ── Tables ── */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+.table-wrap table { margin: 0; }
+.flag-table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0; }
+.flag-table th { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; background-color: var(--paper3); text-align: left; padding: 8px 12px; border: 1px solid var(--rule); font-weight: 500; }
+.flag-table td { padding: 8px 12px; border: 1px solid var(--rule); color: var(--body-text); vertical-align: top; }
+.flag-table tbody tr { transition: background-color 100ms ease; }
+.flag-table tbody tr:hover { background-color: var(--paper2); }
+.flag-name { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; font-weight: 600; color: var(--flag-c); white-space: nowrap; }
+.flag-val { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--val-c); }
+.compare-table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0; border-radius: 8px; overflow: hidden; }
+.compare-table th { background-color: var(--nav-bg); color: #FFFFFF; font-size: 13px; font-weight: 600; text-align: left; padding: 12px 16px; border: 1px solid var(--nav-bg); }
+.compare-table td { font-size: 13px; padding: 12px 16px; border: 1px solid var(--rule); vertical-align: top; color: var(--body-text); }
+.compare-table tbody tr { transition: background-color 100ms ease; }
+.compare-table tbody tr:hover { background-color: var(--paper2); }
+.compare-table .cell-title { font-weight: 600; color: var(--ink); }
+.compare-table .cell-muted { color: var(--muted); }
+.compare-table .cell-highlight { color: var(--accent2); font-weight: 500; }
+
+/* ── Flow diagram ── */
+.flow-diagram { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }
+.flow-step { display: flex; gap: 16px; }
+.flow-connector { display: flex; flex-direction: column; align-items: center; }
+.flow-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 7px; }
+.flow-dot-accent { background-color: var(--accent); }
+.flow-dot-green  { background-color: var(--accent2); }
+.flow-dot-blue   { background-color: var(--accent3); }
+.flow-dot-gold   { background-color: var(--gold); }
+.flow-line { width: 2px; background-color: var(--rule); flex: 1; margin: 4px 0; }
+.flow-content { padding-bottom: 16px; }
+.flow-title { font-size: 14px; font-weight: 600; color: var(--ink); }
+.flow-desc { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+/* ── Scale diagram ── */
+.scale-diagram { background-color: var(--paper2); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 20px; margin: 16px 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; line-height: 2; color: var(--muted); overflow-x: auto; white-space: nowrap; }
+.scale-diagram .highlight { color: var(--ink); font-weight: bold; }
+.scale-diagram .green { color: var(--accent2); }
+.scale-diagram .red { color: var(--accent); }
+.scale-diagram .blue { color: var(--accent3); }
+
+/* ── Buttons (diagram + labs) ── */
+.btn {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 8px 14px; cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-dark { background: var(--nav-bg); color: #FFFFFF; border-color: var(--nav-bg); }
+.btn-dark:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
+
+/* ── Merchant simulator (§01) ── */
+.sim { border: 1px solid var(--rule); border-radius: 10px; background: var(--paper2); margin: 20px 0; overflow: hidden; }
+.sim-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--rule); background: var(--paper3); }
+.sim-bar-title { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--paper); }
+.seg button { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.04em; border: none; background: transparent; color: var(--muted); padding: 7px 14px; cursor: pointer; transition: background-color 150ms ease, color 150ms ease; }
+.seg button[aria-pressed="true"] { background: var(--nav-bg); color: #FFFFFF; }
+.sim-stack { padding: 16px; display: grid; gap: 10px; }
+.sim-label { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; margin-top: 10px; }
+.sim-label:first-child { margin-top: 0; }
+.sim-label h4 { margin: 0; }
+.sim-hint { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; color: var(--accent3); }
+.sim-verdict { padding: 14px 16px; border-top: 1px solid var(--rule); font-size: 13.5px; color: var(--body-text); background: var(--paper); }
+.sim-verdict strong { color: var(--ink); }
+
+/* Mock screenshots keep a fixed light palette, like real screenshots do */
+.mock { background: #FFFFFF; color: #202223; border: 1px solid #D4D6DB; border-radius: 10px; overflow: hidden; color-scheme: light;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 10px 24px -14px rgba(0,0,0,0.35); font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+.mock-scroll { overflow-x: auto; }
+.mock table { border-collapse: collapse; width: 100%; }
+.mock tr.linked td { background: #EAF1FF !important; }
+.mock tbody tr { transition: background-color 150ms ease; }
+
+/* Store admin (orders) */
+.adm-top { display: flex; align-items: center; gap: 14px; padding: 8px 14px; background: #1A1A1A; color: #E3E3E3; }
+.adm-store { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.adm-avatar { width: 22px; height: 22px; border-radius: 6px; background: #36A269; color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.adm-search { flex: 1; max-width: 340px; margin: 0 auto; background: #303030; border: 1px solid #404040; border-radius: 8px; color: #9A9A9A; font-size: 12px; padding: 4px 10px; }
+.adm-user { font-size: 12px; color: #BDBDBD; white-space: nowrap; }
+.adm-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px 12px; }
+.adm-title { font-size: 16px; font-weight: 600; color: #1A1A1A; }
+.adm-btn { display: inline-block; font-size: 12px; font-weight: 500; border: 1px solid #D0D0D0; border-radius: 8px; padding: 4px 10px; margin-left: 6px; background: #FFFFFF; color: #303030; box-shadow: 0 1px 0 #E3E3E3; }
+.adm-btn.primary { background: #303030; color: #FFFFFF; border-color: #1A1A1A; }
+.adm-stats { display: grid; grid-template-columns: repeat(4, minmax(110px, 1fr)); margin: 0 16px 12px; border: 1px solid #E3E3E3; border-radius: 10px; overflow: hidden; }
+.adm-stat { padding: 8px 12px; border-left: 1px solid #E3E3E3; }
+.adm-stat:first-child { border-left: none; }
+.adm-stat span { display: block; font-size: 11px; color: #616161; }
+.adm-stat b { font-size: 15px; font-weight: 600; color: #1A1A1A; }
+.adm-card { margin: 0 16px 16px; border: 1px solid #E3E3E3; border-radius: 10px; overflow: hidden; }
+.adm-tabs { display: flex; gap: 2px; padding: 6px 8px 0; border-bottom: 1px solid #E3E3E3; }
+.adm-tab { font-size: 12.5px; padding: 6px 10px 8px; color: #616161; border-radius: 6px 6px 0 0; white-space: nowrap; }
+.adm-tab.on { color: #1A1A1A; font-weight: 600; box-shadow: inset 0 -2px 0 #1A1A1A; }
+.adm-table { min-width: 820px; }
+.adm-table th { font-size: 11.5px; font-weight: 500; color: #616161; background: #F7F7F7; text-align: left; padding: 8px 12px; border-bottom: 1px solid #E3E3E3; white-space: nowrap; }
+.adm-table td { font-size: 12.5px; padding: 10px 12px; border-bottom: 1px solid #EBEBEB; vertical-align: top; color: #303030; }
+.adm-table tbody tr:last-child td { border-bottom: none; }
+.adm-table tbody tr:hover td { background: #F7F7F7; }
+.adm-cb { width: 14px; height: 14px; border: 1.5px solid #8A8A8A; border-radius: 4px; display: inline-block; margin-top: 2px; }
+.adm-no { font-weight: 600; color: #1A1A1A; }
+.adm-sub { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; color: #8A8A8A; margin-top: 3px; }
+.adm-note { font-size: 11px; color: #8A6100; margin-top: 3px; max-width: 200px; }
+.adm-amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 500; padding: 1px 8px 1px 6px; border-radius: 8px; white-space: nowrap; }
+.chip::before { content: ''; width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid currentColor; box-sizing: border-box; }
+.chip-pending { background: #FFEBC2; color: #5E4200; }
+.chip-paid { background: #CDFEE1; color: #0C5132; }
+.chip-paid::before, .chip-fulfilled::before { background: currentColor; }
+.chip-unpaid { background: #FEDAD9; color: #8E1F0B; }
+.chip-fulfilled { background: #E4E5E7; color: #303030; }
+.chip-unfulfilled { background: #FFF1A8; color: #4F4700; }
+
+/* Bank statement */
+.stmt { font-family: Arial, Helvetica, sans-serif; color: #1B1B1B; }
+.stmt-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px 16px; padding: 16px 18px 12px; border-bottom: 3px solid #0B3D6E; }
+.stmt-bank { display: flex; gap: 10px; align-items: center; }
+.stmt-bank svg { width: 36px; height: 36px; flex-shrink: 0; }
+.stmt-bank-name { font-size: 17px; font-weight: 700; color: #0B3D6E; letter-spacing: 0.01em; }
+.stmt-bank-sub { font-size: 10.5px; color: #555555; margin-top: 1px; }
+.stmt-title { text-align: right; font-size: 12.5px; font-weight: 700; color: #0B3D6E; text-transform: uppercase; letter-spacing: 0.05em; }
+.stmt-title span { display: block; font-size: 10px; font-weight: 400; color: #666666; text-transform: none; letter-spacing: 0; margin-top: 2px; }
+.stmt-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 24px; padding: 10px 18px; font-size: 11px; background: #F4F7FA; border-bottom: 1px solid #D5DEE8; }
+.stmt-meta div { display: flex; gap: 6px; min-width: 0; }
+.stmt-meta b { min-width: 110px; color: #444444; font-weight: 700; flex-shrink: 0; }
+.stmt-table { min-width: 800px; font-size: 10.8px; }
+.stmt-table th { background: #0B3D6E; color: #FFFFFF; font-weight: 700; text-align: left; padding: 6px 8px; white-space: nowrap; }
+.stmt-table th.num, .stmt-table td.num { text-align: right; }
+.stmt-table td { padding: 6px 8px; border-bottom: 1px solid #E1E6EC; vertical-align: top; }
+.stmt-table td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stmt-table td.nar { width: 320px; overflow-wrap: anywhere; }
+.stmt-table td.ref { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stmt-table tbody tr:nth-child(even) td { background: #FAFBFC; }
+.stmt-table tr.bf td { font-weight: 700; background: #FFFFFF; }
+.hl { background: linear-gradient(transparent 6%, rgba(255, 221, 51, 0.8) 6%, rgba(255, 221, 51, 0.8) 90%, transparent 90%); padding: 0 2px; }
+.stmt-foot { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px 16px; padding: 10px 18px; font-size: 10.5px; color: #333333; border-top: 1px solid #D5DEE8; background: #F4F7FA; }
+.stmt-foot b { display: block; font-size: 11.5px; color: #111111; font-variant-numeric: tabular-nums; }
+.stmt-legal { padding: 8px 18px 12px; font-size: 9.5px; color: #777777; font-style: italic; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; }
+
+/* Payment dashboard */
+.rzp { color: #162133; }
+.rzp-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px 10px; }
+.rzp-crumb { font-size: 11px; color: #7B8595; }
+.rzp-title { font-size: 17px; font-weight: 600; color: #0D1B2E; }
+.rzp-mode { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 999px; background: #E6F6EE; color: #1A7F4B; white-space: nowrap; }
+.rzp-tabs { display: flex; gap: 18px; padding: 0 16px; border-bottom: 1px solid #E6E9EF; font-size: 12.5px; color: #5B6576; overflow-x: auto; }
+.rzp-tabs span { padding: 6px 0 8px; white-space: nowrap; }
+.rzp-tabs .on { color: #2F6FED; font-weight: 600; box-shadow: inset 0 -2px 0 #2F6FED; }
+.rzp-filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 16px; }
+.rzp-filter { font-size: 11.5px; border: 1px solid #D8DDE6; border-radius: 6px; padding: 4px 10px; color: #3B4658; white-space: nowrap; }
+.rzp-filter.search { flex: 1; min-width: 180px; color: #9AA3B2; }
+.rzp-table { min-width: 860px; }
+.rzp-table th { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: #7B8595; font-weight: 600; text-align: left; padding: 8px 12px; background: #F7F9FC; border-top: 1px solid #E6E9EF; border-bottom: 1px solid #E6E9EF; white-space: nowrap; }
+.rzp-table td { font-size: 12.5px; padding: 10px 12px; border-bottom: 1px solid #EEF1F5; vertical-align: top; white-space: nowrap; }
+.rzp-table td.num { font-variant-numeric: tabular-nums; font-weight: 500; }
+.rzp-id { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; color: #2F6FED; }
+.rzp-muted { display: block; font-size: 11px; color: #7B8595; margin-top: 2px; }
+.rzp-status { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #E6F6EE; color: #1A7F4B; }
+.rzp-foot { padding: 10px 16px; font-size: 11.5px; color: #5B6576; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; background: #F7F9FC; }
+
+/* ── Sequence diagram (§05) ── */
+.seq-card { border: 1px solid var(--rule); border-radius: 10px; background: var(--paper2); margin: 20px 0; overflow: hidden; }
+.seq-top { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--rule); background: var(--paper3); }
+.seq-legend { display: flex; flex-wrap: wrap; gap: 14px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; color: var(--muted); }
+.seq-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.seq-legend i { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--muted); }
+.seq-legend i.dash { border-top-style: dashed; }
+.seq-canvas { overflow-x: auto; background: var(--paper); border-bottom: 1px solid var(--rule); }
+.seq-canvas svg { display: block; min-width: 760px; width: 100%; height: auto; }
+.seq-actor rect { fill: var(--surface); stroke: var(--ink); stroke-width: 1.5; transition: stroke 200ms ease, fill 200ms ease; }
+.seq-actor text { font-family: 'DM Sans', system-ui, sans-serif; font-size: 13px; font-weight: 500; fill: var(--ink); }
+.seq-actor text.sub { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 400; fill: var(--muted); }
+.seq-actor.on rect { stroke: var(--accent); fill: var(--accent-soft); stroke-width: 2; }
+.seq-life { stroke: var(--rule); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.seq-life.on { stroke: var(--accent); opacity: 0.55; }
+.msg { cursor: pointer; opacity: 0.18; transition: opacity 250ms ease; }
+.msg .ln { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+.msg .hd { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.msg.ret .ln { stroke-dasharray: 4 5; }
+.msg .lbl { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; fill: var(--ink); paint-order: stroke; stroke: var(--paper); stroke-width: 5px; stroke-linejoin: round; }
+.msg .lbl .n { fill: var(--accent); font-weight: 600; }
+.msg .hit { fill: transparent; stroke: none; }
+.msg.done { opacity: 0.55; }
+.msg.active { opacity: 1; }
+.msg.active .ln { stroke: var(--accent); stroke-width: 2.2; stroke-dasharray: 8 12; animation: dataFlow 1.5s linear infinite; }
+.msg.active .hd { stroke: var(--accent); stroke-width: 2.2; }
+.msg.active .lbl { font-weight: 600; }
+.msg:hover { opacity: 0.85; }
+.msg.active:hover { opacity: 1; }
+.alt-frame rect.frame { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 2 4; }
+.alt-frame line { stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 2 4; }
+.alt-frame rect.tag { fill: var(--ink); }
+.alt-frame text.tagt { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; fill: var(--paper); }
+.alt-frame text.guard { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; fill: var(--muted); paint-order: stroke; stroke: var(--paper); stroke-width: 5px; }
+.alt-frame { opacity: 0.35; transition: opacity 250ms ease; }
+.alt-frame.on { opacity: 1; }
+.packet { fill: var(--accent); stroke: var(--paper); stroke-width: 2.5; }
+.packet-ring { fill: none; stroke: var(--accent); stroke-width: 1.5; opacity: 0.5; }
+.seq-panel { padding: 18px 20px 16px; }
+.seq-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.seq-count { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+.seq-count b { color: var(--ink); font-weight: 600; }
+.seq-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 20px; align-items: start; }
+.seq-title { font-family: 'Fraunces', Georgia, serif; font-size: 19px; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 8px; }
+.seq-route { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--accent3); margin-bottom: 8px; }
+.seq-desc { font-size: 14px; }
+.seq-body .code-block { margin: 0; }
+.seq-body .code-pre { font-size: 12px; min-height: 120px; }
+.seq-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--rule); }
+.seq-dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.seq-dot { width: 10px; height: 10px; border-radius: 50%; border: none; padding: 0; background: var(--rule); cursor: pointer; transition: background-color 150ms ease, transform 150ms ease; }
+.seq-dot.done { background: var(--muted); }
+.seq-dot.active { background: var(--accent); transform: scale(1.35); }
+.seq-dot.gap { margin-left: 8px; }
+.seq-hint { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; color: var(--muted); text-align: center; margin-top: 10px; }
+
+/* ── Signature lab (§08) ── */
+.lab { border: 1px solid var(--rule); border-radius: 10px; background: var(--paper2); margin: 20px 0; overflow: hidden; }
+.lab-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--paper3); border-bottom: 1px solid var(--rule); }
+.lab-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.lab-presets .btn { padding: 6px 10px; font-size: 10px; }
+.lab-presets .btn[aria-pressed="true"] { background: var(--nav-bg); color: #FFFFFF; border-color: var(--nav-bg); }
+.lab-body { padding: 16px; display: grid; gap: 12px; }
+.lab-field label { display: block; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.03em; }
+.lab-field label em { font-style: normal; color: var(--accent); }
+.lab-field input { width: 100%; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12.5px; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; }
+.lab-field input:focus { outline: none; border-color: var(--accent3); box-shadow: 0 0 0 3px var(--blue-soft); }
+.lab-field input[readonly] { color: var(--muted); background: var(--paper3); }
+.lab-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lab-out { border-top: 1px solid var(--rule); padding: 14px 16px; background: var(--paper); display: grid; gap: 8px; }
+.lab-line { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11.5px; color: var(--muted); word-break: break-all; }
+.lab-line b { color: var(--ink); font-weight: 500; }
+.lab-verdict { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; padding: 8px 12px; border-radius: 6px; }
+.lab-verdict.ok { background: var(--green-soft); color: var(--accent2); }
+.lab-verdict.bad { background: var(--accent-soft); color: var(--accent); }
+.lab-story { font-size: 13px; color: var(--body-text); margin: 0; }
+
+/* ── Quiz ── */
+.quiz-box { background-color: var(--panel); border-radius: 12px; padding: 24px; margin: 32px 0; border: 1px solid rgba(255,255,255,0.08); }
+.quiz-box + .quiz-box { margin-top: -16px; }
+.quiz-question { font-size: 15px; color: #FFFFFF; font-weight: 500; line-height: 1.6; margin-bottom: 20px; }
+.quiz-question code { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: #F4A261; }
+.quiz-options { display: flex; flex-direction: column; gap: 12px; }
+.quiz-option { text-align: left; font-family: 'DM Sans', system-ui, sans-serif; font-size: 13.5px; color: rgba(255,255,255,0.7); background: transparent; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 12px 16px; cursor: pointer; transition: all 200ms ease; }
+.quiz-option:hover:not(:disabled) { border-color: var(--accent); color: #FFFFFF; background-color: rgba(200,75,31,0.08); }
+.quiz-option:disabled { cursor: not-allowed; }
+.quiz-option.correct { border-color: var(--accent2) !important; background-color: rgba(26,107,74,0.15) !important; color: #FFFFFF !important; opacity: 1 !important; }
+.quiz-option.incorrect { border-color: var(--accent) !important; background-color: rgba(200,75,31,0.15) !important; color: #FFFFFF !important; opacity: 1 !important; }
+.quiz-feedback { margin-top: 16px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.quiz-feedback.correct { color: #4FC393; }
+.quiz-feedback.incorrect { color: #F08A63; }
+.quiz-feedback.hidden { display: none; }
+
+/* ── Footer ── */
+.site-footer { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; justify-content: space-between; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: var(--muted); border-top: 2px solid var(--rule); padding-top: 16px; margin-top: 64px; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .layout-container { flex-direction: column; }
+  html { scroll-padding-top: calc(96px + env(safe-area-inset-top, 0px)); }
+  .sidebar { position: sticky; top: env(safe-area-inset-top, 0px); width: 100%; height: auto; padding: 10px 0 0; z-index: 20; }
+  .nav-brand { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; padding: 0 16px; }
+  .nav-group-label { display: none; }
+  .nav-list { display: flex; overflow-x: auto; scrollbar-width: none; padding: 0 8px; }
+  .nav-list::-webkit-scrollbar { display: none; }
+  .nav-link { flex-shrink: 0; padding: 8px 12px 10px; border-left: none; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .nav-link.active { border-bottom-color: var(--accent); }
+  .main-content { max-width: 100%; padding: 32px 20px 64px; }
+  .seq-body { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .stmt-meta { grid-template-columns: 1fr; }
+  .stmt-title { text-align: left; }
+  .lab-row2 { grid-template-columns: 1fr; }
+  .section-num-big { font-size: 36px; }
+  .section-title { font-size: 22px; }
+  .seq-controls .btn { padding: 8px 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body>
+<div class="layout-container">
+
+  <!-- ═════════ Sidebar ═════════ -->
+  <nav class="sidebar" aria-label="Sections">
+    <div class="nav-brand">
+      <div class="logo">Payment<span class="accent-dot">.</span>Gateway</div>
+      <div class="sub">Sheryians Coding School</div>
+    </div>
+    <div class="nav-list">
+      <div class="nav-group-label">The problem</div>
+      <a href="#problem" class="nav-link active"><span class="nav-num">1</span>The ₹499 problem</a>
+      <a href="#upi-qr" class="nav-link"><span class="nav-num">2</span>Why not a UPI QR?</a>
+      <div class="nav-group-label">The idea</div>
+      <a href="#order-first" class="nav-link"><span class="nav-num">3</span>Order first, pay second</a>
+      <a href="#actors" class="nav-link"><span class="nav-num">4</span>Who's who</a>
+      <a href="#flow" class="nav-link"><span class="nav-num">5</span>The full flow</a>
+      <div class="nav-group-label">Build it</div>
+      <a href="#create-order" class="nav-link"><span class="nav-num">6</span>Create the order</a>
+      <a href="#checkout" class="nav-link"><span class="nav-num">7</span>Open checkout</a>
+      <a href="#verify" class="nav-link"><span class="nav-num">8</span>Verify the signature</a>
+      <div class="nav-group-label">Production</div>
+      <a href="#gotchas" class="nav-link"><span class="nav-num">9</span>When things go wrong</a>
+      <a href="#recap" class="nav-link"><span class="nav-num">10</span>Recap</a>
+    </div>
+  </nav>
+
+  <!-- ═════════ Main ═════════ -->
+  <main class="main-content">
+  <div class="main-inner">
+
+    <header class="hero animate-fade-up">
+      <div class="hero-eyebrow">Backend Domination · Payment Gateway</div>
+      <h1>Who paid <em>for what?</em></h1>
+      <p class="hero-desc">Two customers, two products, the same ₹499. Before writing any Razorpay code, we'll feel the problem a payment gateway solves, see why a UPI QR on your site can't solve it, and then walk the full order → pay → verify flow one message at a time.</p>
+      <div class="hero-tags">
+        <span class="hero-tag">Express</span>
+        <span class="hero-tag">MongoDB</span>
+        <span class="hero-tag">Razorpay</span>
+        <span class="hero-tag">HMAC-SHA256</span>
+        <span class="hero-tag">Webhooks</span>
+      </div>
+    </header>
+
+    <!-- ═════════ 01 ═════════ -->
+    <section class="section-block animate-fade-up" id="problem">
+      <div class="section-header">
+        <div class="section-num-big">01</div>
+        <div class="section-header-text">
+          <div class="section-title">The ₹499 problem</div>
+          <div class="section-subtitle">One store, two products at the same price. Two payments arrive. Which is which?</div>
+        </div>
+      </div>
+
+      <p>Before we touch Razorpay, let's feel the problem it exists to solve. You've built <strong>Kapda Co.</strong>, a small clothing store. It sells two products, both priced at <strong>₹499</strong>: an Oversized Black Tee and a Canvas Tote Bag. To keep things simple, you've put your UPI QR code on the checkout page. Free, instant, everyone has UPI.</p>
+      <p>One order came in this morning, and you matched it by hand. Then, between 7:41 and 7:44 PM, three more arrive. Your phone buzzes twice: <em>₹499 credited. ₹499 credited.</em></p>
+      <p>Now answer three questions — not with your gut, but the way your <strong>server</strong> would have to answer them at 3 AM with nobody awake:</p>
+      <ul class="plain">
+        <li>Which ₹499 is for the tee, and which is for the tote?</li>
+        <li>Who do you ship to — and what do you ship them?</li>
+        <li>Kabir just sent a payment screenshot on WhatsApp. Did he actually pay?</li>
+      </ul>
+
+      <div class="sim" id="sim">
+        <div class="sim-bar">
+          <span class="sim-bar-title">Kapda Co. · 24 Sep 2026, 7:45 PM</span>
+          <div class="seg" role="group" aria-label="Payment setup">
+            <button type="button" data-mode="qr" aria-pressed="true">Static UPI QR</button>
+            <button type="button" data-mode="gw" aria-pressed="false">Payment gateway</button>
+          </div>
+        </div>
+        <div class="sim-stack">
+          <div class="sim-label"><h4>Your store's admin panel</h4><span class="sim-hint" id="simHint1"></span></div>
+          <div class="mock" id="simOrders"></div>
+          <div class="sim-label"><h4 id="simMoneyTitle">Your bank statement</h4><span class="sim-hint" id="simHint2"></span></div>
+          <div class="mock" id="simMoney"></div>
+        </div>
+        <div class="sim-verdict" id="simVerdict"></div>
+      </div>
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text"><strong>Reconciliation</strong> is matching every rupee that lands in your account to the exact order it belongs to. <strong>Amount can't do it</strong> — two ₹499 products look identical in a bank statement. <strong>Payer name can't do it</strong> — people pay from a parent's or friend's account. You need something unique that is <strong>created before the payment</strong> and <strong>travels with it</strong>.</p>
+      </div>
+      <p>Hold on to that last sentence. Everything else in these notes is that one idea, built properly.</p>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Two customers pay ₹499 each for two different products. What is actually missing that stops you from matching them?</p>
+        <div class="quiz-options" id="quiz-problem-1">
+          <button onclick="answerQuiz('quiz-problem-1', this, true)" class="quiz-option">A &nbsp;—&nbsp; A unique reference that exists before the payment and travels with it</button>
+          <button onclick="answerQuiz('quiz-problem-1', this, false)" class="quiz-option">B &nbsp;—&nbsp; A faster bank notification</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-problem-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">Why isn't Kabir's WhatsApp screenshot proof that he paid?</p>
+        <div class="quiz-options" id="quiz-problem-2">
+          <button onclick="answerQuiz('quiz-problem-2', this, false)" class="quiz-option">A &nbsp;—&nbsp; Screenshots don't show the amount</button>
+          <button onclick="answerQuiz('quiz-problem-2', this, true)" class="quiz-option">B &nbsp;—&nbsp; Anyone can edit or reuse a screenshot, and your server never heard from the bank</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-problem-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 02 ═════════ -->
+    <section class="section-block animate-fade-up" id="upi-qr">
+      <div class="section-header">
+        <div class="section-num-big">02</div>
+        <div class="section-header-text">
+          <div class="section-title">Why not just a UPI QR?</div>
+          <div class="section-subtitle">It's free and everyone has UPI. So what's missing?</div>
+        </div>
+      </div>
+
+      <p>At a chai tapri, a UPI QR works perfectly. You scan, pay ₹20, the soundbox announces the payment, and bhaiya hands you the chai. The verification is a <strong>human standing at the counter</strong>, listening.</p>
+      <p>Your website has no one at the counter. Your <strong>server</strong> has to decide — automatically, for every single order — whether to mark it paid and ship it. So let's look at what a QR actually gives your server.</p>
+
+      <h3>What's inside a static QR</h3>
+      <p>A UPI QR is just a link, drawn as an image. Decode one and you get this:</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">Decoded QR</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre"><span class="token-command">upi://pay</span><span class="token-operator">?</span><span class="token-yaml-key">pa</span>=<span class="token-val">kapdaco@okaxis</span><span class="token-operator">&amp;</span><span class="token-yaml-key">pn</span>=<span class="token-val">Kapda%20Co</span><span class="token-operator">&amp;</span><span class="token-yaml-key">cu</span>=<span class="token-val">INR</span></pre>
+      </div>
+      <div class="table-wrap">
+        <table class="flag-table">
+          <thead><tr><th>Param</th><th>Value used</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><span class="flag-name">pa</span></td><td><span class="flag-val">kapdaco@okaxis</span></td><td>Payee address — your UPI ID. Tells the money where to go.</td></tr>
+            <tr><td><span class="flag-name">pn</span></td><td><span class="flag-val">Kapda Co</span></td><td>Payee name shown in the customer's UPI app.</td></tr>
+            <tr><td><span class="flag-name">cu</span></td><td><span class="flag-val">INR</span></td><td>Currency.</td></tr>
+            <tr><td><span class="flag-name">am</span></td><td><span class="flag-val">— missing</span></td><td>Amount. Usually empty in a static QR, so the customer types it — ₹49, ₹499, anything.</td></tr>
+            <tr><td><span class="flag-name">tn</span></td><td><span class="flag-val">— missing</span></td><td>Transaction note. Optional free text.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Notice what's <strong>not</strong> there: no order, no product, no customer — and most importantly, <strong>no address for your server</strong>. The QR tells money where to go. It never tells your server that it arrived.</p>
+
+      <h3>Where it breaks for a website</h3>
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>What your store needs</th><th>Static UPI QR</th><th>Payment gateway</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-title">Tell your server "this got paid"</td><td class="cell-muted">Nobody tells it. You check the bank app by hand.</td><td class="cell-highlight">Signed response + webhook to your backend ✓</td></tr>
+            <tr><td class="cell-title">Know which order a payment is for</td><td class="cell-muted">Guess from amount and payer name</td><td class="cell-highlight">Every payment carries the order_id you created ✓</td></tr>
+            <tr><td class="cell-title">Charge the right amount</td><td class="cell-muted">Customer types it — and can type anything</td><td class="cell-highlight">Locked when your server creates the order ✓</td></tr>
+            <tr><td class="cell-title">Proof of payment</td><td class="cell-muted">A screenshot — easy to edit or reuse</td><td class="cell-highlight">A signature only Razorpay can produce ✓</td></tr>
+            <tr><td class="cell-title">Payment methods</td><td class="cell-muted">UPI only</td><td class="cell-highlight">UPI, cards, netbanking, wallets, EMI ✓</td></tr>
+            <tr><td class="cell-title">Refunds</td><td class="cell-muted">Manual transfer back</td><td class="cell-highlight">One API call ✓</td></tr>
+            <tr><td class="cell-title">1,000 orders a day</td><td class="cell-muted">Someone reconciling a spreadsheet all day</td><td class="cell-highlight">Fully automatic ✓</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text"><strong>"But I can pre-fill the amount and a note in the QR."</strong> You can — a dynamic QR with <code>am=499&amp;tn=ORDER1042</code> fixes the <em>input</em> side. But still nothing calls your server when the money lands, so you're still reading bank statements. That confirmation channel is exactly what gateways sell; even Razorpay's own UPI QR codes come with APIs and webhooks behind them.</p>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text">A payment gateway is <strong>not a new way to move money</strong> — UPI, cards and netbanking still do that. It's the layer that <strong>ties every payment to your order</strong> and <strong>reports it to your server in a way that can't be faked</strong>.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Your checkout page shows a static UPI QR. A customer pays at 3 AM. Who tells your backend?</p>
+        <div class="quiz-options" id="quiz-qr-1">
+          <button onclick="answerQuiz('quiz-qr-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; The customer's UPI app sends a request to your server</button>
+          <button onclick="answerQuiz('quiz-qr-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; Nobody — someone has to check the bank statement by hand</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-qr-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">What does a gateway add that a QR code doesn't have?</p>
+        <div class="quiz-options" id="quiz-qr-2">
+          <button onclick="answerQuiz('quiz-qr-2', this, true)" class="quiz-option">A &nbsp;—&nbsp; A confirmation channel that links each payment to an order and can't be faked</button>
+          <button onclick="answerQuiz('quiz-qr-2', this, false)" class="quiz-option">B &nbsp;—&nbsp; A cheaper way to move money between banks</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-qr-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 03 ═════════ -->
+    <section class="section-block animate-fade-up" id="order-first">
+      <div class="section-header">
+        <div class="section-num-big">03</div>
+        <div class="section-header-text">
+          <div class="section-title">Order first, pay second</div>
+          <div class="section-subtitle">Give every purchase a unique ID before a single rupee moves.</div>
+        </div>
+      </div>
+
+      <p>Think of a busy food court counter. Two people order the same ₹180 thali. The counter doesn't remember faces — it hands out <strong>token #47</strong> and <strong>token #48</strong>. When the kitchen calls "47", nobody is confused, even though both thalis cost exactly the same.</p>
+      <p>A payment gateway does the same thing with an <code>order_id</code>. Before the customer pays, your backend asks Razorpay to create an order, and Razorpay hands back a unique token like <code>order_PxT8Kd2mVbQ1aZ</code>. You save it next to the product and the customer. From then on, every payment that comes back is tagged with its token.</p>
+
+      <div class="scale-diagram">
+        <span class="highlight">Aarav clicks Buy on the Tee</span>&nbsp;&nbsp;→ <span class="blue">order_PxT7Qm4nHs2cXe</span> → saved as pending (Tee, Aarav, ₹499)<br>
+        <span class="highlight">Meera clicks Buy on the Tote</span> → <span class="blue">order_PxT8Kd2mVbQ1aZ</span> → saved as pending (Tote, Meera, ₹499)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="highlight">A ₹499 payment arrives tagged</span> <span class="blue">order_PxT8Kd2mVbQ1aZ</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="green">DB lookup → Tote, Meera → mark completed, ship the tote ✅</span>
+      </div>
+      <p>Two ₹499 payments are now as different as token 47 and token 48. That's the answer to the two-products-same-price problem: <strong>you never match by amount again</strong>.</p>
+
+      <h3>The three IDs you'll meet</h3>
+      <div class="table-wrap">
+        <table class="flag-table">
+          <thead><tr><th>ID</th><th>Example</th><th>Created by, and when</th><th>Answers</th></tr></thead>
+          <tbody>
+            <tr><td><span class="flag-name">order_id</span></td><td><span class="flag-val">order_PxT8Kd2mVbQ1aZ</span></td><td>Your backend, via Razorpay — <strong>before</strong> payment</td><td>Which purchase is this?</td></tr>
+            <tr><td><span class="flag-name">payment_id</span></td><td><span class="flag-val">pay_PxTB3nLq7Rw9Ye</span></td><td>Razorpay — when the customer actually pays</td><td>Which money movement is this?</td></tr>
+            <tr><td><span class="flag-name">signature</span></td><td><span class="flag-val">2cbde86c…ef658b00</span></td><td>Razorpay — after the payment succeeds</td><td>Is this order + payment pair genuine?</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">One order can have <strong>several payment attempts</strong> — a declined card, then a successful UPI payment. Each attempt gets its own <code>payment_id</code>, but they all belong to the same <code>order_id</code>. That's why your database record is keyed on the order.</p>
+      </div>
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>Razorpay amounts are in paise.</strong> To charge ₹499 you send <code>amount: 49900</code>. Send <code>499</code> and the customer pays ₹4.99.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Aarav and Meera both pay ₹499 in the same second. What lets your backend tell the two payments apart?</p>
+        <div class="quiz-options" id="quiz-order-1">
+          <button onclick="answerQuiz('quiz-order-1', this, false)" class="quiz-option">A &nbsp;—&nbsp; The timestamp on each payment</button>
+          <button onclick="answerQuiz('quiz-order-1', this, true)" class="quiz-option">B &nbsp;—&nbsp; Their order_ids, each created separately before they paid</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-order-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">You want to charge ₹499. What value do you pass as <code>amount</code> when creating the Razorpay order?</p>
+        <div class="quiz-options" id="quiz-order-2">
+          <button onclick="answerQuiz('quiz-order-2', this, true)" class="quiz-option">A &nbsp;—&nbsp; 49900 — the amount in paise</button>
+          <button onclick="answerQuiz('quiz-order-2', this, false)" class="quiz-option">B &nbsp;—&nbsp; 499 — the amount in rupees</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-order-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 04 ═════════ -->
+    <section class="section-block animate-fade-up" id="actors">
+      <div class="section-header">
+        <div class="section-num-big">04</div>
+        <div class="section-header-text">
+          <div class="section-title">Who's who</div>
+          <div class="section-subtitle">Four actors, one rule: the browser asks, the backend decides.</div>
+        </div>
+      </div>
+
+      <p>The reference diagram has four columns. Before following the arrows, know what each one holds and how far you trust it.</p>
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>Actor</th><th>What it holds</th><th>Trust it?</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-title">Frontend (Browser)</td><td>The UI, Razorpay's public <code>key_id</code>, whatever the user types</td><td class="cell-muted">No. The user controls it — DevTools can edit any request.</td></tr>
+            <tr><td class="cell-title">Backend (Express)</td><td><code>key_secret</code>, product prices, the verification logic</td><td class="cell-highlight">Yes. Every decision is made here.</td></tr>
+            <tr><td class="cell-title">MongoDB</td><td>One Payment record per order: order → product → user → status</td><td class="cell-highlight">Yes. The source of truth for "is this order paid?"</td></tr>
+            <tr><td class="cell-title">Razorpay</td><td>The money movement, order_ids, payment_ids, signatures</td><td class="cell-highlight">Yes — once the signature proves it's really Razorpay talking.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text">Razorpay gives you two keys. <strong>key_id</strong> (<code>rzp_test_…</code>) is public — it only says which merchant account a checkout belongs to, so it can go to the browser. <strong>key_secret</strong> is the password to your merchant account and the ingredient of every signature. It lives only in your backend's <code>.env</code>.</p>
+      </div>
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>Never let the frontend send the price.</strong> If your API accepts <code>{ amount: 499 }</code> from the browser, anyone can change it to <code>1</code> and buy the tote for ₹1. The frontend says <em>which</em> product; the backend looks up <em>how much</em>.</p>
+      </div>
+    </section>
+
+    <!-- ═════════ 05 ═════════ -->
+    <section class="section-block animate-fade-up" id="flow">
+      <div class="section-header">
+        <div class="section-num-big">05</div>
+        <div class="section-header-text">
+          <div class="section-title">The full flow, step by step</div>
+          <div class="section-subtitle">All 14 messages from the reference diagram. Click Forward, a dot or an arrow — or use the ← → keys.</div>
+        </div>
+      </div>
+
+      <p>Three phases: <strong>create the order</strong> (steps 1–5), <strong>pay</strong> (6–9) and <strong>verify</strong> (10–14). Watch where each message lands — especially step 9, where the proof of payment arrives in the one place you don't trust.</p>
+
+      <div class="seq-card" id="seqCard">
+        <div class="seq-top">
+          <span class="sim-bar-title">Razorpay checkout · Meera buys the Canvas Tote Bag</span>
+          <div class="seq-legend"><span><i></i>request</span><span><i class="dash"></i>response</span></div>
+        </div>
+        <div class="seq-canvas">
+          <svg id="seqSvg" viewBox="0 0 880 760" role="img" aria-label="Sequence diagram of the Razorpay payment flow between Frontend, Backend, MongoDB and Razorpay"></svg>
+        </div>
+        <div class="seq-panel" aria-live="polite">
+          <div class="seq-meta">
+            <span class="badge badge-blue" id="seqPhase">Phase 1 · Create order</span>
+            <span class="seq-count">Step <b id="seqNum">1</b> / <span id="seqTotal">14</span></span>
+          </div>
+          <div class="seq-body">
+            <div>
+              <div class="seq-route" id="seqRoute"></div>
+              <div class="seq-title" id="seqTitle"></div>
+              <p class="seq-desc" id="seqDesc"></p>
+            </div>
+            <div class="code-block">
+              <div class="code-header"><span class="code-label" id="seqPayloadLabel">Payload</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+              <pre class="code-pre" id="seqPayload"></pre>
+            </div>
+          </div>
+          <div class="seq-controls">
+            <button type="button" class="btn" id="seqBack">Back</button>
+            <div class="seq-dots" id="seqDots" role="group" aria-label="Jump to step"></div>
+            <button type="button" class="btn btn-dark" id="seqNext">Forward</button>
+          </div>
+        </div>
+      </div>
+
+      <h3>The three phases in one breath</h3>
+      <div class="flow-diagram">
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-blue"></div><div class="flow-line"></div></div>
+          <div class="flow-content"><div class="flow-title">Create order · steps 1–5</div><div class="flow-desc">Browser sends a productId → backend prices it from the DB → Razorpay issues an order_id → saved as pending → order_id goes back to the browser.</div></div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-gold"></div><div class="flow-line"></div></div>
+          <div class="flow-content"><div class="flow-title">Pay · steps 6–9</div><div class="flow-desc">Checkout opens for that order_id → the customer pays → Razorpay returns order_id, payment_id and signature to the browser.</div></div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-connector"><div class="flow-dot flow-dot-green"></div></div>
+          <div class="flow-content"><div class="flow-title">Verify · steps 10–14</div><div class="flow-desc">Browser forwards the three values → backend recomputes the signature → valid: the same record flips to completed; invalid: rejected.</div></div>
+        </div>
+      </div>
+
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text"><strong>About step 11.</strong> The reference diagram draws "Validate Signature" as an arrow to Razorpay and back. Conceptually that's fair — you're checking whether Razorpay really signed this. In code, though, there's <strong>no network call</strong>: your backend recomputes the signature with its own <code>key_secret</code>. That's why the animation draws it as a loop on the backend.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">In step 4 the backend saves the payment as <code>pending</code> before the customer has paid anything. Why?</p>
+        <div class="quiz-options" id="quiz-flow-1">
+          <button onclick="answerQuiz('quiz-flow-1', this, true)" class="quiz-option">A &nbsp;—&nbsp; So the link order_id → product → user exists before any money moves</button>
+          <button onclick="answerQuiz('quiz-flow-1', this, false)" class="quiz-option">B &nbsp;—&nbsp; Because Razorpay refuses to open checkout until it sees the record</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-flow-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">In step 9, the payment response reaches your system through the browser. What follows from that?</p>
+        <div class="quiz-options" id="quiz-flow-2">
+          <button onclick="answerQuiz('quiz-flow-2', this, false)" class="quiz-option">A &nbsp;—&nbsp; It came from Razorpay, so the backend can mark the order paid straight away</button>
+          <button onclick="answerQuiz('quiz-flow-2', this, true)" class="quiz-option">B &nbsp;—&nbsp; It could be faked, so the backend must verify the signature first</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-flow-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 06 ═════════ -->
+    <section class="section-block animate-fade-up" id="create-order">
+      <div class="section-header">
+        <div class="section-num-big">06</div>
+        <div class="section-header-text">
+          <div class="section-title">Build it: create the order</div>
+          <div class="section-subtitle">Steps 1–5 — price from the DB, amount in paise, save as pending.</div>
+        </div>
+      </div>
+
+      <div class="badge-row"><span class="badge badge-accent">Step 1 — Install &amp; configure</span></div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">Terminal</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre"><span class="token-command">npm</span> <span class="token-flag">install</span> <span class="token-val">razorpay</span></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">.env</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="env"># Razorpay Dashboard → API Keys (generate them in Test Mode)
+RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxxxx
+RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">src/config/razorpay.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">const Razorpay = require("razorpay");
+
+// One instance for the whole app. key_secret never leaves the server.
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+module.exports = razorpay;</pre>
+      </div>
+
+      <div class="badge-row"><span class="badge badge-accent">Step 2 — The Payment model</span></div>
+      <p>One document per order. It starts as <code>pending</code> and later flips to <code>completed</code> — we <strong>update</strong> it, we never insert a second one. We also store <code>product</code> and <code>user</code>, which the reference diagram leaves out. Those two fields are what answer "who paid for what".</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">src/models/payment.model.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">const mongoose = require("mongoose");
+
+const paymentSchema = new mongoose.Schema(
+  {
+    orderId:   { type: String, required: true, unique: true },
+    paymentId: { type: String },
+    signature: { type: String },
+    amount:    { type: Number, required: true },   // in paise
+    currency:  { type: String, default: "INR" },
+    product:   { type: mongoose.Schema.Types.ObjectId, ref: "product", required: true },
+    user:      { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
+    status:    { type: String, enum: ["pending", "completed", "failed"], default: "pending" },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("payment", paymentSchema);</pre>
+      </div>
+
+      <div class="badge-row"><span class="badge badge-accent">Step 3 — The create-order controller</span></div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">src/controllers/payment.controller.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">const razorpay = require("../config/razorpay");
+const productModel = require("../models/product.model");
+const paymentModel = require("../models/payment.model");
+
+// POST /create/order/:productId   → steps 1–5
+async function createOrder(req, res) {
+  // Price comes from OUR database — never from req.body
+  const product = await productModel.findById(req.params.productId);
+  if (!product) return res.status(404).json({ message: "Product not found" });
+
+  // Step 2–3: ask Razorpay for an order. Amount is in paise.
+  const order = await razorpay.orders.create({
+    amount: Math.round(product.price * 100),
+    currency: "INR",
+    receipt: `rcpt_${Date.now()}`,
+    notes: { productId: String(product._id) },
+  });
+
+  // Step 4: a pending record that ties order → product → user
+  await paymentModel.create({
+    orderId: order.id,
+    amount: order.amount,
+    currency: order.currency,
+    product: product._id,
+    user: req.user._id,
+    status: "pending",
+  });
+
+  // Step 5: send the browser only what checkout needs
+  res.status(201).json({
+    orderId: order.id,
+    amount: order.amount,
+    currency: order.currency,
+    keyId: process.env.RAZORPAY_KEY_ID,
+  });
+}</pre>
+      </div>
+      <div class="table-wrap">
+        <table class="flag-table">
+          <thead><tr><th>Field</th><th>Value used</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><span class="flag-name">amount</span></td><td><span class="flag-val">49900</span></td><td>Amount in the smallest unit (paise). <code>Math.round</code> guards against floating-point results like 49989.99999.</td></tr>
+            <tr><td><span class="flag-name">currency</span></td><td><span class="flag-val">"INR"</span></td><td>Currency code for the order.</td></tr>
+            <tr><td><span class="flag-name">receipt</span></td><td><span class="flag-val">rcpt_1727162400</span></td><td>Your own reference for the order (max 40 characters). Handy for your accounting.</td></tr>
+            <tr><td><span class="flag-name">notes</span></td><td><span class="flag-val">{ productId }</span></td><td>Key-value pairs stored on the order and visible in the Razorpay dashboard — useful when support asks "what was this payment for?"</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="badge-row"><span class="badge badge-accent">Step 4 — Wire the routes</span></div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">src/routes/payment.routes.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">const router = require("express").Router();
+const { createOrder, verifyPayment } = require("../controllers/payment.controller");
+const { authUser } = require("../middlewares/auth.middleware");
+
+router.post("/create/order/:productId", authUser, createOrder);
+router.post("/api/payment/verify", authUser, verifyPayment);
+
+module.exports = router;</pre>
+      </div>
+
+      <div class="badge-row"><span class="badge badge-green">Verify</span></div>
+      <p>Hit the endpoint for the tote and you should get back a fresh order — and see a <code>pending</code> document appear in the <code>payments</code> collection.</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">Response · 201</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">{
+  "orderId": "order_PxT8Kd2mVbQ1aZ",
+  "amount": 49900,
+  "currency": "INR",
+  "keyId": "rzp_test_xxxxxxxxxxxxxx"
+}</pre>
+      </div>
+    </section>
+
+    <!-- ═════════ 07 ═════════ -->
+    <section class="section-block animate-fade-up" id="checkout">
+      <div class="section-header">
+        <div class="section-num-big">07</div>
+        <div class="section-header-text">
+          <div class="section-title">Build it: open checkout</div>
+          <div class="section-subtitle">Steps 6–10 — Razorpay's popup takes the payment; your frontend only carries messages.</div>
+        </div>
+      </div>
+
+      <p>Razorpay's checkout is a popup hosted by Razorpay. Card numbers, OTPs and UPI approvals happen inside it, so they never touch your server. Your frontend's job is tiny: open the popup for the right <code>order_id</code>, then pass whatever comes back to your backend.</p>
+
+      <div class="badge-row"><span class="badge badge-accent">Step 1 — Load checkout.js</span></div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">index.html</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="html">&lt;script src="https://checkout.razorpay.com/v1/checkout.js"&gt;&lt;/script&gt;</pre>
+      </div>
+
+      <div class="badge-row"><span class="badge badge-accent">Step 2 — Create the order, open checkout, forward the result</span></div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">checkout.js (frontend)</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">async function buy(productId) {
+  // Steps 1–5: ask OUR backend to create the order
+  const { data } = await axios.post(`/create/order/${productId}`);
+
+  // Step 6: open Razorpay Checkout for that order
+  const rzp = new window.Razorpay({
+    key: data.keyId,
+    order_id: data.orderId,
+    amount: data.amount,
+    currency: data.currency,
+    name: "Kapda Co.",
+    description: "Canvas Tote Bag",
+
+    // Step 9: Razorpay calls this with the three values
+    handler: async function (response) {
+      // Step 10: hand them to OUR backend. The browser decides nothing.
+      const verify = await axios.post("/api/payment/verify", response);
+      if (verify.data.status === "success") showOrderConfirmed();
+      else showPaymentFailed();
+    },
+  });
+
+  rzp.on("payment.failed", function (res) {
+    showPaymentFailed(res.error.description);
+  });
+
+  rzp.open();
+}</pre>
+      </div>
+      <div class="table-wrap">
+        <table class="flag-table">
+          <thead><tr><th>Option</th><th>Value used</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><span class="flag-name">key</span></td><td><span class="flag-val">rzp_test_…</span></td><td>Public key_id. Tells checkout which merchant account this is.</td></tr>
+            <tr><td><span class="flag-name">order_id</span></td><td><span class="flag-val">order_PxT8Kd2mVbQ1aZ</span></td><td>The order your backend created. This is what locks the amount and links the payment to the tote.</td></tr>
+            <tr><td><span class="flag-name">handler</span></td><td><span class="flag-val">function (response)</span></td><td>Called after a successful payment with <code>razorpay_order_id</code>, <code>razorpay_payment_id</code> and <code>razorpay_signature</code>.</td></tr>
+            <tr><td><span class="flag-name">payment.failed</span></td><td><span class="flag-val">event</span></td><td>Fires when an attempt fails. The customer can retry in the same popup — same order, new payment_id.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="warning-box">
+        <div class="warning-box-icon">⚠️</div>
+        <p class="warning-box-text"><strong>Don't show "Order confirmed" just because the handler ran.</strong> Anyone can call that function from DevTools. The success screen should appear only after your backend says <code>status: "success"</code>.</p>
+      </div>
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">The handler runs <strong>only if the tab is still open</strong> when the payment completes. Battery dies, tab closes, network drops — and step 10 never happens. We fix that with webhooks in section 09.</p>
+      </div>
+    </section>
+
+    <!-- ═════════ 08 ═════════ -->
+    <section class="section-block animate-fade-up" id="verify">
+      <div class="section-header">
+        <div class="section-num-big">08</div>
+        <div class="section-header-text">
+          <div class="section-title">Verify the signature</div>
+          <div class="section-subtitle">Steps 10–14 — the screenshot that can't be faked.</div>
+        </div>
+      </div>
+
+      <p>Go back to Kabir's WhatsApp screenshot. The problem wasn't the picture — it was that <strong>anyone can make that picture</strong>. Step 9 has the same problem: the payment response reaches your backend through the browser, and anyone can open DevTools and send <code>/api/payment/verify</code> whatever values they like.</p>
+      <p>The signature fixes this. After a successful payment, Razorpay computes:</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">How Razorpay signs a payment</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">razorpay_signature = HMAC_SHA256(order_id + "|" + razorpay_payment_id, key_secret)</pre>
+      </div>
+      <p><strong>HMAC</strong> is a hash that needs a secret key. Change one character of the message, or use the wrong key, and the output is completely different. Only two parties know <code>key_secret</code>: Razorpay and your backend. So your backend recomputes the same HMAC and compares. If they match, only Razorpay could have produced it — and it's bound to <strong>this</strong> order and <strong>this</strong> payment.</p>
+
+      <h3>Try to fool the backend</h3>
+      <p>This lab runs real HMAC-SHA256 in your browser with a demo secret. Pick an attack, or edit any field yourself.</p>
+      <div class="lab" id="lab">
+        <div class="lab-top">
+          <span class="sim-bar-title">Signature lab</span>
+          <div class="lab-presets" role="group" aria-label="Scenarios">
+            <button type="button" class="btn" data-preset="genuine" aria-pressed="true">Genuine payment</button>
+            <button type="button" class="btn" data-preset="invented" aria-pressed="false">Invented payment_id</button>
+            <button type="button" class="btn" data-preset="swap" aria-pressed="false">Aarav's payment, Meera's order</button>
+          </div>
+        </div>
+        <div class="lab-body">
+          <p class="lab-story" id="labStory"></p>
+          <div class="lab-row2">
+            <div class="lab-field"><label for="labOrder">razorpay_order_id <em>from request</em></label><input id="labOrder" spellcheck="false" autocomplete="off"></div>
+            <div class="lab-field"><label for="labPay">razorpay_payment_id <em>from request</em></label><input id="labPay" spellcheck="false" autocomplete="off"></div>
+          </div>
+          <div class="lab-field"><label for="labSig">razorpay_signature <em>from request</em></label><input id="labSig" spellcheck="false" autocomplete="off"></div>
+          <div class="lab-field"><label for="labSecret">key_secret — only on your server (demo value)</label><input id="labSecret" value="kapdaco_demo_secret" readonly></div>
+        </div>
+        <div class="lab-out">
+          <div class="lab-line">Backend signs: <b id="labMsg"></b></div>
+          <div class="lab-line">Expected: <b id="labExpected">…</b></div>
+          <div class="lab-verdict" id="labVerdict">Computing…</div>
+        </div>
+      </div>
+
+      <div class="badge-row"><span class="badge badge-accent">Step 1 — The verify controller</span></div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">src/controllers/payment.controller.js</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">const crypto = require("crypto");
+
+// POST /api/payment/verify   → steps 10–14
+async function verifyPayment(req, res) {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+  // Step 11: recompute what Razorpay would have signed
+  const expected = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+    .digest("hex");
+
+  // Step 14: no match → someone tampered with or invented these values
+  if (expected !== razorpay_signature) {
+    return res.status(400).json({ status: "failure", message: "Invalid signature" });
+  }
+
+  // Step 12: update the SAME record we saved as pending in step 4
+  const payment = await paymentModel.findOneAndUpdate(
+    { orderId: razorpay_order_id },
+    { paymentId: razorpay_payment_id, signature: razorpay_signature, status: "completed" },
+    { new: true }
+  );
+  if (!payment) return res.status(404).json({ status: "failure", message: "Order not found" });
+
+  // Step 13
+  res.json({ status: "success", orderId: payment.orderId });
+}</pre>
+      </div>
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">The Razorpay SDK ships the same check as a helper: <code>validatePaymentVerification({ order_id, payment_id }, signature, secret)</code> from <code>razorpay/dist/utils/razorpay-utils</code>. Write it by hand once so you know there's no magic — it's the five lines above.</p>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Razorpay's checkout signature is an HMAC-SHA256 of which string?</p>
+        <div class="quiz-options" id="quiz-verify-1">
+          <button onclick="answerQuiz('quiz-verify-1', this, true)" class="quiz-option">A &nbsp;—&nbsp; order_id + "|" + payment_id</button>
+          <button onclick="answerQuiz('quiz-verify-1', this, false)" class="quiz-option">B &nbsp;—&nbsp; amount + "|" + currency</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-verify-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">Aarav really paid ₹499 for the tee. An attacker sends his payment_id and signature with Meera's tote order_id. What happens?</p>
+        <div class="quiz-options" id="quiz-verify-2">
+          <button onclick="answerQuiz('quiz-verify-2', this, false)" class="quiz-option">A &nbsp;—&nbsp; Accepted — the payment is real and the amount is the same</button>
+          <button onclick="answerQuiz('quiz-verify-2', this, true)" class="quiz-option">B &nbsp;—&nbsp; Rejected — the signature was computed over Aarav's order_id, so the HMAC won't match</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-verify-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 09 ═════════ -->
+    <section class="section-block animate-fade-up" id="gotchas">
+      <div class="section-header">
+        <div class="section-num-big">09</div>
+        <div class="section-header-text">
+          <div class="section-title">When things go wrong</div>
+          <div class="section-subtitle">Closed tabs, repeated requests, and the mistakes that cost real money.</div>
+        </div>
+      </div>
+
+      <h3>The closed-tab problem</h3>
+      <p>Meera pays. Her UPI app confirms. But before Razorpay's popup hands control back, her phone dies. The <code>handler</code> never runs, so step 10 never happens. Razorpay has her money; your database still says <code>pending</code>. She'll be emailing you by morning.</p>
+      <div class="scale-diagram">
+        <span class="green">Payment captured at Razorpay ✅</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="red">Browser closes before the handler runs ✗</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="highlight">/api/payment/verify is never called</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+        <span class="red">DB stuck at pending — paid customer, unshipped order ✗</span>
+      </div>
+      <p>The fix is a <strong>webhook</strong>: you give Razorpay a URL on your backend, and Razorpay calls it directly — server to server — whenever a payment event happens. No browser in the middle, so nothing can close.</p>
+
+      <div class="badge-row"><span class="badge badge-accent">Step 1 — The webhook route</span></div>
+      <div class="code-block">
+        <div class="code-header"><span class="code-label">app.js + webhook controller</span><button onclick="copyCode(this)" class="code-copy-btn">copy</button></div>
+        <pre class="code-pre" data-lang="js">// Register BEFORE app.use(express.json()) — the signature is over the RAW body
+app.post("/api/payment/webhook", express.raw({ type: "application/json" }), handleWebhook);
+app.use(express.json());
+
+async function handleWebhook(req, res) {
+  const expected = crypto
+    .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
+    .update(req.body)                        // raw Buffer, not parsed JSON
+    .digest("hex");
+
+  if (expected !== req.headers["x-razorpay-signature"]) return res.status(400).end();
+
+  const event = JSON.parse(req.body);
+  if (event.event === "payment.captured") {
+    const p = event.payload.payment.entity;
+    await paymentModel.findOneAndUpdate(
+      { orderId: p.order_id, status: "pending" },
+      { paymentId: p.id, status: "completed" }
+    );
+  }
+
+  res.status(200).json({ received: true });  // 2xx, or Razorpay retries
+}</pre>
+      </div>
+      <div class="note-box">
+        <div class="note-box-icon">💡</div>
+        <p class="note-box-text">The <strong>webhook secret</strong> is a different secret from <code>key_secret</code> — you choose it when you add the webhook in the Razorpay dashboard. Webhooks need a public URL, so for local development expose your server with a tunnel such as ngrok.</p>
+      </div>
+      <p>Now the same record can be completed by <strong>either</strong> path — the browser's verify call or the webhook — whichever arrives first. That's why both updates target the record by <code>orderId</code>, and why anything with side effects (reducing stock, sending the confirmation email) should run only when the status actually changes from <code>pending</code>.</p>
+
+      <h3>The usual mistakes</h3>
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>Mistake</th><th>What happens</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-title">Taking the amount from the frontend</td><td class="cell-muted">Someone edits it to ₹1 and buys the tote</td><td class="cell-highlight">Read <code>product.price</code> from the DB</td></tr>
+            <tr><td class="cell-title">Forgetting paise</td><td class="cell-muted">₹499 becomes ₹4.99</td><td class="cell-highlight"><code>Math.round(price * 100)</code></td></tr>
+            <tr><td class="cell-title"><code>key_secret</code> in frontend code or GitHub</td><td class="cell-muted">Anyone can forge signatures and call your account's APIs</td><td class="cell-highlight"><code>.env</code> on the server, in <code>.gitignore</code></td></tr>
+            <tr><td class="cell-title">Marking paid inside the handler</td><td class="cell-muted">A fake "success" from DevTools ships free products</td><td class="cell-highlight">Only the backend decides, after the signature check</td></tr>
+            <tr><td class="cell-title">No webhook</td><td class="cell-muted">Closed tab = paid but stuck at pending</td><td class="cell-highlight">Handle <code>payment.captured</code> server-to-server</td></tr>
+            <tr><td class="cell-title">Side effects on every update</td><td class="cell-muted">Verify + webhook both arrive → stock reduced twice</td><td class="cell-highlight">Filter on <code>status: "pending"</code> before side effects</td></tr>
+            <tr><td class="cell-title">Inserting a new record on success</td><td class="cell-muted">Two documents per order, reports double-count</td><td class="cell-highlight">Update the pending record from step 4</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="quiz-box">
+        <p class="quiz-question">Meera pays successfully but closes the tab before the handler runs. How does your database find out?</p>
+        <div class="quiz-options" id="quiz-prod-1">
+          <button onclick="answerQuiz('quiz-prod-1', this, true)" class="quiz-option">A &nbsp;—&nbsp; Razorpay calls your webhook directly, server to server</button>
+          <button onclick="answerQuiz('quiz-prod-1', this, false)" class="quiz-option">B &nbsp;—&nbsp; It can't — the order stays pending until she opens the site again</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-prod-1-feedback"></div>
+      </div>
+      <div class="quiz-box">
+        <p class="quiz-question">Where should the order amount come from when your backend creates a Razorpay order?</p>
+        <div class="quiz-options" id="quiz-prod-2">
+          <button onclick="answerQuiz('quiz-prod-2', this, false)" class="quiz-option">A &nbsp;—&nbsp; req.body.amount sent by the frontend</button>
+          <button onclick="answerQuiz('quiz-prod-2', this, true)" class="quiz-option">B &nbsp;—&nbsp; product.price read from your own database</button>
+        </div>
+        <div class="quiz-feedback hidden" id="quiz-prod-2-feedback"></div>
+      </div>
+    </section>
+
+    <!-- ═════════ 10 ═════════ -->
+    <section class="section-block animate-fade-up" id="recap">
+      <div class="section-header">
+        <div class="section-num-big">10</div>
+        <div class="section-header-text">
+          <div class="section-title">Recap: why, then what</div>
+          <div class="section-subtitle">The whole module in five questions.</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>Why…</th><th>Because…</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-title">…not a UPI QR on the website?</td><td>Nothing tells your server a payment arrived, and nothing links it to an order. Amount and payer name can't tell two ₹499 products apart.</td></tr>
+            <tr><td class="cell-title">…create the order on the backend first?</td><td>It gives each purchase a unique <code>order_id</code> — the food-court token — and locks the amount to the price in your DB.</td></tr>
+            <tr><td class="cell-title">…save it as pending before payment?</td><td>So <code>order_id → product → user</code> exists before any money moves. Later you update that same record.</td></tr>
+            <tr><td class="cell-title">…verify the signature?</td><td>The payment response came through the browser. Only an HMAC made with <code>key_secret</code> proves Razorpay sent it, for this exact order and payment.</td></tr>
+            <tr><td class="cell-title">…add a webhook?</td><td>The browser might never come back. Razorpay can always reach your server directly.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="concept-box">
+        <div class="concept-box-label">Key Concept</div>
+        <p class="concept-box-text">A payment gateway turns <strong>"₹499 credited"</strong> into <strong>"Meera paid ₹499 for the Canvas Tote Bag, order_PxT8Kd2mVbQ1aZ, and here's proof"</strong>. Everything you built — the order, the pending record, the signature, the webhook — exists to make that sentence true without a human checking.</p>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <span>Sheryians Coding School · Backend Domination · Payment Gateway</span>
+      <span>Stack: Express · MongoDB · Razorpay · Test mode</span>
+    </footer>
+
+  </div>
+  </main>
+</div>
+
+<script>
+/* ───────────── Helpers ───────────── */
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function hlJS(code) {
+  var re = /(\/\/.*$)|(`(?:\\[\s\S]|[^`\\])*`|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|\b(const|let|var|await|async|function|return|if|else|new|require|module|exports|true|false|null|try|catch|throw)\b|\b([A-Za-z_$][\w$]*)(?=[ \t]*:(?!:))|\b(\d+(?:\.\d+)?)\b|\b([A-Za-z_$][\w$]*)(?=[ \t]*\()/gm;
+  var out = '', last = 0, m;
+  while ((m = re.exec(code)) !== null) {
+    if (m[0] === '') { re.lastIndex++; continue; }
+    out += esc(code.slice(last, m.index));
+    if (m[1]) out += '<span class="token-comment">' + esc(m[1]) + '</span>';
+    else if (m[2]) out += '<span class="token-string">' + esc(m[2]) + '</span>';
+    else if (m[3]) out += '<span class="token-yaml-key">' + m[3] + '</span>';
+    else if (m[4]) out += '<span class="token-flag">' + esc(m[4]) + '</span>';
+    else if (m[5]) out += '<span class="token-val">' + m[5] + '</span>';
+    else if (m[6]) out += '<span class="token-command">' + esc(m[6]) + '</span>';
+    last = re.lastIndex;
+  }
+  return out + esc(code.slice(last));
+}
+function hlEnv(code) {
+  return code.split('\n').map(function (l) {
+    if (/^\s*#/.test(l)) return '<span class="token-comment">' + esc(l) + '</span>';
+    var m = l.match(/^([A-Z_]+)=(.*)$/);
+    return m ? '<span class="token-yaml-key">' + m[1] + '</span>=<span class="token-val">' + esc(m[2]) + '</span>' : esc(l);
+  }).join('\n');
+}
+function hlHTML(code) {
+  var re = /(<\/?)([a-zA-Z][\w-]*)|\b([a-zA-Z-]+)(?==)|("[^"]*")|(\/?>)/g, out = '', last = 0, m;
+  while ((m = re.exec(code)) !== null) {
+    out += esc(code.slice(last, m.index));
+    if (m[2]) out += esc(m[1]) + '<span class="token-yaml-key">' + m[2] + '</span>';
+    else if (m[3]) out += '<span class="token-flag">' + m[3] + '</span>';
+    else if (m[4]) out += '<span class="token-string">' + esc(m[4]) + '</span>';
+    else out += esc(m[5]);
+    last = re.lastIndex;
+  }
+  return out + esc(code.slice(last));
+}
+function highlightAll() {
+  document.querySelectorAll('pre.code-pre[data-lang]').forEach(function (pre) {
+    var lang = pre.getAttribute('data-lang'), src = pre.textContent;
+    pre.innerHTML = lang === 'env' ? hlEnv(src) : lang === 'html' ? hlHTML(src) : hlJS(src);
+  });
+}
+
+/* ───────────── Copy ───────────── */
+function copyCode(btn) {
+  var pre = btn.closest('.code-block').querySelector('pre');
+  var text = pre.textContent;
+  function done(ok) {
+    var old = 'copy';
+    btn.textContent = ok ? 'copied' : 'press ⌘/Ctrl+C';
+    setTimeout(function () { btn.textContent = old; }, 1400);
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { fallback(); });
+    } else fallback();
+  } catch (e) { fallback(); }
+  function fallback() {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      var ok = document.execCommand('copy'); document.body.removeChild(ta); done(ok);
+    } catch (e) { done(false); }
+  }
+}
+
+/* ───────────── Quiz ───────────── */
+function answerQuiz(quizId, btn, isCorrect) {
+  var container = document.getElementById(quizId);
+  var feedback = document.getElementById(quizId + '-feedback');
+  container.querySelectorAll('.quiz-option').forEach(function (b) {
+    b.disabled = true;
+    b.classList.add('cursor-not-allowed');
+    b.style.opacity = '0.6';
+  });
+  if (isCorrect) {
+    btn.classList.add('correct');
+    feedback.textContent = '✓ Correct!';
+    feedback.className = 'quiz-feedback correct';
+  } else {
+    btn.classList.add('incorrect');
+    feedback.textContent = '✗ Not quite — try reviewing that section.';
+    feedback.className = 'quiz-feedback incorrect';
+  }
+}
+
+/* ───────────── §01 Merchant simulator ───────────── */
+(function () {
+  var sim = document.getElementById('sim');
+  if (!sim) return;
+  var ORDERS = [
+    { no: '#1043', when: 'Today at 7:44 pm', name: 'Kabir Qureshi', item: 'Canvas Tote Bag × 1', oid: 'order_PxT9Rb6pJt3dYf',
+      note: '💬 Sent a payment screenshot on WhatsApp',
+      qr: ['pending', 'Payment pending', ''], gw: ['unpaid', 'Unpaid', 'No payment on this order'], ful: 'unfulfilled' },
+    { no: '#1042', when: 'Today at 7:42 pm', name: 'Meera Sharma', item: 'Canvas Tote Bag × 1', oid: 'order_PxT8Kd2mVbQ1aZ',
+      qr: ['pending', 'Payment pending', ''], gw: ['paid', 'Paid', 'pay_PxTB3nLq7Rw9Ye'], ful: 'unfulfilled' },
+    { no: '#1041', when: 'Today at 7:41 pm', name: 'Aarav Mehta', item: 'Oversized Black Tee · L × 1', oid: 'order_PxT7Qm4nHs2cXe',
+      qr: ['pending', 'Payment pending', ''], gw: ['paid', 'Paid', 'pay_PxTC9aWm2Kd4Lh'], ful: 'unfulfilled' },
+    { no: '#1040', when: 'Today at 11:01 am', name: 'Rohit Kushwaha', item: 'Oversized Black Tee · M × 1', oid: 'order_PxR2Kq8Wm5Tb1x',
+      qr: ['paid', 'Paid', 'Marked as paid manually'], gw: ['paid', 'Paid', 'pay_PxR4Vn7Lc2Hs9d'], ful: 'fulfilled' }
+  ];
+  var STATS = {
+    qr: [['Orders', '4'], ['Items ordered', '4'], ['Payment pending', '3'], ['Fulfilled', '1']],
+    gw: [['Orders', '4'], ['Items ordered', '4'], ['Unpaid', '1'], ['Fulfilled', '1']]
+  };
+  var STMT = [
+    { n: 'UPI-ROHIT KUSHWAHA-rohitk.97@okicici-ICIC0002318-426709218844-PAYMENT FROM PHONE', who: 'ROHIT KUSHWAHA', r: '0000426709218844', dr: '', cr: '499.00', bal: '18,739.50' },
+    { n: 'NEFT DR-UTIB0000417-VARDHMAN PACKAGING-NETBANK, MUM-N267262481537291-POLY MAILERS', r: 'N267262481537291', dr: '2,360.00', cr: '', bal: '16,379.50' },
+    { n: 'UPI-RAMESH TAILORS-rameshtailors@ybl-YESB0YBLUPI-426712004517-STITCHING CHARGES', r: '0000426712004517', dr: '850.00', cr: '', bal: '15,529.50' },
+    { n: 'UPI-AARAV MEHTA-aarav.mehta02@okhdfcbank-HDFC0001102-426718831457-UPI', who: 'AARAV MEHTA', r: '0000426718831457', dr: '', cr: '499.00', bal: '16,028.50' },
+    { n: 'UPI-SUNITA SHARMA-sunita.sharma68@oksbi-SBIN0004872-426718830912-PAYMENT FROM PHONE', who: 'SUNITA SHARMA', r: '0000426718830912', dr: '', cr: '499.00', bal: '16,527.50' }
+  ];
+  var PAYMENTS = [
+    { id: 'pay_PxTB3nLq7Rw9Ye', oid: 'order_PxT8Kd2mVbQ1aZ', m: 'UPI', md: 'sunita.sharma68@oksbi', c: '+91 97XXXXXX08', e: 'meera.s•••@gmail.com', d: '24 Sep 2026', t: '07:42:31 pm' },
+    { id: 'pay_PxTC9aWm2Kd4Lh', oid: 'order_PxT7Qm4nHs2cXe', m: 'UPI', md: 'aarav.mehta02@okhdfcbank', c: '+91 98XXXXXX41', e: 'aarav.m•••@gmail.com', d: '24 Sep 2026', t: '07:41:08 pm' },
+    { id: 'pay_PxR4Vn7Lc2Hs9d', oid: 'order_PxR2Kq8Wm5Tb1x', m: 'Card', md: 'Visa •••• 2291', c: '+91 88XXXXXX19', e: 'rohit.k•••@gmail.com', d: '24 Sep 2026', t: '11:01:47 am' }
+  ];
+  var TEXT = {
+    qr: {
+      hint1: 'Try it: match each pending order to a credit below',
+      title2: 'Your bank statement',
+      hint2: 'Downloaded from NetBanking at 7:45 PM',
+      verdict: '<strong>Four ₹499 orders, three ₹499 credits — and the statement has no order numbers, no products and no times.</strong> ROHIT KUSHWAHA you matched by hand this morning. AARAV MEHTA is probably your Aarav, but you can\'t be sure. SUNITA SHARMA shares a surname with Meera — her mother, or a coincidence? And Kabir\'s screenshot matches nothing here. Three pending orders, three guesses.'
+    },
+    gw: {
+      hint1: 'Hover or tap an order to find its payment',
+      title2: 'Razorpay Dashboard',
+      hint2: 'The same four orders, as Razorpay sees them',
+      verdict: '<strong>Every payment carries the order_id your server created before the customer paid.</strong> Meera paid from her mother\'s UPI ID, and it doesn\'t matter: the payment is tagged <code>order_PxT8Kd2mVbQ1aZ</code>, which is her tote. Kabir\'s order has no payment at all, so it stays unpaid, screenshot or not. Your bank now receives one settlement credit from Razorpay a couple of days later, and the settlement report lists exactly which payments are inside it.'
+    }
+  };
+  var LOGO = '<svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="17" fill="#0B3D6E"/><path d="M18 7l6 8H12z" fill="#FFFFFF"/><path d="M8 20c3.3-3 6.7-3 10 0s6.7 3 10 0" stroke="#F2B233" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M8 25.5c3.3-3 6.7-3 10 0s6.7 3 10 0" stroke="#FFFFFF" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>';
+
+  function chip(kind, label) { return '<span class="chip chip-' + kind + '">' + esc(label) + '</span>'; }
+
+  function renderOrders(mode) {
+    var rows = ORDERS.map(function (o) {
+      var p = o[mode];
+      var sub = p[2] ? '<div class="adm-sub"' + (p[2].indexOf('pay_') === 0 ? '' : ' style="font-family:inherit"') + '>' + esc(p[2]) + '</div>' : '';
+      return '<tr' + (mode === 'gw' ? ' data-oid="' + o.oid + '" tabindex="0"' : '') + '>' +
+        '<td><span class="adm-cb"></span></td>' +
+        '<td><div class="adm-no">' + o.no + '</div>' + (mode === 'gw' ? '<div class="adm-sub">' + o.oid + '</div>' : '') + '</td>' +
+        '<td style="white-space:nowrap">' + esc(o.when) + '</td>' +
+        '<td><span style="white-space:nowrap">' + esc(o.name) + '</span>' + (o.note ? '<div class="adm-note">' + esc(o.note) + '</div>' : '') + '</td>' +
+        '<td style="white-space:nowrap">' + esc(o.item) + '</td>' +
+        '<td class="adm-amt">₹499.00</td>' +
+        '<td>' + chip(p[0], p[1]) + sub + '</td>' +
+        '<td>' + chip(o.ful, o.ful === 'fulfilled' ? 'Fulfilled' : 'Unfulfilled') + '</td></tr>';
+    }).join('');
+    document.getElementById('simOrders').innerHTML =
+      '<div class="adm-top"><div class="adm-store"><span class="adm-avatar">K</span>Kapda Co.</div>' +
+      '<div class="adm-search">Search</div><div class="adm-user">KC</div></div>' +
+      '<div class="adm-head"><div class="adm-title">Orders</div><div><span class="adm-btn">Export</span><span class="adm-btn primary">Create order</span></div></div>' +
+      '<div class="mock-scroll"><div class="adm-stats" style="min-width:460px">' + STATS[mode].map(function (s) {
+        return '<div class="adm-stat"><span>' + s[0] + '</span><b>' + s[1] + '</b></div>';
+      }).join('') + '</div></div>' +
+      '<div class="adm-card"><div class="adm-tabs"><span class="adm-tab on">All</span><span class="adm-tab">Unfulfilled</span><span class="adm-tab">Unpaid</span><span class="adm-tab">Open</span><span class="adm-tab">Archived</span></div>' +
+      '<div class="mock-scroll"><table class="adm-table"><thead><tr><th></th><th>Order</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment status</th><th>Fulfillment status</th></tr></thead><tbody>' +
+      rows + '</tbody></table></div></div>';
+  }
+
+  function renderStatement() {
+    var rows = STMT.map(function (r) {
+      var n = esc(r.n);
+      if (r.who) n = n.replace(r.who, '<span class="hl">' + r.who + '</span>');
+      return '<tr><td>24/09/26</td><td class="nar">' + n + '</td><td class="ref">' + r.r + '</td><td>24/09/26</td>' +
+        '<td class="num">' + r.dr + '</td><td class="num">' + (r.who ? '<span class="hl">' + r.cr + '</span>' : r.cr) + '</td><td class="num">' + r.bal + '</td></tr>';
+    }).join('');
+    return '<div class="stmt">' +
+      '<div class="stmt-head"><div class="stmt-bank">' + LOGO + '<div><div class="stmt-bank-name">Narmada Bank</div><div class="stmt-bank-sub">MP Nagar Zone-I Branch, Bhopal – 462011</div></div></div>' +
+      '<div class="stmt-title">Statement of Account<span>Current account · NetBanking download</span></div></div>' +
+      '<div class="stmt-meta">' +
+        '<div><b>Account Name</b>KAPDA CO.</div><div><b>Account No.</b>XXXXXXXX4821</div>' +
+        '<div><b>Account Type</b>CURRENT ACCOUNT – REGULAR</div><div><b>Customer ID</b>58213094</div>' +
+        '<div><b>IFSC / MICR</b>NRMD0000142 / 462817004</div><div><b>Currency</b>INR</div>' +
+        '<div><b>Branch</b>MP NAGAR ZONE-I, BHOPAL</div><div><b>Statement Period</b>24/09/2026 to 24/09/2026</div>' +
+      '</div>' +
+      '<div class="mock-scroll"><table class="stmt-table"><thead><tr><th>Date</th><th>Narration</th><th>Chq./Ref.No.</th><th>Value Dt</th><th class="num">Withdrawal Amt.</th><th class="num">Deposit Amt.</th><th class="num">Closing Balance</th></tr></thead><tbody>' +
+      '<tr class="bf"><td></td><td class="nar">OPENING BALANCE</td><td></td><td></td><td class="num"></td><td class="num"></td><td class="num">18,240.50</td></tr>' +
+      rows + '</tbody></table></div>' +
+      '<div class="stmt-foot"><div>Opening Balance<b>18,240.50</b></div><div>Dr Count / Cr Count<b>2 / 3</b></div><div>Debits<b>3,210.00</b></div><div>Credits<b>1,497.00</b></div><div>Closing Balance<b>16,527.50</b></div></div>' +
+      '<div class="stmt-legal"><span>*This is a computer-generated statement and does not require a signature.</span><span>Generated on 24/09/2026 19:45:12 · Page 1 of 1</span></div>' +
+      '</div>';
+  }
+
+  function renderDashboard() {
+    var rows = PAYMENTS.map(function (p) {
+      return '<tr data-oid="' + p.oid + '"><td><span class="rzp-id">' + p.id + '</span></td><td><span class="rzp-id">' + p.oid + '</span></td>' +
+        '<td class="num">₹499.00</td><td>' + p.m + '<span class="rzp-muted">' + esc(p.md) + '</span></td>' +
+        '<td>' + p.c + '<span class="rzp-muted">' + esc(p.e) + '</span></td>' +
+        '<td>' + p.d + '<span class="rzp-muted">' + p.t + '</span></td><td><span class="rzp-status">captured</span></td></tr>';
+    }).join('');
+    return '<div class="rzp">' +
+      '<div class="rzp-top"><div><div class="rzp-crumb">Transactions › Payments</div><div class="rzp-title">Payments</div></div><span class="rzp-mode">● Live mode</span></div>' +
+      '<div class="rzp-tabs"><span class="on">Payments</span><span>Refunds</span><span>Orders</span><span>Disputes</span><span>Settlements</span></div>' +
+      '<div class="rzp-filters"><span class="rzp-filter">Last 24 hours ▾</span><span class="rzp-filter">Status: All ▾</span><span class="rzp-filter">Method: All ▾</span><span class="rzp-filter search">Search by Payment Id or Order Id</span></div>' +
+      '<div class="mock-scroll"><table class="rzp-table"><thead><tr><th>Payment Id</th><th>Order Id</th><th>Amount</th><th>Method</th><th>Customer</th><th>Created On</th><th>Status</th></tr></thead><tbody>' +
+      rows + '</tbody></table></div>' +
+      '<div class="rzp-foot"><span>Showing 3 of 3 payments · ₹1,497.00 captured</span><span>Next settlement: 26 Sep 2026 to A/c XXXXXXXX4821 (fees &amp; GST deducted)</span></div>' +
+      '</div>';
+  }
+
+  var mode = 'qr';
+  function render(m) {
+    mode = m;
+    renderOrders(m);
+    document.getElementById('simMoney').innerHTML = m === 'gw' ? renderDashboard() : renderStatement();
+    document.getElementById('simHint1').textContent = TEXT[m].hint1;
+    document.getElementById('simMoneyTitle').textContent = TEXT[m].title2;
+    document.getElementById('simHint2').textContent = TEXT[m].hint2;
+    document.getElementById('simVerdict').innerHTML = TEXT[m].verdict;
+    sim.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === m)); });
+  }
+
+  // Link an order to its payment (gateway mode only)
+  function link(oid) {
+    sim.querySelectorAll('tr.linked').forEach(function (r) { r.classList.remove('linked'); });
+    if (!oid || mode !== 'gw') return;
+    sim.querySelectorAll('tr[data-oid="' + oid + '"]').forEach(function (r) { r.classList.add('linked'); });
+  }
+  function oidFrom(e) { var tr = e.target.closest && e.target.closest('tr[data-oid]'); return tr ? tr.getAttribute('data-oid') : null; }
+  sim.addEventListener('mouseover', function (e) { link(oidFrom(e)); });
+  sim.addEventListener('mouseleave', function () { link(null); });
+  sim.addEventListener('focusin', function (e) { link(oidFrom(e)); });
+  sim.addEventListener('click', function (e) { var o = oidFrom(e); if (o) link(o); });
+
+  sim.querySelectorAll('.seg button').forEach(function (b) { b.addEventListener('click', function () { render(b.dataset.mode); }); });
+  render('qr');
+})();
+
+/* ───────────── §05 Animated sequence diagram ───────────── */
+(function () {
+  var svg = document.getElementById('seqSvg');
+  if (!svg) return;
+  var NS = 'http://www.w3.org/2000/svg';
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var ACT = {
+    F: { x: 100, name: 'Frontend', sub: 'browser' },
+    B: { x: 340, name: 'Backend', sub: 'express server' },
+    M: { x: 580, name: 'MongoDB', sub: 'payments collection' },
+    R: { x: 790, name: 'Razorpay', sub: 'razorpay server' }
+  };
+  var SIG_SHORT = '2cbde86ce9bc…ef658b00';
+  var STEPS = [
+    { f: 'F', t: 'B', y: 110, ph: 1, lbl: 'POST /create/order/:productId', pl: 'HTTP request',
+      title: 'Meera clicks Buy on the tote',
+      desc: 'The browser sends only which product — the productId in the URL. Not the price. If the browser could send the amount, anyone with DevTools could buy the tote for ₹1.',
+      code: 'POST /create/order/66f1a2c9e4b0d71a3c5e9b12\nAuthorization: Bearer eyJhbGciOi…\n\n// no body: no price, no amount — only WHICH product' },
+    { f: 'B', t: 'R', y: 150, ph: 1, lbl: 'Create Order {amount, currency}', pl: 'Razorpay SDK call',
+      title: 'Backend asks Razorpay to open an order',
+      desc: 'The backend looks up the tote in MongoDB, finds ₹499, converts it to paise and asks Razorpay to create an order. This is the moment the purchase gets its identity — before any money moves. The call is authenticated with key_id + key_secret, which only the server has.',
+      code: '// product.price = 499  →  499 * 100 paise\nrazorpay.orders.create({\n  amount: 49900,\n  currency: "INR",\n  receipt: "rcpt_1727162400",\n  notes: { productId: "66f1a2c9e4b0d71a3c5e9b12" }\n})' },
+    { f: 'R', t: 'B', y: 190, ph: 1, ret: true, lbl: 'Order details {order_id, amount, currency}', pl: 'Razorpay response',
+      title: 'Razorpay returns a unique order_id',
+      desc: 'This is the food-court token. Aarav\'s tee and Meera\'s tote now have different order_ids even though both cost ₹499 — the whole two-products-same-price problem, solved by one field.',
+      code: '{\n  "id": "order_PxT8Kd2mVbQ1aZ",\n  "entity": "order",\n  "amount": 49900,\n  "currency": "INR",\n  "receipt": "rcpt_1727162400",\n  "status": "created"\n}' },
+    { f: 'B', t: 'M', y: 230, ph: 1, lbl: 'Save Payment {status: pending}', pl: 'MongoDB write',
+      title: 'Save a pending record — before payment',
+      desc: 'One document ties order_id → product → user with status pending. Later we update this same record; we never insert a second one. This is how your server will know, at 3 AM, that order_PxT8… was Meera\'s tote.',
+      code: 'payments.insertOne({\n  orderId: "order_PxT8Kd2mVbQ1aZ",\n  amount: 49900,\n  currency: "INR",\n  product: ObjectId("66f1a2c9…"),   // Canvas Tote Bag\n  user: ObjectId("66e0b7d2…"),      // Meera\n  status: "pending"\n})' },
+    { f: 'B', t: 'F', y: 270, ph: 1, ret: true, lbl: 'Return order details', pl: 'HTTP response',
+      title: 'Send the order details to the browser',
+      desc: 'Checkout needs the order_id, amount, currency and the public key_id. The key_secret stays on the server.',
+      code: 'HTTP 201\n{\n  "orderId": "order_PxT8Kd2mVbQ1aZ",\n  "amount": 49900,\n  "currency": "INR",\n  "keyId": "rzp_test_xxxxxxxxxxxxxx"\n}\n// key_secret is NOT in here. Ever.' },
+    { f: 'F', t: 'R', y: 310, ph: 2, lbl: 'Open Razorpay Checkout (order_id)', pl: 'Frontend code',
+      title: 'Frontend opens Razorpay Checkout',
+      desc: 'checkout.js opens Razorpay\'s popup for this order_id. The amount comes from the order, so the customer can\'t type ₹49 the way they could with a static QR.',
+      code: 'new Razorpay({\n  key: "rzp_test_xxxxxxxxxxxxxx",\n  order_id: "order_PxT8Kd2mVbQ1aZ",\n  amount: 49900,\n  currency: "INR",\n  handler: onPaid\n}).open();' },
+    { f: 'R', t: 'F', y: 350, ph: 2, ret: true, lbl: 'Show Checkout UI', pl: 'What the customer sees',
+      title: 'Razorpay shows its payment screen',
+      desc: 'UPI, cards, netbanking, wallets — all inside Razorpay\'s popup. Card numbers, OTPs and UPI approvals never touch your server.',
+      code: '// Razorpay-hosted popup, not your HTML\n// Kapda Co. · Canvas Tote Bag\n// Pay ₹499.00   (locked to the order)\n// UPI | Cards | Netbanking | Wallets' },
+    { f: 'F', t: 'R', y: 390, ph: 2, lbl: 'User completes payment', pl: 'What happens',
+      title: 'The customer pays',
+      desc: 'The only step where money actually moves — between Meera\'s bank and Razorpay. Your backend isn\'t involved at all. Razorpay creates a payment_id for this attempt, linked to the order.',
+      code: '// Meera approves on her UPI app\n// Razorpay creates:  pay_PxTB3nLq7Rw9Ye\n// payment: authorized → captured\n// order:   created → attempted → paid' },
+    { f: 'R', t: 'F', y: 430, ph: 2, ret: true, lbl: 'Payment Response {order_id, payment_id, signature}', pl: 'handler(response)',
+      title: 'Razorpay hands the browser three values',
+      desc: 'order_id, payment_id and signature arrive in the handler — in the browser, the one place you don\'t trust. Anyone could call your verify endpoint with made-up values. That\'s exactly why the signature exists.',
+      code: 'handler({\n  razorpay_order_id:   "order_PxT8Kd2mVbQ1aZ",\n  razorpay_payment_id: "pay_PxTB3nLq7Rw9Ye",\n  razorpay_signature:  "' + SIG_SHORT + '"  // 64 hex chars\n})' },
+    { f: 'F', t: 'B', y: 470, ph: 3, lbl: 'POST /api/payment/verify', pl: 'HTTP request',
+      title: 'The browser forwards the proof',
+      desc: 'The frontend doesn\'t decide anything. It carries the three values to the backend and waits for a verdict.',
+      code: 'POST /api/payment/verify\n{\n  "razorpay_order_id": "order_PxT8Kd2mVbQ1aZ",\n  "razorpay_payment_id": "pay_PxTB3nLq7Rw9Ye",\n  "razorpay_signature": "' + SIG_SHORT + '"\n}' },
+    { f: 'B', t: 'B', y: 508, ph: 3, lbl: 'Validate signature (HMAC-SHA256 with key_secret)', pl: 'Backend, no network call',
+      title: 'Backend recomputes the signature',
+      desc: 'HMAC-SHA256 of "order_id|payment_id" using key_secret. The reference diagram draws this as a round trip to Razorpay, but no network call happens — the backend checks locally. A match means Razorpay really signed this exact pair.',
+      code: 'const expected = HMAC_SHA256(\n  "order_PxT8Kd2mVbQ1aZ|pay_PxTB3nLq7Rw9Ye",\n  process.env.RAZORPAY_KEY_SECRET\n);\n\nexpected === razorpay_signature   // true → valid' },
+    { f: 'B', t: 'M', y: 605, ph: 3, lbl: 'Update Payment {status: completed}', pl: 'MongoDB update',
+      title: 'Valid: update the same record',
+      desc: 'Find the payment by orderId and flip pending → completed, storing paymentId and signature. Because step 4 saved the product and user, you now know exactly who paid for what.',
+      code: 'payments.findOneAndUpdate(\n  { orderId: "order_PxT8Kd2mVbQ1aZ" },\n  { paymentId: "pay_PxTB3nLq7Rw9Ye",\n    signature: "' + SIG_SHORT + '",\n    status: "completed" }   // same record, not a new one\n)' },
+    { f: 'B', t: 'F', y: 645, ph: 3, ret: true, lbl: 'Response {status: success}', pl: 'HTTP response',
+      title: 'Tell the browser it worked',
+      desc: 'Only now does the UI show "Order confirmed". The success screen follows the backend\'s decision, not the popup closing.',
+      code: 'HTTP 200\n{ "status": "success", "orderId": "order_PxT8Kd2mVbQ1aZ" }' },
+    { f: 'B', t: 'F', y: 720, ph: 3, ret: true, bad: true, lbl: 'Response {status: failure}', pl: 'HTTP response',
+      title: 'Invalid: reject it',
+      desc: 'The alternative branch. The signature didn\'t match, so the values were tampered with or invented. Respond with failure and leave the record pending — nothing ships.',
+      code: 'HTTP 400\n{ "status": "failure", "message": "Invalid signature" }\n// record stays pending — nothing ships' }
+  ];
+  var PHASE = {
+    1: ['badge-blue', 'Phase 1 · Create order'],
+    2: ['badge-gold', 'Phase 2 · Pay'],
+    3: ['badge-green', 'Phase 3 · Verify']
+  };
+
+  function el(tag, attrs, parent) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+
+  // lifelines + actors
+  var lifelines = {}, actors = {};
+  Object.keys(ACT).forEach(function (k) {
+    var a = ACT[k];
+    lifelines[k] = el('line', { x1: a.x, y1: 60, x2: a.x, y2: 752, 'class': 'seq-life' }, svg);
+  });
+  // alt frame
+  var alt = el('g', { 'class': 'alt-frame' }, svg);
+  el('rect', { x: 30, y: 552, width: 620, height: 190, rx: 2, 'class': 'frame' }, alt);
+  el('rect', { x: 30, y: 552, width: 36, height: 20, 'class': 'tag' }, alt);
+  el('text', { x: 38, y: 566, 'class': 'tagt' }, alt).textContent = 'alt';
+  el('text', { x: 340, y: 576, 'text-anchor': 'middle', 'class': 'guard' }, alt).textContent = '[signature valid]';
+  el('line', { x1: 30, y1: 668, x2: 650, y2: 668 }, alt);
+  el('text', { x: 340, y: 690, 'text-anchor': 'middle', 'class': 'guard' }, alt).textContent = '[signature invalid]';
+
+  Object.keys(ACT).forEach(function (k) {
+    var a = ACT[k], g = el('g', { 'class': 'seq-actor' }, svg);
+    el('rect', { x: a.x - 75, y: 12, width: 150, height: 48, rx: 3 }, g);
+    el('text', { x: a.x, y: 33, 'text-anchor': 'middle' }, g).textContent = a.name;
+    var s = el('text', { x: a.x, y: 49, 'text-anchor': 'middle', 'class': 'sub' }, g); s.textContent = a.sub;
+    actors[k] = g;
+  });
+
+  // messages
+  var msgs = STEPS.map(function (s, i) {
+    var g = el('g', { 'class': 'msg' + (s.ret ? ' ret' : ''), 'data-i': i }, svg);
+    var d, head, lx, ly, anchor, hit;
+    if (s.f === s.t) {
+      var x = ACT[s.f].x, y = s.y;
+      d = 'M ' + (x + 2) + ' ' + y + ' H ' + (x + 56) + ' V ' + (y + 24) + ' H ' + (x + 6);
+      head = 'M ' + (x + 16) + ' ' + (y + 18) + ' L ' + (x + 6) + ' ' + (y + 24) + ' L ' + (x + 16) + ' ' + (y + 30);
+      lx = x + 66; ly = y + 17; anchor = 'start';
+      hit = { x: x, y: y - 6, width: 64, height: 40 };
+    } else {
+      var x1 = ACT[s.f].x, x2 = ACT[s.t].x, dir = x2 > x1 ? 1 : -1, sx = x1 + dir * 2, ex = x2 - dir * 3;
+      d = 'M ' + sx + ' ' + s.y + ' H ' + ex;
+      head = 'M ' + (ex - dir * 11) + ' ' + (s.y - 6) + ' L ' + ex + ' ' + s.y + ' L ' + (ex - dir * 11) + ' ' + (s.y + 6);
+      lx = (x1 + x2) / 2; ly = s.y - 8; anchor = 'middle';
+      hit = { x: Math.min(x1, x2), y: s.y - 24, width: Math.abs(x2 - x1), height: 32 };
+    }
+    el('rect', { x: hit.x, y: hit.y, width: hit.width, height: hit.height, 'class': 'hit', fill: 'transparent' }, g);
+    var path = el('path', { d: d, 'class': 'ln' }, g);
+    el('path', { d: head, 'class': 'hd' }, g);
+    var t = el('text', { x: lx, y: ly, 'text-anchor': anchor, 'class': 'lbl' }, g);
+    var n = el('tspan', { 'class': 'n' }, t); n.textContent = (i + 1) + '  ';
+    var l = el('tspan', {}, t); l.textContent = s.lbl;
+    g.addEventListener('click', function () { go(i); });
+    return { g: g, path: path };
+  });
+
+  var ring = el('circle', { r: 6, 'class': 'packet-ring', opacity: 0 }, svg);
+  var packet = el('circle', { r: 6, 'class': 'packet', opacity: 0 }, svg);
+
+  // dots
+  var dotsWrap = document.getElementById('seqDots');
+  var dots = STEPS.map(function (s, i) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'seq-dot' + (i === 5 || i === 9 ? ' gap' : '');
+    b.setAttribute('aria-label', 'Step ' + (i + 1) + ': ' + s.title);
+    b.addEventListener('click', function () { go(i); });
+    dotsWrap.appendChild(b);
+    return b;
+  });
+
+  var cur = -1, raf = null;
+  var $ = function (id) { return document.getElementById(id); };
+  $('seqTotal').textContent = STEPS.length;
+
+  function animatePacket(i) {
+    if (raf) cancelAnimationFrame(raf);
+    var p = msgs[i].path, len = p.getTotalLength();
+    var endPt = p.getPointAtLength(len);
+    if (reduce) {
+      packet.setAttribute('cx', endPt.x); packet.setAttribute('cy', endPt.y); packet.setAttribute('opacity', 1);
+      ring.setAttribute('opacity', 0);
+      return;
+    }
+    var start = null, dur = 850 + Math.min(len, 700) * 0.6;
+    ring.setAttribute('opacity', 0);
+    function frame(ts) {
+      if (start === null) start = ts;
+      var k = Math.min(1, (ts - start) / dur);
+      var e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      var pt = p.getPointAtLength(e * len);
+      packet.setAttribute('cx', pt.x); packet.setAttribute('cy', pt.y); packet.setAttribute('opacity', 1);
+      if (k < 1) { raf = requestAnimationFrame(frame); }
+      else { pulse(endPt); }
+    }
+    raf = requestAnimationFrame(frame);
+  }
+  function pulse(pt) {
+    var start = null;
+    ring.setAttribute('cx', pt.x); ring.setAttribute('cy', pt.y);
+    function frame(ts) {
+      if (start === null) start = ts;
+      var k = Math.min(1, (ts - start) / 700);
+      ring.setAttribute('r', 6 + k * 14); ring.setAttribute('opacity', (1 - k) * 0.6);
+      if (k < 1) raf = requestAnimationFrame(frame);
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  function go(i) {
+    if (i < 0 || i >= STEPS.length) return;
+    cur = i;
+    var s = STEPS[i];
+    msgs.forEach(function (m, j) {
+      var done = j < i;
+      if (i === 13 && (j === 11 || j === 12)) done = false; // other branch
+      m.g.setAttribute('class', 'msg' + (STEPS[j].ret ? ' ret' : '') + (j === i ? ' active' : done ? ' done' : ''));
+    });
+    Object.keys(actors).forEach(function (k) {
+      var on = k === s.f || k === s.t;
+      actors[k].setAttribute('class', 'seq-actor' + (on ? ' on' : ''));
+      lifelines[k].setAttribute('class', 'seq-life' + (on ? ' on' : ''));
+    });
+    alt.setAttribute('class', 'alt-frame' + (i >= 11 ? ' on' : ''));
+    dots.forEach(function (d, j) {
+      var done = j < i && !(i === 13 && (j === 11 || j === 12));
+      d.className = 'seq-dot' + (j === 5 || j === 9 ? ' gap' : '') + (j === i ? ' active' : done ? ' done' : '');
+      d.setAttribute('aria-current', j === i ? 'step' : 'false');
+    });
+
+    var ph = PHASE[s.ph];
+    var badge = $('seqPhase');
+    badge.className = 'badge ' + (s.bad ? 'badge-accent' : ph[0]);
+    badge.textContent = ph[1] + (s.bad ? ' · invalid branch' : (i === 11 || i === 12) ? ' · valid branch' : '');
+    $('seqNum').textContent = i + 1;
+    $('seqRoute').textContent = ACT[s.f].name + (s.f === s.t ? ' ↻ itself' : ' → ' + ACT[s.t].name);
+    $('seqTitle').textContent = s.title;
+    $('seqDesc').textContent = s.desc;
+    $('seqPayloadLabel').textContent = s.pl;
+    $('seqPayload').innerHTML = hlJS(s.code);
+    var canvas = svg.parentNode;
+    if (canvas.scrollWidth > canvas.clientWidth + 4) {
+      var scale = svg.getBoundingClientRect().width / 880;
+      var mid = ((ACT[s.f].x + ACT[s.t].x) / 2 + (s.f === s.t ? 120 : 0)) * scale;
+      canvas.scrollTo({ left: Math.max(0, mid - canvas.clientWidth / 2), behavior: reduce ? 'auto' : 'smooth' });
+    }
+    $('seqBack').disabled = i === 0;
+    $('seqNext').textContent = i === STEPS.length - 1 ? 'Start over' : 'Forward';
+    animatePacket(i);
+  }
+
+  $('seqBack').addEventListener('click', function () { go(cur - 1); });
+  $('seqNext').addEventListener('click', function () { go(cur === STEPS.length - 1 ? 0 : cur + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var r = document.getElementById('seqCard').getBoundingClientRect();
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    if (r.bottom < 80 || r.top > vh - 80) return;
+    e.preventDefault();
+    if (e.key === 'ArrowRight') go(Math.min(STEPS.length - 1, cur + 1));
+    else go(Math.max(0, cur - 1));
+  });
+
+  go(0);
+})();
+
+/* ───────────── §08 Signature lab ───────────── */
+(function () {
+  var lab = document.getElementById('lab');
+  if (!lab) return;
+  var M_ORDER = 'order_PxT8Kd2mVbQ1aZ', M_PAY = 'pay_PxTB3nLq7Rw9Ye', M_SIG = '2cbde86ce9bcdd2cb9e7f7505585f31e8e75cb4365cef7c4f76b8de5ef658b00';
+  var A_ORDER = 'order_PxT7Qm4nHs2cXe', A_PAY = 'pay_PxTC9aWm2Kd4Lh', A_SIG = '36dbbe23b9ff1648cd89f8c1299f28ca6f093ccd146965561bfc6114b920d6ef';
+  var KNOWN = {};
+  KNOWN[M_ORDER + '|' + M_PAY] = M_SIG;
+  KNOWN[A_ORDER + '|' + A_PAY] = A_SIG;
+  var PRESETS = {
+    genuine: { o: M_ORDER, p: M_PAY, s: M_SIG, story: 'Meera\'s real payment for the tote, exactly as Razorpay returned it to the browser.' },
+    invented: { o: M_ORDER, p: 'pay_FakeFakeFake01', s: M_SIG, story: 'An attacker keeps Meera\'s signature but swaps in a payment_id they made up, hoping you only check that the order exists.' },
+    swap: { o: M_ORDER, p: A_PAY, s: A_SIG, story: 'Aarav really paid ₹499 — for the tee. Someone replays his payment_id and signature against Meera\'s tote order. Same amount, real payment, wrong order.' }
+  };
+  var fO = document.getElementById('labOrder'), fP = document.getElementById('labPay'), fS = document.getElementById('labSig');
+  var secret = document.getElementById('labSecret').value;
+  var story = document.getElementById('labStory'), msgEl = document.getElementById('labMsg');
+  var expEl = document.getElementById('labExpected'), verdict = document.getElementById('labVerdict');
+  var token = 0;
+
+  function hmacHex(key, msg) {
+    var enc = new TextEncoder();
+    return crypto.subtle.importKey('raw', enc.encode(key), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+      .then(function (k) { return crypto.subtle.sign('HMAC', k, enc.encode(msg)); })
+      .then(function (buf) { return Array.prototype.map.call(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2, '0'); }).join(''); });
+  }
+  function show(expected, msg) {
+    expEl.textContent = expected;
+    var got = fS.value.trim();
+    if (expected && got === expected) {
+      verdict.className = 'lab-verdict ok';
+      verdict.textContent = '✓ Signatures match — valid. Mark ' + fO.value.trim() + ' as completed.';
+    } else {
+      verdict.className = 'lab-verdict bad';
+      verdict.textContent = '✗ Signatures don\'t match — invalid. Respond { status: "failure" } and ship nothing.';
+    }
+  }
+  function compute() {
+    var msg = fO.value.trim() + '|' + fP.value.trim();
+    msgEl.textContent = '"' + msg + '"';
+    var my = ++token;
+    var hasSubtle = window.crypto && window.crypto.subtle && window.TextEncoder;
+    if (!hasSubtle) {
+      if (KNOWN[msg]) show(KNOWN[msg], msg);
+      else { expEl.textContent = '(this browser blocks Web Crypto here — try the presets)'; verdict.className = 'lab-verdict bad'; verdict.textContent = '✗ Signatures don\'t match — invalid.'; }
+      return;
+    }
+    hmacHex(secret, msg).then(function (hex) { if (my === token) show(hex, msg); })
+      .catch(function () { if (my === token) show(KNOWN[msg] || '', msg); });
+  }
+  function setPreset(name) {
+    var p = PRESETS[name];
+    fO.value = p.o; fP.value = p.p; fS.value = p.s; story.textContent = p.story;
+    lab.querySelectorAll('[data-preset]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.preset === name)); });
+    compute();
+  }
+  lab.querySelectorAll('[data-preset]').forEach(function (b) { b.addEventListener('click', function () { setPreset(b.dataset.preset); }); });
+  [fO, fP, fS].forEach(function (f) {
+    f.addEventListener('input', function () {
+      lab.querySelectorAll('[data-preset]').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+      story.textContent = 'Your own experiment. Change a single character anywhere and watch the expected signature change completely.';
+      compute();
+    });
+  });
+  setPreset('genuine');
+})();
+
+/* ───────────── Scrollspy ───────────── */
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.nav-link'));
+  var list = document.querySelector('.nav-list');
+  var map = {};
+  links.forEach(function (l) { map[l.getAttribute('href').slice(1)] = l; });
+  function activate(id) {
+    var link = map[id]; if (!link) return;
+    links.forEach(function (l) { l.classList.toggle('active', l === link); });
+    if (list && list.scrollWidth > list.clientWidth + 4) {
+      list.scrollTo({ left: link.offsetLeft - list.clientWidth / 2 + link.offsetWidth / 2, behavior: 'smooth' });
+    }
+  }
+  var sections = Array.prototype.slice.call(document.querySelectorAll('section.section-block[id]'));
+  var ticking = false, currentId = null;
+  function update() {
+    ticking = false;
+    var line = (window.innerHeight || document.documentElement.clientHeight) * 0.3;
+    var id = sections[0].id;
+    sections.forEach(function (sec) { if (sec.getBoundingClientRect().top <= line) id = sec.id; });
+    if ((window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 4) id = sections[sections.length - 1].id;
+    if (id !== currentId) { currentId = id; activate(id); }
+  }
+  window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+})();
+
+highlightAll();
+</script>
+</body>
+</html>

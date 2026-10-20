@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Authentication — Cohort Session Notes | Sheryians Coding School</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,700;0,900;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Design Tokens ── */
+:root {
+  --ink:       #0E0F14;
+  --paper:     #F5F2EB;
+  --paper2:    #EDE9DF;
+  --paper3:    #E4DFD3;
+  --rule:      #D4CEBC;
+  --muted:     #6B6455;
+  --accent:    #C84B1F;
+  --accent2:   #1A6B4A;
+  --accent3:   #1B4587;
+  --gold:      #B8860B;
+  --code-bg:   #1A1C24;
+  --code-text: #E2DCCC;
+  --flag-c:    #5BA4CF;
+  --val-c:     #F4A261;
+}
+
+/* ── Typography & Resets ── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Keyframe Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes floatPulse {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+@keyframes dataFlow {
+  from { stroke-dashoffset: 200; }
+  to   { stroke-dashoffset: 0; }
+}
+.animate-fade-up     { animation: fadeUp 0.4s ease both; }
+.animate-float-pulse { animation: floatPulse 2.5s ease-in-out infinite; }
+.animate-data-flow   { animation: dataFlow 1.5s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  html { scroll-behavior: auto; }
+}
+
+/* ── Layout ── */
+.layout-container { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background-color: var(--ink);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 32px 0 40px;
+}
+
+.main-content {
+  flex: 1;
+  max-width: calc(100% - 260px);
+  padding: 56px 56px 80px;
+}
+
+/* ── Sidebar / Navigation ── */
+.nav-brand { padding: 0 24px; margin-bottom: 24px; }
+.nav-brand .logo {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.nav-brand .logo .accent-dot { color: var(--accent); }
+.nav-brand .sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+.nav-group-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 24px;
+  margin-top: 16px;
+  margin-bottom: 4px;
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.5);
+  border-left: 2px solid transparent;
+  text-decoration: none;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+.nav-link:hover { color: #FFFFFF; background-color: rgba(255, 255, 255, 0.04); }
+.nav-link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.nav-link.active {
+  color: #FFFFFF;
+  border-left-color: var(--accent);
+  background-color: rgba(200, 75, 31, 0.08);
+}
+.nav-num {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: rgba(255, 255, 255, 0.08);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  border-radius: 4px;
+  color: inherit;
+}
+.nav-link:hover .nav-num,
+.nav-link.active .nav-num { background-color: var(--accent); color: #FFFFFF; }
+
+/* ── Hero ── */
+.hero { margin-bottom: 64px; padding-bottom: 40px; border-bottom: 2px solid var(--rule); }
+.hero-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 14px;
+}
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(36px, 5vw, 58px);
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
+}
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 560px;
+  line-height: 1.65;
+  margin: 0 0 20px;
+}
+.hero-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.hero-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: 9999px;
+  padding: 2px 12px;
+}
+
+/* ── Sections & Typography ── */
+.section-block { margin-bottom: 72px; scroll-margin-top: 24px; }
+.section-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 28px; }
+.section-header-text { padding-top: 4px; }
+.section-num-big {
+  font-family: 'Fraunces', serif;
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--rule);
+  user-select: none;
+  line-height: 1;
+}
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.section-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 28px;
+  margin-bottom: 12px;
+}
+h4 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 24px 0 8px;
+}
+p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14.5px;
+  color: #2A2720;
+  line-height: 1.7;
+  margin-bottom: 12px;
+  max-width: 74ch;
+}
+ul, ol { max-width: 74ch; font-size: 14.5px; color: #2A2720; padding-left: 20px; }
+li { margin-bottom: 6px; }
+code, .inline-code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  background-color: var(--paper3);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.divider { border: none; border-top: 1px solid var(--rule); margin: 40px 0; }
+
+/* ── Concept Box ── */
+.concept-box {
+  background-color: var(--paper2);
+  border-left: 3px solid var(--accent3);
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin: 16px 0;
+}
+.concept-box-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--accent3);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+}
+.concept-box-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ── Note Box ── */
+.note-box {
+  background-color: #FEF9EC;
+  border: 1px solid #EDD97A;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.note-box-icon { font-size: 18px; line-height: 1; margin-top: 2px; }
+.note-box-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: #5C4A00;
+  margin: 0;
+}
+.note-box-text strong { color: #3D3000; }
+
+/* ── Warning Box ── */
+.warning-box {
+  background-color: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.warning-box-icon { font-size: 18px; line-height: 1; margin-top: 2px; }
+.warning-box-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: #7F1D1D;
+  margin: 0;
+}
+
+/* ── Badges ── */
+.badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 10px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+.badge-accent { background-color: var(--accent); }
+.badge-green  { background-color: var(--accent2); }
+.badge-blue   { background-color: var(--accent3); }
+.badge-gold   { background-color: var(--gold); }
+
+/* ── Code Block ── */
+.code-block {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 16px 0;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background-color: #13141A;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.code-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.code-copy-btn {
+  background: none;
+  border: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.code-copy-btn:hover { color: rgba(255, 255, 255, 0.7); }
+.code-pre {
+  background-color: var(--code-bg);
+  color: var(--code-text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.75;
+  padding: 16px 20px;
+  overflow-x: auto;
+  margin: 0;
+}
+.token-command  { color: #87CEEB; font-weight: bold; }
+.token-flag     { color: #5BA4CF; }
+.token-val      { color: #F4A261; }
+.token-string   { color: #98C379; }
+.token-comment  { color: rgba(255, 255, 255, 0.3); font-style: italic; }
+.token-yaml-key { color: #C678DD; }
+.token-operator { color: #E5C07B; }
+
+/* ── Flag Table ── */
+.flag-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  margin: 16px 0;
+}
+.flag-table th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background-color: var(--paper3);
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--rule);
+}
+.flag-table td { padding: 8px 12px; border: 1px solid var(--rule); vertical-align: top; }
+.flag-table tbody tr { transition: background-color 100ms ease; }
+.flag-table tbody tr:hover { background-color: var(--paper2); }
+.flag-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--flag-c);
+}
+.flag-val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--val-c);
+}
+
+/* ── Compare Table ── */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.compare-table th {
+  background-color: var(--ink);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  padding: 12px 16px;
+  border: 1px solid var(--ink);
+}
+.compare-table td { font-size: 13px; padding: 12px 16px; border: 1px solid var(--rule); vertical-align: top; }
+.compare-table tbody tr { transition: background-color 100ms ease; }
+.compare-table tbody tr:hover { background-color: var(--paper2); }
+.compare-table .cell-title { font-weight: 600; color: var(--ink); }
+.compare-table .cell-muted { color: var(--muted); }
+.compare-table .cell-highlight { color: var(--accent2); font-weight: 500; }
+
+/* ── Flow Diagram ── */
+.flow-diagram { display: flex; flex-direction: column; gap: 0; margin: 16px 0; }
+.flow-step { display: flex; gap: 16px; }
+.flow-connector { display: flex; flex-direction: column; align-items: center; }
+.flow-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.flow-dot-accent { background-color: var(--accent); }
+.flow-dot-green  { background-color: var(--accent2); }
+.flow-line { width: 2px; background-color: var(--rule); flex: 1; margin: 4px 0; }
+.flow-content { padding-bottom: 16px; }
+.flow-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.flow-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── Scale Diagram ── */
+.scale-diagram {
+  background-color: var(--paper2);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 2;
+  color: var(--muted);
+  overflow-x: auto;
+}
+.scale-diagram .highlight { color: var(--ink); font-weight: bold; }
+.scale-diagram .green     { color: var(--accent2); }
+.scale-diagram .red       { color: var(--accent); }
+
+/* ── SVG Figure ── */
+.figure {
+  background-color: var(--paper2);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 20px;
+  margin: 16px 0;
+}
+.figure svg { width: 100%; height: auto; display: block; }
+.figure-caption {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 12px;
+  text-align: center;
+}
+.svg-box-fill   { fill: var(--paper); stroke: var(--rule); stroke-width: 1.5; }
+.svg-box-ink    { fill: var(--ink); stroke: var(--ink); }
+.svg-label      { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; fill: var(--ink); }
+.svg-label-inv  { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; fill: #FFFFFF; }
+.svg-mono       { font-family: 'IBM Plex Mono', monospace; font-size: 10px; fill: var(--muted); }
+.svg-mono-accent{ font-family: 'IBM Plex Mono', monospace; font-size: 10px; fill: var(--accent); }
+.svg-arrow      { stroke: var(--rule); stroke-width: 2; fill: none; }
+.svg-arrow-live { stroke: var(--accent); stroke-width: 2; fill: none; stroke-dasharray: 6 6; }
+.svg-question   { font-family: 'Fraunces', serif; font-size: 34px; font-weight: 900; fill: var(--accent); }
+
+/* ── Step-through Diagram ── */
+.stepper { margin: 16px 0; }
+.stepper .figure { margin-bottom: 0; border-radius: 10px 10px 0 0; }
+.stepper-caption {
+  background-color: var(--paper2);
+  border: 1px solid var(--rule);
+  border-top: none;
+  padding: 16px 20px;
+  min-height: 92px;
+}
+.stepper-caption .step-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.stepper-caption .step-detail {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+.stepper-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background-color: var(--ink);
+  border-radius: 0 0 10px 10px;
+  padding: 10px 16px;
+}
+.stepper-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.stepper-btn:hover:not(:disabled) { border-color: var(--accent); color: #FFFFFF; background-color: rgba(200, 75, 31, 0.12); }
+.stepper-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.stepper-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.08em;
+}
+.stepper-count b { color: var(--accent); font-weight: 600; }
+.svg-dim { opacity: 0.28; transition: opacity 250ms ease; }
+.svg-lit { opacity: 1; transition: opacity 250ms ease; }
+
+/* ── JWT Decoder ── */
+.decoder { margin: 16px 0; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); }
+.decoder-body { background-color: var(--code-bg); padding: 16px 20px; }
+.decoder-input {
+  width: 100%;
+  min-height: 92px;
+  resize: vertical;
+  background-color: #13141A;
+  color: var(--code-text);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  word-break: break-all;
+}
+.decoder-input:focus { outline: none; border-color: var(--accent); }
+.decoder-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.decoder-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 150ms ease;
+}
+.decoder-btn:hover { color: #FFFFFF; border-color: var(--accent); background-color: rgba(200, 75, 31, 0.12); }
+.decoder-btn.primary { background-color: var(--accent); border-color: var(--accent); color: #FFFFFF; }
+.decoder-btn.primary:hover { background-color: #A93D17; }
+.decoder-out { margin-top: 16px; display: grid; gap: 12px; }
+.decoder-part { border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; overflow: hidden; }
+.decoder-part-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  background-color: #13141A;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.decoder-part-body {
+  padding: 10px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--code-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+.part-header  { color: var(--val-c); }
+.part-payload { color: #C678DD; }
+.part-sig     { color: #98C379; }
+.token-split-header  { color: var(--val-c); }
+.token-split-payload { color: #C678DD; }
+.token-split-sig     { color: #98C379; }
+.token-split-dot     { color: #FFFFFF; font-weight: bold; }
+
+/* ── Quiz ── */
+.quiz-box {
+  background-color: var(--ink);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 32px 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.quiz-question {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: #FFFFFF;
+  font-weight: 500;
+  line-height: 1.6;
+  margin: 0 0 20px;
+  max-width: none;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 12px; }
+.quiz-option {
+  text-align: left;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--accent); color: #FFFFFF; background-color: rgba(200, 75, 31, 0.08); }
+.quiz-option.correct {
+  border-color: var(--accent2) !important;
+  background-color: rgba(26, 107, 74, 0.15) !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+.quiz-option.incorrect {
+  border-color: var(--accent) !important;
+  background-color: rgba(200, 75, 31, 0.15) !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+}
+.quiz-feedback {
+  margin-top: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.quiz-feedback.correct   { color: var(--accent2); }
+.quiz-feedback.incorrect { color: var(--accent); }
+.quiz-feedback.hidden    { display: none; }
+.cursor-not-allowed { cursor: not-allowed; }
+
+/* ── Footer ── */
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  border-top: 2px solid var(--rule);
+  padding-top: 16px;
+  margin-top: 64px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .layout-container { flex-direction: column; }
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 46vh;
+    position: static;
+    padding: 24px 0 20px;
+  }
+  .main-content { max-width: 100%; padding: 32px 24px 64px; }
+  .section-num-big { font-size: 34px; }
+  .section-title { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="layout-container">
+
+<nav class="sidebar">
+  <div class="nav-brand">
+    <div class="logo">Auth<span class="accent-dot">.</span>101</div>
+    <div class="sub">Sheryians · Cohort</div>
+  </div>
+
+  <div class="nav-group-label">Foundations</div>
+  <a href="#s01" class="nav-link active"><span class="nav-num">1</span> The problem</a>
+  <a href="#s02" class="nav-link"><span class="nav-num">2</span> Authn vs authz</a>
+  <a href="#s03" class="nav-link"><span class="nav-num">3</span> Validation</a>
+
+  <div class="nav-group-label">Tokens</div>
+  <a href="#s04" class="nav-link"><span class="nav-num">4</span> The ID card</a>
+  <a href="#s05" class="nav-link"><span class="nav-num">5</span> Inside a JWT</a>
+  <a href="#s06" class="nav-link"><span class="nav-num">6</span> The payload</a>
+  <a href="#s07" class="nav-link"><span class="nav-num">7</span> The full flow</a>
+
+  <div class="nav-group-label">Passwords</div>
+  <a href="#s08" class="nav-link"><span class="nav-num">8</span> Why we hash</a>
+  <a href="#s09" class="nav-link"><span class="nav-num">9</span> bcrypt in practice</a>
+
+  <div class="nav-group-label">Implementation</div>
+  <a href="#s10" class="nav-link"><span class="nav-num">10</span> Setup</a>
+  <a href="#s11" class="nav-link"><span class="nav-num">11</span> Register route</a>
+  <a href="#s12" class="nav-link"><span class="nav-num">12</span> Login route</a>
+  <a href="#s13" class="nav-link"><span class="nav-num">13</span> Auth middleware</a>
+  <a href="#s14" class="nav-link"><span class="nav-num">14</span> Storing the token</a>
+
+  <div class="nav-group-label">Wrap up</div>
+  <a href="#s15" class="nav-link"><span class="nav-num">15</span> Common mistakes</a>
+  <a href="#s16" class="nav-link"><span class="nav-num">16</span> Recap &amp; practice</a>
+</nav>
+
+<main class="main-content">
+
+<header class="hero animate-fade-up">
+  <div class="hero-eyebrow">Cohort · Backend · Session notes</div>
+  <h1>Who sent <em>this request?</em></h1>
+  <p class="hero-desc">Your server already accepts requests and talks to a database. But every request that arrives looks the same — the server has no idea which human is on the other end. Today we fix that, and then decide what each identified user is allowed to do.</p>
+  <div class="hero-tags">
+    <span class="hero-tag">Validation</span>
+    <span class="hero-tag">Authentication</span>
+    <span class="hero-tag">Authorization</span>
+    <span class="hero-tag">JWT</span>
+    <span class="hero-tag">bcrypt</span>
+    <span class="hero-tag">Express + Mongoose</span>
+  </div>
+</header>
+
+<!-- ══ 01 ══ -->
+<section class="section-block animate-fade-up" id="s01">
+  <div class="section-header">
+    <div class="section-num-big">01</div>
+    <div class="section-header-text">
+      <div class="section-title">The problem — who sent this request?</div>
+      <div class="section-subtitle">Before we write a single line of auth code, feel the problem it solves</div>
+    </div>
+  </div>
+
+  <p>Three users are using your app right now — A, B and C. All three tap the same button, so all three send the same request to the same route on your server.</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 700 250" role="img" aria-label="Three users sending identical requests to one server, which cannot tell them apart">
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 z" fill="#D4CEBC"></path>
+        </marker>
+        <marker id="ah-accent" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+          <path d="M0,0 L7,3 L0,6 z" fill="#C84B1F"></path>
+        </marker>
+      </defs>
+
+      <rect class="svg-box-fill" x="20" y="16" width="120" height="46" rx="8"></rect>
+      <text class="svg-label" x="80" y="38" text-anchor="middle">User A</text>
+      <text class="svg-mono" x="80" y="53" text-anchor="middle">Mumbai</text>
+
+      <rect class="svg-box-fill" x="20" y="96" width="120" height="46" rx="8"></rect>
+      <text class="svg-label" x="80" y="118" text-anchor="middle">User B</text>
+      <text class="svg-mono" x="80" y="133" text-anchor="middle">Bhopal</text>
+
+      <rect class="svg-box-fill" x="20" y="176" width="120" height="46" rx="8"></rect>
+      <text class="svg-label" x="80" y="198" text-anchor="middle">User C</text>
+      <text class="svg-mono" x="80" y="213" text-anchor="middle">Indore</text>
+
+      <path class="svg-arrow-live animate-data-flow" d="M146 39 C 220 39, 235 119, 292 119" marker-end="url(#ah-accent)"></path>
+      <path class="svg-arrow-live animate-data-flow" d="M146 119 L 292 119" marker-end="url(#ah-accent)"></path>
+      <path class="svg-arrow-live animate-data-flow" d="M146 199 C 220 199, 235 119, 292 119" marker-end="url(#ah-accent)"></path>
+
+      <text class="svg-mono-accent" x="215" y="88" text-anchor="middle">POST /api/transfer</text>
+      <text class="svg-mono" x="215" y="160" text-anchor="middle">same shape, same headers</text>
+
+      <text class="svg-question" x="330" y="132" text-anchor="middle">?</text>
+      <path class="svg-arrow" d="M356 119 L 452 119" marker-end="url(#ah)"></path>
+
+      <rect class="svg-box-ink" x="460" y="82" width="210" height="74" rx="8"></rect>
+      <text class="svg-label-inv" x="565" y="112" text-anchor="middle">Your server</text>
+      <text x="565" y="132" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;fill:rgba(255,255,255,0.45)">3 requests · 0 identities</text>
+    </svg>
+    <div class="figure-caption">Fig 1 — the server receives requests, not people</div>
+  </div>
+
+  <p>The server sees three HTTP requests. It does not see A, B or C. HTTP is <strong>stateless</strong> — the server keeps no memory of who connected last time, and nothing in a plain request says who is holding the phone.</p>
+
+  <div class="concept-box">
+    <div class="concept-box-label">Key Concept</div>
+    <p class="concept-box-text"><strong>Stateless</strong> means every request is treated as a brand new stranger. Request number two knows nothing about request number one. If we want the server to recognise a user, the <em>request itself</em> has to carry the proof.</p>
+  </div>
+
+  <h3>Why this actually matters</h3>
+  <p>Take a banking app. A user asks to transfer ₹60,000:</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">Incoming request</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-command">POST</span> <span class="token-val">/api/transfer</span>
+<span class="token-yaml-key">Content-Type:</span> <span class="token-string">application/json</span>
+
+{
+  <span class="token-yaml-key">"to"</span>: <span class="token-string">"XYZ0001234"</span>,
+  <span class="token-yaml-key">"amount"</span>: <span class="token-val">60000</span>
+}
+
+<span class="token-comment"># Transfer 60,000 to XYZ0001234 — fine.</span>
+<span class="token-comment"># But FROM whose account? The request never says.</span></pre>
+  </div>
+
+  <p>Money has to leave someone's account. Without identity this endpoint is either useless or catastrophic. The same question shows up everywhere: whose cart is this, whose posts do I return, whose profile is being edited.</p>
+
+  <div class="warning-box">
+    <div class="warning-box-icon">⚠️</div>
+    <p class="warning-box-text">The obvious fix — <strong>send <code>userId</code> in the body</strong> — is the classic beginner trap. The body is written by the client. Anyone can open Postman and put <em>your</em> id in it and empty your account. <strong>Never trust data the client can edit.</strong> Identity must be something the client cannot fake.</p>
+  </div>
+
+  <div class="concept-box">
+    <div class="concept-box-label">Definition</div>
+    <p class="concept-box-text"><strong>Authentication</strong> is the process of identifying the user who made the request.</p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Why can't the server simply remember who user A is after their first request?</p>
+    <div class="quiz-options" id="quiz-01">
+      <button onclick="answerQuiz('quiz-01', this, false)" class="quiz-option">A &nbsp;—&nbsp; Because the database is too slow to store it</button>
+      <button onclick="answerQuiz('quiz-01', this, true)" class="quiz-option">B &nbsp;—&nbsp; Because HTTP is stateless — each request arrives with no memory of the last one</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-01-feedback"></div>
+  </div>
+</section>
+
+<!-- ══ 02 ══ -->
+<section class="section-block animate-fade-up" id="s02">
+  <div class="section-header">
+    <div class="section-num-big">02</div>
+    <div class="section-header-text">
+      <div class="section-title">Authentication vs authorization</div>
+      <div class="section-subtitle">Two different questions that students mix up in every interview</div>
+    </div>
+  </div>
+
+  <p>These two words look alike and are constantly confused. They answer completely different questions, and they run one after the other.</p>
+
+  <div class="concept-box">
+    <div class="concept-box-label">Key Concept</div>
+    <p class="concept-box-text"><strong>Authentication</strong> asks <em>who are you?</em> &nbsp;·&nbsp; <strong>Authorization</strong> asks <em>are you allowed to do this?</em> You cannot check what someone is allowed to do until you know who they are — so authentication always runs first.</p>
+  </div>
+
+  <table class="compare-table">
+    <thead>
+      <tr><th>What</th><th>Authentication</th><th>Authorization</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="cell-title">The question</td>
+        <td class="cell-muted">Who is this user?</td>
+        <td class="cell-highlight">Is this user allowed to do it?</td>
+      </tr>
+      <tr>
+        <td class="cell-title">Runs</td>
+        <td class="cell-muted">First</td>
+        <td class="cell-highlight">After authentication</td>
+      </tr>
+      <tr>
+        <td class="cell-title">Checks</td>
+        <td class="cell-muted">Credentials or a valid token</td>
+        <td class="cell-highlight">Role, ownership, permissions</td>
+      </tr>
+      <tr>
+        <td class="cell-title">Fails with</td>
+        <td class="cell-muted">401 Unauthorized — "I don't know you"</td>
+        <td class="cell-highlight">403 Forbidden — "I know you, and no"</td>
+      </tr>
+      <tr>
+        <td class="cell-title">In our app</td>
+        <td class="cell-muted">Verifying the token on <code>/api/orders</code></td>
+        <td class="cell-highlight">Only <code>role: "admin"</code> may delete a product</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>A real example from a college: the guard at the gate checks your ID card and confirms you are a student — that is authentication. Inside, that same card does not open the staff room, because the card says <em>student</em>, not <em>teacher</em> — that is authorization.</p>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text"><strong>401 vs 403</strong> is a favourite interview question. 401 means no valid identity was presented. 403 means the identity is fine, the permission is not.</p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">A logged-in normal user hits <code>DELETE /api/products/12</code>, an admin-only route. What should the server respond?</p>
+    <div class="quiz-options" id="quiz-02">
+      <button onclick="answerQuiz('quiz-02', this, false)" class="quiz-option">A &nbsp;—&nbsp; 401 Unauthorized, because the request must be blocked</button>
+      <button onclick="answerQuiz('quiz-02', this, true)" class="quiz-option">B &nbsp;—&nbsp; 403 Forbidden, because we know who they are but their role isn't allowed</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-02-feedback"></div>
+  </div>
+</section>
+
+<!-- ══ 03 ══ -->
+<section class="section-block animate-fade-up" id="s03">
+  <div class="section-header">
+    <div class="section-num-big">03</div>
+    <div class="section-header-text">
+      <div class="section-title">Validation — check before you trust</div>
+      <div class="section-subtitle">The step that runs before we even ask who you are</div>
+    </div>
+  </div>
+
+  <p>Before identity, sanity. <strong>Validation</strong> asks a simpler question: is this data even usable? Is the email actually shaped like an email, is the password long enough, is <code>amount</code> a positive number and not the string <code>"sixty thousand"</code>?</p>
+
+  <h4>Order of a protected request</h4>
+  <div class="flow-diagram">
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">Validation</div>
+        <div class="flow-desc">Is the incoming data the right shape? → 400 Bad Request</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">Authentication</div>
+        <div class="flow-desc">Who is sending this? → 401 Unauthorized</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">Authorization</div>
+        <div class="flow-desc">Is this user allowed here? → 403 Forbidden</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-green"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">Controller</div>
+        <div class="flow-desc">Only now do we touch the database and do the real work.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">controllers/auth.controller.js</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-comment">// the simplest possible validation — do it before anything else</span>
+<span class="token-yaml-key">const</span> { <span class="token-val">name</span>, <span class="token-val">email</span>, <span class="token-val">password</span> } <span class="token-operator">=</span> <span class="token-val">req</span>.<span class="token-val">body</span>;
+
+<span class="token-yaml-key">if</span> (<span class="token-operator">!</span><span class="token-val">name</span> <span class="token-operator">||</span> <span class="token-operator">!</span><span class="token-val">email</span> <span class="token-operator">||</span> <span class="token-operator">!</span><span class="token-val">password</span>) {
+  <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">400</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"name, email and password are required"</span> });
+}
+
+<span class="token-yaml-key">if</span> (<span class="token-val">password</span>.<span class="token-val">length</span> <span class="token-operator">&lt;</span> <span class="token-val">8</span>) {
+  <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">400</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"password must be at least 8 characters"</span> });
+}
+
+<span class="token-comment">// In a real project you would not write this by hand for every route.</span>
+<span class="token-comment">// Use a schema library — zod, joi or express-validator — as middleware.</span></pre>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-box-icon">⚠️</div>
+    <p class="warning-box-text">The validation you wrote in React is <strong>UX, not security</strong>. Postman, curl and a script never open your form. If the only check lives in the browser, there is effectively no check. <strong>Validate on the server, always.</strong></p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">You already block empty emails in your React form. Do you still need the same check in Express?</p>
+    <div class="quiz-options" id="quiz-03">
+      <button onclick="answerQuiz('quiz-03', this, true)" class="quiz-option">A &nbsp;—&nbsp; Yes — anyone can bypass the UI and call the API directly</button>
+      <button onclick="answerQuiz('quiz-03', this, false)" class="quiz-option">B &nbsp;—&nbsp; No — it is already handled, checking twice is wasted work</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-03-feedback"></div>
+  </div>
+</section>
+
+<!-- ══ 04 ══ -->
+<section class="section-block animate-fade-up" id="s04">
+  <div class="section-header">
+    <div class="section-num-big">04</div>
+    <div class="section-header-text">
+      <div class="section-title">The student ID card</div>
+      <div class="section-subtitle">The whole token idea, in a story you have already lived</div>
+    </div>
+  </div>
+
+  <p>Think about joining a school or college.</p>
+
+  <p>First you fill an <strong>admission form</strong> — name, details, documents. The office verifies it and writes you into their register. A few days later they hand you an <strong>ID card</strong>. That card carries your roll number, your class, a photo, an expiry date, and the school's stamp or hologram.</p>
+
+  <p>Now watch what the card does. At the library gate, the computer lab, the swimming pool, the sports club, the ground — you show the card and you are let in. Nobody sends you back to the admission office. Nobody makes you fill the form again. The card <em>is</em> your proof, and every gate can check it on the spot.</p>
+
+  <p>That is exactly what a token does for your server.</p>
+
+  <table class="compare-table">
+    <thead>
+      <tr><th>At school</th><th>In our backend</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="cell-title">Filling the admission form</td><td class="cell-highlight">Registration — <code>POST /api/auth/register</code></td></tr>
+      <tr><td class="cell-title">Office verifies and records you</td><td class="cell-highlight">Server validates and saves the user in the database</td></tr>
+      <tr><td class="cell-title">School issues an ID card</td><td class="cell-highlight">Server signs and issues a JWT</td></tr>
+      <tr><td class="cell-title">Roll number printed on the card</td><td class="cell-highlight">The user's <code>id</code> inside the token payload</td></tr>
+      <tr><td class="cell-title">Stamp / hologram nobody can copy</td><td class="cell-highlight">The signature, created with a secret only the server has</td></tr>
+      <tr><td class="cell-title">Showing the card at the library gate</td><td class="cell-highlight">Sending the token with every request</td></tr>
+      <tr><td class="cell-title">Card valid till March 2027</td><td class="cell-highlight"><code>expiresIn</code> — the token stops working after that</td></tr>
+      <tr><td class="cell-title">Lost card? Report it, get a new one</td><td class="cell-highlight">Logout / re-login issues a fresh token</td></tr>
+    </tbody>
+  </table>
+
+  <div class="concept-box">
+    <div class="concept-box-label">Key Concept</div>
+    <p class="concept-box-text">The gatekeeper never calls the admission office. Everything needed to trust you is <strong>printed on the card itself</strong>, and the hologram proves it is genuine. That is why JWT auth is called <strong>stateless</strong> — the server does not have to store a session for you anywhere.</p>
+  </div>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text">Push the analogy one more step and you get authorization for free: a <strong>student card</strong> opens the library, a <strong>teacher card</strong> opens the staff room. Same card system, different role printed on it.</p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">In the ID card analogy, what plays the role of the school's hologram?</p>
+    <div class="quiz-options" id="quiz-04">
+      <button onclick="answerQuiz('quiz-04', this, false)" class="quiz-option">A &nbsp;—&nbsp; The payload, because it holds the user's details</button>
+      <button onclick="answerQuiz('quiz-04', this, true)" class="quiz-option">B &nbsp;—&nbsp; The signature, because only the server's secret can produce it</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-04-feedback"></div>
+  </div>
+</section>
+
+<!-- ══ 05 ══ -->
+<section class="section-block animate-fade-up" id="s05">
+  <div class="section-header">
+    <div class="section-num-big">05</div>
+    <div class="section-header-text">
+      <div class="section-title">Inside a JWT</div>
+      <div class="section-subtitle">Three parts, two dots, and one very common misunderstanding</div>
+    </div>
+  </div>
+
+  <p><strong>JWT</strong> stands for JSON Web Token. It is a long string that looks like random noise, but it is not random at all. Look for the two dots — they split it into three parts.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">A real JWT</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-split-header">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</span><span class="token-split-dot">.</span><span class="token-split-payload">eyJpZCI6IjY4ZjNhMWM5NGU3YjJkMDAxMmM5YWI0NSIsInJvbGUiOiJzdHVkZW50IiwiaWF0IjoxNzU2NzAzNDAwLCJleHAiOjE3NTczMDgyMDB9</span><span class="token-split-dot">.</span><span class="token-split-sig">Jz74pc6s1u5dKsQOWBkuKcfGXT4Mz3IVg2GiJBvDaYU</span>
+
+<span class="token-comment"># header . payload . signature</span></pre>
+  </div>
+
+  <table class="flag-table">
+    <thead>
+      <tr><th>Part</th><th>Holds</th><th>What it is for</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="flag-name">Header</span></td>
+        <td><span class="flag-val">{ alg, typ }</span></td>
+        <td>Which algorithm signed this token. Usually HS256, and the type is JWT.</td>
+      </tr>
+      <tr>
+        <td><span class="flag-name">Payload</span></td>
+        <td><span class="flag-val">{ id, role, iat, exp }</span></td>
+        <td>The actual data — the "claims". This is what your server reads to know who the user is.</td>
+      </tr>
+      <tr>
+        <td><span class="flag-name">Signature</span></td>
+        <td><span class="flag-val">HMACSHA256(...)</span></td>
+        <td>Header + payload signed with your secret key. This is the hologram — proof the token came from your server and was not edited.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Decode it yourself</h3>
+  <p>The first two parts are just JSON, Base64URL-encoded. No key, no password, no special tool — the browser can read them. Paste any token below and see it open up.</p>
+
+  <div class="decoder">
+    <div class="code-header">
+      <span class="code-label">JWT decoder — paste a token</span>
+      <button onclick="decodeToken()" class="code-copy-btn">decode</button>
+    </div>
+    <div class="decoder-body">
+      <textarea id="jwt-input" class="decoder-input" spellcheck="false" aria-label="JWT to decode">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjNhMWM5NGU3YjJkMDAxMmM5YWI0NSIsInJvbGUiOiJzdHVkZW50IiwiaWF0IjoxNzU2NzAzNDAwLCJleHAiOjE3NTczMDgyMDB9.Jz74pc6s1u5dKsQOWBkuKcfGXT4Mz3IVg2GiJBvDaYU</textarea>
+      <div class="decoder-actions">
+        <button class="decoder-btn primary" onclick="decodeToken()">Decode token</button>
+        <button class="decoder-btn" onclick="loadSample('valid')">Load student token</button>
+        <button class="decoder-btn" onclick="loadSample('tampered')">Load edited token</button>
+        <button class="decoder-btn" onclick="clearDecoder()">Clear</button>
+      </div>
+      <div class="decoder-out" id="jwt-out"></div>
+    </div>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-box-icon">⚠️</div>
+    <p class="warning-box-text">Base64URL is <strong>encoding, not encryption</strong>. A JWT is readable by anyone who has it — the user, a browser extension, anyone reading a log file. <strong>Never put a password, OTP, card number or Aadhaar inside a token.</strong></p>
+  </div>
+
+  <h3>Then what stops someone editing it?</h3>
+  <p>Try it live: press <strong>Load edited token</strong> above. Someone took the student token, changed <code>"role": "student"</code> to <code>"role": "admin"</code>, and re-encoded the payload. It decodes perfectly. It looks like a valid admin token.</p>
+
+  <p>But the signature was calculated from the <em>original</em> header and payload using a secret that only your server knows. Change one character of the payload and the signature no longer matches. When your server runs <code>jwt.verify()</code>, it recomputes the signature and sees the mismatch — the token is rejected.</p>
+
+  <div class="scale-diagram">
+    <span class="highlight">Attacker edits payload → role: "admin"</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    <span class="highlight">Server recomputes signature using its secret</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    <span class="red">Computed signature ≠ signature on the token</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    <span class="green">jwt.verify() throws → 401 Unauthorized ✅</span>
+  </div>
+
+  <div class="concept-box">
+    <div class="concept-box-label">Key Concept</div>
+    <p class="concept-box-text">A JWT is <strong>readable by everyone, forgeable by no one</strong>. Read access is public. Write access needs the secret. That single line explains almost every JWT rule you will ever be told.</p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Your teammate says "the payload is safe, it's encrypted". Are they right?</p>
+    <div class="quiz-options" id="quiz-05">
+      <button onclick="answerQuiz('quiz-05', this, false)" class="quiz-option">A &nbsp;—&nbsp; Yes — you need the secret key to read a JWT payload</button>
+      <button onclick="answerQuiz('quiz-05', this, true)" class="quiz-option">B &nbsp;—&nbsp; No — it is only Base64URL encoded, anyone holding the token can read it</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-05-feedback"></div>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">An attacker edits the payload of a token they stole. What happens on the server?</p>
+    <div class="quiz-options" id="quiz-05b">
+      <button onclick="answerQuiz('quiz-05b', this, true)" class="quiz-option">A &nbsp;—&nbsp; Signature verification fails, because the signature was made from the original payload</button>
+      <button onclick="answerQuiz('quiz-05b', this, false)" class="quiz-option">B &nbsp;—&nbsp; Nothing — the server trusts whatever the payload says</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-05b-feedback"></div>
+  </div>
+</section>
+
+<!-- ══ 06 ══ -->
+<section class="section-block animate-fade-up" id="s06">
+  <div class="section-header">
+    <div class="section-num-big">06</div>
+    <div class="section-header-text">
+      <div class="section-title">What goes inside the payload</div>
+      <div class="section-subtitle">Keep it small, keep it boring</div>
+    </div>
+  </div>
+
+  <p>Since the payload is public, the rule writes itself: put in the minimum the server needs to identify the user, and nothing else. In practice that is the user's <strong>id</strong>, and — if you have roles — the <strong>role</strong>.</p>
+
+  <table class="compare-table">
+    <thead>
+      <tr><th>Field</th><th>Put it in the token?</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="cell-title"><code>id</code> / <code>_id</code></td><td class="cell-highlight">Yes</td><td class="cell-muted">The whole point — it tells the server which database document this request belongs to.</td></tr>
+      <tr><td class="cell-title"><code>role</code></td><td class="cell-highlight">Yes</td><td class="cell-muted">Lets authorization run without an extra DB call. Not secret information.</td></tr>
+      <tr><td class="cell-title"><code>iat</code>, <code>exp</code></td><td class="cell-highlight">Automatic</td><td class="cell-muted">Issued-at and expiry. The library adds these for you when you pass <code>expiresIn</code>.</td></tr>
+      <tr><td class="cell-title">Password or its hash</td><td class="cell-muted">Never</td><td class="cell-muted">It would be public. This is the single worst JWT mistake.</td></tr>
+      <tr><td class="cell-title">Phone, address, Aadhaar, DOB</td><td class="cell-muted">No</td><td class="cell-muted">Personal data that anyone holding the token could read. Fetch it from the DB when needed.</td></tr>
+      <tr><td class="cell-title">Cart, orders, big objects</td><td class="cell-muted">No</td><td class="cell-muted">The token travels with every single request. Keep it light.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">utils/token.js</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-yaml-key">const</span> <span class="token-val">jwt</span> <span class="token-operator">=</span> <span class="token-command">require</span>(<span class="token-string">"jsonwebtoken"</span>);
+
+<span class="token-yaml-key">function</span> <span class="token-command">signToken</span>(<span class="token-val">user</span>) {
+  <span class="token-yaml-key">return</span> <span class="token-val">jwt</span>.<span class="token-command">sign</span>(
+    { <span class="token-yaml-key">id</span>: <span class="token-val">user</span>.<span class="token-val">_id</span>, <span class="token-yaml-key">role</span>: <span class="token-val">user</span>.<span class="token-val">role</span> },   <span class="token-comment">// payload — small on purpose</span>
+    <span class="token-val">process</span>.<span class="token-val">env</span>.<span class="token-val">JWT_SECRET</span>,                <span class="token-comment">// secret — never hardcode it</span>
+    { <span class="token-yaml-key">expiresIn</span>: <span class="token-string">"7d"</span> }                    <span class="token-comment">// adds iat + exp for you</span>
+  );
+}
+
+<span class="token-val">module</span>.<span class="token-val">exports</span> <span class="token-operator">=</span> { <span class="token-val">signToken</span> };</pre>
+  </div>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text">A token is a <strong>photocopy taken at login time</strong>, not a live view of the database. If you promote a user to admin today, their old token still says <code>student</code> until it expires — and if you demote an admin, their old token still says <code>admin</code>. That is exactly why tokens should be short-lived.</p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">A student wants to store the user's phone number in the token to avoid a database call. What do you tell them?</p>
+    <div class="quiz-options" id="quiz-06">
+      <button onclick="answerQuiz('quiz-06', this, true)" class="quiz-option">A &nbsp;—&nbsp; Don't — the payload is public, so personal data must not go in it</button>
+      <button onclick="answerQuiz('quiz-06', this, false)" class="quiz-option">B &nbsp;—&nbsp; Fine — the signature protects everything inside the payload</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-06-feedback"></div>
+  </div>
+</section>
+
+<!-- ══ 07 ══ -->
+<section class="section-block animate-fade-up" id="s07">
+  <div class="section-header">
+    <div class="section-num-big">07</div>
+    <div class="section-header-text">
+      <div class="section-title">The complete flow, step by step</div>
+      <div class="section-subtitle">Walk it forward and backward until the whole class can narrate it</div>
+    </div>
+  </div>
+
+  <p>Everything so far in one journey. Use the buttons to move through it — one step at a time.</p>
+
+  <div class="stepper" id="auth-stepper">
+    <div class="figure">
+      <svg viewBox="0 0 700 280" role="img" aria-label="Step by step diagram of the login and protected request flow">
+        <g id="n-client" class="svg-lit">
+          <rect class="svg-box-fill" x="20" y="40" width="150" height="66" rx="8"></rect>
+          <text class="svg-label" x="95" y="70" text-anchor="middle">Client</text>
+          <text class="svg-mono" x="95" y="88" text-anchor="middle">React app</text>
+        </g>
+
+        <g id="n-server" class="svg-lit">
+          <rect class="svg-box-ink" x="275" y="40" width="150" height="66" rx="8"></rect>
+          <text class="svg-label-inv" x="350" y="70" text-anchor="middle">Server</text>
+          <text x="350" y="88" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;fill:rgba(255,255,255,0.45)">Express</text>
+        </g>
+
+        <g id="n-db" class="svg-dim">
+          <rect class="svg-box-fill" x="530" y="40" width="150" height="66" rx="8"></rect>
+          <text class="svg-label" x="605" y="70" text-anchor="middle">Database</text>
+          <text class="svg-mono" x="605" y="88" text-anchor="middle">users collection</text>
+        </g>
+
+        <g id="n-mw" class="svg-dim">
+          <rect class="svg-box-fill" x="275" y="196" width="150" height="60" rx="8"></rect>
+          <text class="svg-label" x="350" y="222" text-anchor="middle">Auth middleware</text>
+          <text class="svg-mono" x="350" y="240" text-anchor="middle">jwt.verify()</text>
+        </g>
+
+        <g id="n-route" class="svg-dim">
+          <rect class="svg-box-fill" x="530" y="196" width="150" height="60" rx="8"></rect>
+          <text class="svg-label" x="605" y="222" text-anchor="middle">Protected route</text>
+          <text class="svg-mono" x="605" y="240" text-anchor="middle">req.user is ready</text>
+        </g>
+
+        <g id="a1" class="svg-lit">
+          <path class="svg-arrow-live" d="M176 58 L 268 58" marker-end="url(#ah-accent)"></path>
+          <text class="svg-mono-accent" x="222" y="48" text-anchor="middle">credentials</text>
+        </g>
+        <g id="a2" class="svg-dim">
+          <path class="svg-arrow-live" d="M431 58 L 523 58" marker-end="url(#ah-accent)"></path>
+          <text class="svg-mono-accent" x="477" y="48" text-anchor="middle">find user</text>
+        </g>
+        <g id="a3" class="svg-dim">
+          <path class="svg-arrow" d="M523 92 L 434 92" marker-end="url(#ah)"></path>
+          <text class="svg-mono" x="477" y="112" text-anchor="middle">user + hash</text>
+        </g>
+        <g id="a4" class="svg-dim">
+          <path class="svg-arrow" d="M268 92 L 179 92" marker-end="url(#ah)"></path>
+          <text class="svg-mono" x="222" y="112" text-anchor="middle">token</text>
+        </g>
+        <g id="a5" class="svg-dim">
+          <path class="svg-arrow-live" d="M95 112 L 95 226 L 268 226" marker-end="url(#ah-accent)"></path>
+          <text class="svg-mono-accent" x="180" y="216" text-anchor="middle">token on every request</text>
+        </g>
+        <g id="a6" class="svg-dim">
+          <path class="svg-arrow" d="M431 226 L 523 226" marker-end="url(#ah)"></path>
+          <text class="svg-mono" x="477" y="216" text-anchor="middle">req.user</text>
+        </g>
+        <g id="n-token" class="svg-dim">
+          <rect x="292" y="130" width="116" height="26" rx="13" fill="#C84B1F"></rect>
+          <text x="350" y="147" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;fill:#FFFFFF">JWT signed</text>
+        </g>
+      </svg>
+    </div>
+    <div class="stepper-caption">
+      <div class="step-name" id="step-name">Step name</div>
+      <p class="step-detail" id="step-detail">Step detail</p>
+    </div>
+    <div class="stepper-controls">
+      <button class="stepper-btn" id="step-back" onclick="moveStep(-1)">← Back</button>
+      <span class="stepper-count">Step <b id="step-now">1</b> / 7</span>
+      <button class="stepper-btn" id="step-fwd" onclick="moveStep(1)">Forward →</button>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text">Steps 1 to 5 happen <strong>once</strong>, at login. Steps 6 and 7 happen on <strong>every single request</strong> after that. That difference is the whole reason tokens exist — the password is checked once, the card is shown a thousand times.</p>
+  </div>
+</section>
+
+<!-- ══ 08 ══ -->
+<section class="section-block animate-fade-up" id="s08">
+  <div class="section-header">
+    <div class="section-num-big">08</div>
+    <div class="section-header-text">
+      <div class="section-title">Why we hash passwords</div>
+      <div class="section-subtitle">The one mistake that can end a product and a career</div>
+    </div>
+  </div>
+
+  <p>Registration means storing a user in your database. The tempting version looks like this:</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">users collection — the dangerous version</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre">{ <span class="token-yaml-key">"email"</span>: <span class="token-string">"riya@gmail.com"</span>,  <span class="token-yaml-key">"password"</span>: <span class="token-string">"riya@1234"</span> }
+{ <span class="token-yaml-key">"email"</span>: <span class="token-string">"aman@gmail.com"</span>,  <span class="token-yaml-key">"password"</span>: <span class="token-string">"sheryians123"</span> }
+{ <span class="token-yaml-key">"email"</span>: <span class="token-string">"neha@gmail.com"</span>,  <span class="token-yaml-key">"password"</span>: <span class="token-string">"sheryians123"</span> }
+
+<span class="token-comment"># It works. Login is a simple ===. And it is a disaster waiting to happen.</span></pre>
+  </div>
+
+  <h3>Now list everyone who can read that column</h3>
+  <ul>
+    <li>Anyone who gets a copy of the database — a leak, a stolen backup, a public Mongo instance with no password on it.</li>
+    <li>Every developer, intern and DBA on your team, including the one who leaves next month.</li>
+    <li>Whatever log, analytics tool or error report accidentally captured a request body.</li>
+  </ul>
+
+  <p>And here is the part students underestimate. People reuse passwords. <code>sheryians123</code> is probably also Neha's email password, her Instagram password, maybe her bank password. If your little project leaks, you did not just lose your app's accounts — you handed over other people's lives. That is why this is treated as a serious offence and not a bug.</p>
+
+  <div class="concept-box">
+    <div class="concept-box-label">Key Concept</div>
+    <p class="concept-box-text"><strong>Hashing is a one-way street.</strong> You can turn a password into a hash, but you cannot turn a hash back into the password. So we never store the password — we store the hash. At login we hash the incoming password again and compare the two hashes. The server itself never knows your real password.</p>
+  </div>
+
+  <table class="compare-table">
+    <thead>
+      <tr><th>What</th><th>Encoding (Base64)</th><th>Encryption (AES)</th><th>Hashing (bcrypt)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="cell-title">Reversible?</td><td class="cell-muted">Yes, by anyone</td><td class="cell-muted">Yes, with the key</td><td class="cell-highlight">No, by design</td></tr>
+      <tr><td class="cell-title">Needs a key?</td><td class="cell-muted">No</td><td class="cell-muted">Yes</td><td class="cell-highlight">No</td></tr>
+      <tr><td class="cell-title">Used for</td><td class="cell-muted">Safe transport of data — JWT parts</td><td class="cell-muted">Data you must read back later</td><td class="cell-highlight">Passwords — you never need them back</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Why bcrypt and not MD5 or SHA-256</h3>
+  <p>MD5 and SHA-256 are hashes too, but they were built to be <em>fast</em>. A modern GPU can try billions of guesses per second against them, and precomputed rainbow tables already contain every common password. Fast is exactly what you do not want here.</p>
+
+  <p>bcrypt is deliberately <strong>slow</strong>, and you control how slow with a cost factor. It also <strong>salts</strong> every password automatically — a random value mixed in before hashing. Look at Aman and Neha, who chose the same password:</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">bcrypt.hash("sheryians123", 10) — run twice</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-comment"># aman</span>
+<span class="token-string">$2b$10$GnnIMosW7uaOVRg98b9jOeBlf6ZQb6lmq1cLpTZo9y6fD/SgMypMe</span>
+
+<span class="token-comment"># neha — same password, completely different hash</span>
+<span class="token-string">$2b$10$Ao8zemGb5v7Wbp/o8E.V/eGHZrT0Km.doIcku8ZxQpFNCUojLMqUu</span></pre>
+  </div>
+
+  <p>Same input, different output, because each got its own random salt. An attacker cannot spot that two users share a password, and cannot crack a thousand accounts with one precomputed table — every account has to be attacked separately, slowly.</p>
+
+  <div class="warning-box">
+    <div class="warning-box-icon">⚠️</div>
+    <p class="warning-box-text">Never hash on the client, never log a password, and never send the password or its hash back in a response. And do not invent your own hashing scheme — <strong>reversing your own "secret formula" is the first thing an attacker tries.</strong></p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Two users pick the same password. Why do their bcrypt hashes look completely different?</p>
+    <div class="quiz-options" id="quiz-08">
+      <button onclick="answerQuiz('quiz-08', this, false)" class="quiz-option">A &nbsp;—&nbsp; Because bcrypt encrypts each one with a different secret key</button>
+      <button onclick="answerQuiz('quiz-08', this, true)" class="quiz-option">B &nbsp;—&nbsp; Because bcrypt mixes a fresh random salt into every hash</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-08-feedback"></div>
+  </div>
+</section>
+
+<!-- ══ 09 ══ -->
+<section class="section-block animate-fade-up" id="s09">
+  <div class="section-header">
+    <div class="section-num-big">09</div>
+    <div class="section-header-text">
+      <div class="section-title">bcrypt in practice</div>
+      <div class="section-subtitle">Two functions, and what that weird string actually contains</div>
+    </div>
+  </div>
+
+  <div class="badge badge-accent">Step 1 — Hash on registration</div>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">hashing a password</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-yaml-key">const</span> <span class="token-val">bcrypt</span> <span class="token-operator">=</span> <span class="token-command">require</span>(<span class="token-string">"bcryptjs"</span>);
+
+<span class="token-yaml-key">const</span> <span class="token-val">hashedPassword</span> <span class="token-operator">=</span> <span class="token-yaml-key">await</span> <span class="token-val">bcrypt</span>.<span class="token-command">hash</span>(<span class="token-val">password</span>, <span class="token-val">10</span>);
+<span class="token-comment">//                                         ↑ cost factor (salt rounds)</span>
+
+<span class="token-comment">// store hashedPassword in the database — never the plain one</span></pre>
+  </div>
+
+  <div class="badge badge-green">Step 2 — Compare on login</div>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">checking a password</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-yaml-key">const</span> <span class="token-val">isMatch</span> <span class="token-operator">=</span> <span class="token-yaml-key">await</span> <span class="token-val">bcrypt</span>.<span class="token-command">compare</span>(<span class="token-val">password</span>, <span class="token-val">user</span>.<span class="token-val">password</span>);
+<span class="token-comment">//                                     plain input    stored hash</span>
+
+<span class="token-yaml-key">if</span> (<span class="token-operator">!</span><span class="token-val">isMatch</span>) {
+  <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">401</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"invalid email or password"</span> });
+}</pre>
+  </div>
+
+  <p>Notice we never "decrypt" anything. <code>bcrypt.compare</code> reads the salt out of the stored hash, hashes the incoming password with that same salt, and checks whether the results match.</p>
+
+  <h4>Reading a bcrypt hash</h4>
+  <table class="flag-table">
+    <thead>
+      <tr><th>Segment</th><th>Value in our example</th><th>What it means</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="flag-name">algorithm</span></td><td><span class="flag-val">$2b</span></td><td>Which bcrypt version produced this hash.</td></tr>
+      <tr><td><span class="flag-name">cost</span></td><td><span class="flag-val">$10</span></td><td>2<sup>10</sup> rounds of work. Every +1 doubles the time to hash — and to attack.</td></tr>
+      <tr><td><span class="flag-name">salt</span></td><td><span class="flag-val">GnnIMosW7uaOVRg98b9jOe</span></td><td>The 22-character random salt, stored right inside the hash so login can reuse it.</td></tr>
+      <tr><td><span class="flag-name">hash</span></td><td><span class="flag-val">Blf6ZQb6lmq1cLpTZo9y6fD/SgMypMe</span></td><td>The actual result of hashing password + salt.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text">Cost <strong>10</strong> is a sensible default — roughly 50–100 ms per hash. Slow enough to make brute force painful, fast enough that your login route still feels instant. Do not push it to 20 "for extra security" unless you enjoy 30-second logins.</p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Where does bcrypt store the salt it used?</p>
+    <div class="quiz-options" id="quiz-09">
+      <button onclick="answerQuiz('quiz-09', this, true)" class="quiz-option">A &nbsp;—&nbsp; Inside the hash string itself, so compare() can read it back</button>
+      <button onclick="answerQuiz('quiz-09', this, false)" class="quiz-option">B &nbsp;—&nbsp; In a separate salts collection you have to create</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-09-feedback"></div>
+  </div>
+</section>
+
+<!-- ══ 10 ══ -->
+<section class="section-block animate-fade-up" id="s10">
+  <div class="section-header">
+    <div class="section-num-big">10</div>
+    <div class="section-header-text">
+      <div class="section-title">Setup</div>
+      <div class="section-subtitle">Packages, environment variables, and the user model</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">Terminal</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-command">npm</span> <span class="token-flag">install</span> <span class="token-val">jsonwebtoken bcryptjs cookie-parser dotenv</span></pre>
+  </div>
+
+  <table class="flag-table">
+    <thead>
+      <tr><th>Package</th><th>Used for</th><th>What it gives you</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="flag-name">jsonwebtoken</span></td><td><span class="flag-val">tokens</span></td><td>Creates and verifies JWTs — <code>jwt.sign()</code> and <code>jwt.verify()</code>.</td></tr>
+      <tr><td><span class="flag-name">bcryptjs</span></td><td><span class="flag-val">passwords</span></td><td>Hashes passwords and compares them — <code>bcrypt.hash()</code> and <code>bcrypt.compare()</code>.</td></tr>
+      <tr><td><span class="flag-name">cookie-parser</span></td><td><span class="flag-val">reading cookies</span></td><td>Fills <code>req.cookies</code> so the middleware can pick the token out of the request.</td></tr>
+      <tr><td><span class="flag-name">dotenv</span></td><td><span class="flag-val">secrets</span></td><td>Loads your <code>.env</code> file into <code>process.env</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">.env</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-yaml-key">PORT</span><span class="token-operator">=</span><span class="token-val">3000</span>
+<span class="token-yaml-key">MONGO_URI</span><span class="token-operator">=</span><span class="token-string">mongodb://127.0.0.1:27017/auth-class</span>
+<span class="token-yaml-key">JWT_SECRET</span><span class="token-operator">=</span><span class="token-string">a-long-random-string-nobody-can-guess</span></pre>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-box-icon">⚠️</div>
+    <p class="warning-box-text">Your <code>JWT_SECRET</code> is the hologram die. Anyone who has it can mint a token for any user, including an admin. <strong>Keep it in <code>.env</code>, add <code>.env</code> to <code>.gitignore</code>, and never hardcode it or push it to GitHub.</strong></p>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">models/user.model.js</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-yaml-key">const</span> <span class="token-val">mongoose</span> <span class="token-operator">=</span> <span class="token-command">require</span>(<span class="token-string">"mongoose"</span>);
+
+<span class="token-yaml-key">const</span> <span class="token-val">userSchema</span> <span class="token-operator">=</span> <span class="token-yaml-key">new</span> <span class="token-command">mongoose.Schema</span>({
+  <span class="token-yaml-key">name</span>:     { <span class="token-yaml-key">type</span>: <span class="token-val">String</span>, <span class="token-yaml-key">required</span>: <span class="token-val">true</span>, <span class="token-yaml-key">trim</span>: <span class="token-val">true</span> },
+  <span class="token-yaml-key">email</span>:    { <span class="token-yaml-key">type</span>: <span class="token-val">String</span>, <span class="token-yaml-key">required</span>: <span class="token-val">true</span>, <span class="token-yaml-key">unique</span>: <span class="token-val">true</span>, <span class="token-yaml-key">lowercase</span>: <span class="token-val">true</span> },
+  <span class="token-yaml-key">password</span>: { <span class="token-yaml-key">type</span>: <span class="token-val">String</span>, <span class="token-yaml-key">required</span>: <span class="token-val">true</span>, <span class="token-yaml-key">select</span>: <span class="token-val">false</span> },
+  <span class="token-yaml-key">role</span>:     { <span class="token-yaml-key">type</span>: <span class="token-val">String</span>, <span class="token-yaml-key">enum</span>: [<span class="token-string">"user"</span>, <span class="token-string">"admin"</span>], <span class="token-yaml-key">default</span>: <span class="token-string">"user"</span> }
+}, { <span class="token-yaml-key">timestamps</span>: <span class="token-val">true</span> });
+
+<span class="token-val">module</span>.<span class="token-val">exports</span> <span class="token-operator">=</span> <span class="token-val">mongoose</span>.<span class="token-command">model</span>(<span class="token-string">"User"</span>, <span class="token-val">userSchema</span>);</pre>
+  </div>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text"><code>select: false</code> on the password means every normal query leaves it out automatically. You cannot leak a hash you never fetched. On login you ask for it explicitly with <code>.select("+password")</code>.</p>
+  </div>
+</section>
+
+<!-- ══ 11 ══ -->
+<section class="section-block animate-fade-up" id="s11">
+  <div class="section-header">
+    <div class="section-num-big">11</div>
+    <div class="section-header-text">
+      <div class="section-title">The register route</div>
+      <div class="section-subtitle">Filling the admission form</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">controllers/auth.controller.js</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-yaml-key">const</span> <span class="token-val">bcrypt</span> <span class="token-operator">=</span> <span class="token-command">require</span>(<span class="token-string">"bcryptjs"</span>);
+<span class="token-yaml-key">const</span> <span class="token-val">User</span> <span class="token-operator">=</span> <span class="token-command">require</span>(<span class="token-string">"../models/user.model"</span>);
+<span class="token-yaml-key">const</span> { <span class="token-val">signToken</span> } <span class="token-operator">=</span> <span class="token-command">require</span>(<span class="token-string">"../utils/token"</span>);
+
+<span class="token-val">module</span>.<span class="token-val">exports</span>.<span class="token-val">register</span> <span class="token-operator">=</span> <span class="token-yaml-key">async</span> (<span class="token-val">req</span>, <span class="token-val">res</span>) <span class="token-operator">=&gt;</span> {
+  <span class="token-yaml-key">const</span> { <span class="token-val">name</span>, <span class="token-val">email</span>, <span class="token-val">password</span> } <span class="token-operator">=</span> <span class="token-val">req</span>.<span class="token-val">body</span>;
+
+  <span class="token-comment">// 1. validate</span>
+  <span class="token-yaml-key">if</span> (<span class="token-operator">!</span><span class="token-val">name</span> <span class="token-operator">||</span> <span class="token-operator">!</span><span class="token-val">email</span> <span class="token-operator">||</span> <span class="token-operator">!</span><span class="token-val">password</span>)
+    <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">400</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"all fields are required"</span> });
+
+  <span class="token-comment">// 2. is this email already admitted?</span>
+  <span class="token-yaml-key">const</span> <span class="token-val">exists</span> <span class="token-operator">=</span> <span class="token-yaml-key">await</span> <span class="token-val">User</span>.<span class="token-command">findOne</span>({ <span class="token-val">email</span> });
+  <span class="token-yaml-key">if</span> (<span class="token-val">exists</span>)
+    <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">409</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"email already registered"</span> });
+
+  <span class="token-comment">// 3. hash — the plain password must never reach the database</span>
+  <span class="token-yaml-key">const</span> <span class="token-val">hashedPassword</span> <span class="token-operator">=</span> <span class="token-yaml-key">await</span> <span class="token-val">bcrypt</span>.<span class="token-command">hash</span>(<span class="token-val">password</span>, <span class="token-val">10</span>);
+
+  <span class="token-comment">// 4. create the user (the register entry)</span>
+  <span class="token-yaml-key">const</span> <span class="token-val">user</span> <span class="token-operator">=</span> <span class="token-yaml-key">await</span> <span class="token-val">User</span>.<span class="token-command">create</span>({ <span class="token-val">name</span>, <span class="token-val">email</span>, <span class="token-yaml-key">password</span>: <span class="token-val">hashedPassword</span> });
+
+  <span class="token-comment">// 5. issue the ID card</span>
+  <span class="token-yaml-key">const</span> <span class="token-val">token</span> <span class="token-operator">=</span> <span class="token-command">signToken</span>(<span class="token-val">user</span>);
+  <span class="token-val">res</span>.<span class="token-command">cookie</span>(<span class="token-string">"token"</span>, <span class="token-val">token</span>, { <span class="token-yaml-key">httpOnly</span>: <span class="token-val">true</span> });
+
+  <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">201</span>).<span class="token-command">json</span>({
+    <span class="token-yaml-key">message</span>: <span class="token-string">"registered successfully"</span>,
+    <span class="token-yaml-key">user</span>: { <span class="token-yaml-key">id</span>: <span class="token-val">user</span>.<span class="token-val">_id</span>, <span class="token-yaml-key">name</span>: <span class="token-val">user</span>.<span class="token-val">name</span>, <span class="token-yaml-key">email</span>: <span class="token-val">user</span>.<span class="token-val">email</span> }
+  });                                <span class="token-comment">// ↑ never send the password back</span>
+};</pre>
+  </div>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text">Notice the order: <strong>validate → check duplicate → hash → save → issue token</strong>. Every step is cheap protection for the step after it. And <code>409 Conflict</code> is the honest status for "this email already exists", not <code>400</code>.</p>
+  </div>
+</section>
+
+<!-- ══ 12 ══ -->
+<section class="section-block animate-fade-up" id="s12">
+  <div class="section-header">
+    <div class="section-num-big">12</div>
+    <div class="section-header-text">
+      <div class="section-title">The login route</div>
+      <div class="section-subtitle">Collecting a fresh ID card</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">controllers/auth.controller.js</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-val">module</span>.<span class="token-val">exports</span>.<span class="token-val">login</span> <span class="token-operator">=</span> <span class="token-yaml-key">async</span> (<span class="token-val">req</span>, <span class="token-val">res</span>) <span class="token-operator">=&gt;</span> {
+  <span class="token-yaml-key">const</span> { <span class="token-val">email</span>, <span class="token-val">password</span> } <span class="token-operator">=</span> <span class="token-val">req</span>.<span class="token-val">body</span>;
+
+  <span class="token-yaml-key">if</span> (<span class="token-operator">!</span><span class="token-val">email</span> <span class="token-operator">||</span> <span class="token-operator">!</span><span class="token-val">password</span>)
+    <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">400</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"email and password are required"</span> });
+
+  <span class="token-comment">// password is select:false in the schema, so ask for it explicitly</span>
+  <span class="token-yaml-key">const</span> <span class="token-val">user</span> <span class="token-operator">=</span> <span class="token-yaml-key">await</span> <span class="token-val">User</span>.<span class="token-command">findOne</span>({ <span class="token-val">email</span> }).<span class="token-command">select</span>(<span class="token-string">"+password"</span>);
+
+  <span class="token-yaml-key">if</span> (<span class="token-operator">!</span><span class="token-val">user</span>)
+    <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">401</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"invalid email or password"</span> });
+
+  <span class="token-yaml-key">const</span> <span class="token-val">isMatch</span> <span class="token-operator">=</span> <span class="token-yaml-key">await</span> <span class="token-val">bcrypt</span>.<span class="token-command">compare</span>(<span class="token-val">password</span>, <span class="token-val">user</span>.<span class="token-val">password</span>);
+
+  <span class="token-yaml-key">if</span> (<span class="token-operator">!</span><span class="token-val">isMatch</span>)
+    <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">401</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"invalid email or password"</span> });
+
+  <span class="token-yaml-key">const</span> <span class="token-val">token</span> <span class="token-operator">=</span> <span class="token-command">signToken</span>(<span class="token-val">user</span>);
+  <span class="token-val">res</span>.<span class="token-command">cookie</span>(<span class="token-string">"token"</span>, <span class="token-val">token</span>, { <span class="token-yaml-key">httpOnly</span>: <span class="token-val">true</span> });
+
+  <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">200</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"logged in"</span> });
+};</pre>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-box-icon">⚠️</div>
+    <p class="warning-box-text">Both failures return the same message: <strong>"invalid email or password"</strong>. If you say "user not found" for one and "wrong password" for the other, you have just built a tool that tells an attacker which emails are registered on your platform.</p>
+  </div>
+</section>
+
+<!-- ══ 13 ══ -->
+<section class="section-block animate-fade-up" id="s13">
+  <div class="section-header">
+    <div class="section-num-big">13</div>
+    <div class="section-header-text">
+      <div class="section-title">The auth middleware</div>
+      <div class="section-subtitle">The guard at every gate</div>
+    </div>
+  </div>
+
+  <p>This is where authentication actually pays off. One small middleware sits in front of every protected route, checks the card, and hands the route a ready-made <code>req.user</code>.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">middlewares/auth.middleware.js</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-yaml-key">const</span> <span class="token-val">jwt</span> <span class="token-operator">=</span> <span class="token-command">require</span>(<span class="token-string">"jsonwebtoken"</span>);
+
+<span class="token-val">module</span>.<span class="token-val">exports</span>.<span class="token-val">isLoggedIn</span> <span class="token-operator">=</span> (<span class="token-val">req</span>, <span class="token-val">res</span>, <span class="token-val">next</span>) <span class="token-operator">=&gt;</span> {
+  <span class="token-comment">// the card can arrive as a cookie or an Authorization header</span>
+  <span class="token-yaml-key">const</span> <span class="token-val">token</span> <span class="token-operator">=</span>
+    <span class="token-val">req</span>.<span class="token-val">cookies</span>.<span class="token-val">token</span> <span class="token-operator">||</span> <span class="token-val">req</span>.<span class="token-val">headers</span>.<span class="token-val">authorization</span><span class="token-operator">?.</span><span class="token-command">split</span>(<span class="token-string">" "</span>)[<span class="token-val">1</span>];
+
+  <span class="token-yaml-key">if</span> (<span class="token-operator">!</span><span class="token-val">token</span>)
+    <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">401</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"please login first"</span> });
+
+  <span class="token-yaml-key">try</span> {
+    <span class="token-comment">// verify = recompute the signature and check expiry</span>
+    <span class="token-yaml-key">const</span> <span class="token-val">decoded</span> <span class="token-operator">=</span> <span class="token-val">jwt</span>.<span class="token-command">verify</span>(<span class="token-val">token</span>, <span class="token-val">process</span>.<span class="token-val">env</span>.<span class="token-val">JWT_SECRET</span>);
+    <span class="token-val">req</span>.<span class="token-val">user</span> <span class="token-operator">=</span> <span class="token-val">decoded</span>;        <span class="token-comment">// { id, role, iat, exp }</span>
+    <span class="token-command">next</span>();
+  } <span class="token-yaml-key">catch</span> (<span class="token-val">err</span>) {
+    <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">401</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"invalid or expired token"</span> });
+  }
+};</pre>
+  </div>
+
+  <div class="warning-box">
+    <div class="warning-box-icon">⚠️</div>
+    <p class="warning-box-text">Use <code>jwt.verify()</code>, never <code>jwt.decode()</code>. <strong><code>decode()</code> only reads the payload and checks nothing</strong> — no signature, no expiry. Using it to authenticate means any string a user invents becomes a valid login.</p>
+  </div>
+
+  <h3>Adding authorization on top</h3>
+  <p>Authentication is done. Now the role check — the same card, a different gate:</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">middlewares/role.middleware.js</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-val">module</span>.<span class="token-val">exports</span>.<span class="token-val">allow</span> <span class="token-operator">=</span> (<span class="token-operator">...</span><span class="token-val">roles</span>) <span class="token-operator">=&gt;</span> (<span class="token-val">req</span>, <span class="token-val">res</span>, <span class="token-val">next</span>) <span class="token-operator">=&gt;</span> {
+  <span class="token-yaml-key">if</span> (<span class="token-operator">!</span><span class="token-val">roles</span>.<span class="token-command">includes</span>(<span class="token-val">req</span>.<span class="token-val">user</span>.<span class="token-val">role</span>))
+    <span class="token-yaml-key">return</span> <span class="token-val">res</span>.<span class="token-command">status</span>(<span class="token-val">403</span>).<span class="token-command">json</span>({ <span class="token-yaml-key">message</span>: <span class="token-string">"you are not allowed to do this"</span> });
+  <span class="token-command">next</span>();
+};</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">routes/product.routes.js</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-comment">// authentication → authorization → controller</span>
+<span class="token-val">router</span>.<span class="token-command">delete</span>(
+  <span class="token-string">"/products/:id"</span>,
+  <span class="token-val">isLoggedIn</span>,          <span class="token-comment">// who are you?      → 401</span>
+  <span class="token-command">allow</span>(<span class="token-string">"admin"</span>),      <span class="token-comment">// allowed to do it? → 403</span>
+  <span class="token-val">deleteProduct</span>
+);
+
+<span class="token-comment">// inside deleteProduct you can now trust req.user.id — it came from</span>
+<span class="token-comment">// a signed token, not from the request body.</span></pre>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Why must the controller use <code>req.user.id</code> instead of <code>req.body.userId</code>?</p>
+    <div class="quiz-options" id="quiz-13">
+      <button onclick="answerQuiz('quiz-13', this, true)" class="quiz-option">A &nbsp;—&nbsp; <code>req.user.id</code> came from a verified token; the body is written by the client</button>
+      <button onclick="answerQuiz('quiz-13', this, false)" class="quiz-option">B &nbsp;—&nbsp; They are the same, <code>req.user.id</code> is just shorter to type</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-13-feedback"></div>
+  </div>
+</section>
+
+<!-- ══ 14 ══ -->
+<section class="section-block animate-fade-up" id="s14">
+  <div class="section-header">
+    <div class="section-num-big">14</div>
+    <div class="section-header-text">
+      <div class="section-title">Where the token lives</div>
+      <div class="section-subtitle">Two places to keep the card, and why one is safer</div>
+    </div>
+  </div>
+
+  <table class="compare-table">
+    <thead>
+      <tr><th>What</th><th>localStorage</th><th>httpOnly cookie</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="cell-title">Sent automatically</td><td class="cell-muted">No — you attach it by hand on every call</td><td class="cell-highlight">Yes, the browser attaches it</td></tr>
+      <tr><td class="cell-title">Readable by JavaScript</td><td class="cell-muted">Yes — so any injected script can steal it</td><td class="cell-highlight">No — JS cannot touch it</td></tr>
+      <tr><td class="cell-title">Works with</td><td class="cell-muted">Mobile apps, third-party APIs</td><td class="cell-highlight">Browser apps on your own domain</td></tr>
+      <tr><td class="cell-title">Needs care about</td><td class="cell-muted">XSS</td><td class="cell-highlight">CSRF — handled with <code>sameSite</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-label">production cookie options</span>
+      <button onclick="copyCode(this)" class="code-copy-btn">copy</button>
+    </div>
+<pre class="code-pre"><span class="token-val">res</span>.<span class="token-command">cookie</span>(<span class="token-string">"token"</span>, <span class="token-val">token</span>, {
+  <span class="token-yaml-key">httpOnly</span>: <span class="token-val">true</span>,                    <span class="token-comment">// JS cannot read it</span>
+  <span class="token-yaml-key">secure</span>: <span class="token-val">process</span>.<span class="token-val">env</span>.<span class="token-val">NODE_ENV</span> <span class="token-operator">===</span> <span class="token-string">"production"</span>,  <span class="token-comment">// HTTPS only</span>
+  <span class="token-yaml-key">sameSite</span>: <span class="token-string">"lax"</span>,                   <span class="token-comment">// blocks most CSRF</span>
+  <span class="token-yaml-key">maxAge</span>: <span class="token-val">7</span> <span class="token-operator">*</span> <span class="token-val">24</span> <span class="token-operator">*</span> <span class="token-val">60</span> <span class="token-operator">*</span> <span class="token-val">60</span> <span class="token-operator">*</span> <span class="token-val">1000</span>   <span class="token-comment">// 7 days, matching the JWT</span>
+});
+
+<span class="token-comment">// logout = take the card back</span>
+<span class="token-val">res</span>.<span class="token-command">clearCookie</span>(<span class="token-string">"token"</span>);</pre>
+  </div>
+
+  <div class="note-box">
+    <div class="note-box-icon">💡</div>
+    <p class="note-box-text">Here is the honest limitation of stateless auth: because the server stores nothing, it cannot un-issue a token. If someone steals a valid token, it works until it expires — clearing the cookie only clears <em>that browser</em>. The industry answer is short-lived access tokens plus refresh tokens, which is our next session.</p>
+  </div>
+
+  <div class="quiz-box">
+    <p class="quiz-question">Why is an <code>httpOnly</code> cookie safer than <code>localStorage</code> for a browser app?</p>
+    <div class="quiz-options" id="quiz-14">
+      <button onclick="answerQuiz('quiz-14', this, false)" class="quiz-option">A &nbsp;—&nbsp; Because cookies are encrypted by the browser</button>
+      <button onclick="answerQuiz('quiz-14', this, true)" class="quiz-option">B &nbsp;—&nbsp; Because JavaScript cannot read it, so an injected script cannot steal the token</button>
+    </div>
+    <div class="quiz-feedback hidden" id="quiz-14-feedback"></div>
+  </div>
+</section>
+
+<!-- ══ 15 ══ -->
+<section class="section-block animate-fade-up" id="s15">
+  <div class="section-header">
+    <div class="section-num-big">15</div>
+    <div class="section-header-text">
+      <div class="section-title">Mistakes to avoid</div>
+      <div class="section-subtitle">Check your project against this list before you push</div>
+    </div>
+  </div>
+
+  <table class="compare-table">
+    <thead>
+      <tr><th>Mistake</th><th>What it costs you</th><th>Do this instead</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="cell-title">Storing plain passwords</td><td class="cell-muted">One leak exposes every user, and their other accounts too</td><td class="cell-highlight">Always <code>bcrypt.hash(password, 10)</code></td></tr>
+      <tr><td class="cell-title">Personal data in the payload</td><td class="cell-muted">Anyone holding the token can read it</td><td class="cell-highlight">Only <code>id</code> and <code>role</code></td></tr>
+      <tr><td class="cell-title">Hardcoding <code>JWT_SECRET</code></td><td class="cell-muted">Secret ends up on GitHub; anyone can mint admin tokens</td><td class="cell-highlight"><code>.env</code> plus <code>.gitignore</code></td></tr>
+      <tr><td class="cell-title">Using <code>jwt.decode()</code> to authenticate</td><td class="cell-muted">No signature check — auth is completely bypassed</td><td class="cell-highlight"><code>jwt.verify()</code> inside try/catch</td></tr>
+      <tr><td class="cell-title">Trusting <code>req.body.userId</code></td><td class="cell-muted">Any user can act as any other user</td><td class="cell-highlight"><code>req.user.id</code> from the middleware</td></tr>
+      <tr><td class="cell-title">Tokens that never expire</td><td class="cell-muted">A stolen token is valid forever</td><td class="cell-highlight">Set <code>expiresIn</code>, keep it short</td></tr>
+      <tr><td class="cell-title">"User not found" vs "wrong password"</td><td class="cell-muted">Leaks which emails are registered</td><td class="cell-highlight">One message for both</td></tr>
+      <tr><td class="cell-title">Returning the user with the hash</td><td class="cell-muted">Ships the hash to the browser for no reason</td><td class="cell-highlight"><code>select: false</code>, send only safe fields</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══ 16 ══ -->
+<section class="section-block animate-fade-up" id="s16">
+  <div class="section-header">
+    <div class="section-num-big">16</div>
+    <div class="section-header-text">
+      <div class="section-title">Recap and practice</div>
+      <div class="section-subtitle">What to build before the next class</div>
+    </div>
+  </div>
+
+  <div class="scale-diagram">
+    <span class="highlight">Request arrives — server has no idea who sent it</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    <span class="highlight">Validate the body</span> — is this data even usable?<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    <span class="green">Authenticate</span> — verify the token, set req.user (who are you?)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    <span class="green">Authorize</span> — check the role (are you allowed?)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+    <span class="green">Controller runs with a trusted identity ✅</span>
+  </div>
+
+  <h3>Build this yourself</h3>
+  <div class="flow-diagram">
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">1 — Register and login</div>
+        <div class="flow-desc">A fresh Express + Mongoose project with <code>/register</code> and <code>/login</code>. Hash with bcrypt, issue a JWT in an httpOnly cookie. Check in Compass that no plain password was ever saved.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">2 — Protect a route</div>
+        <div class="flow-desc">Add <code>GET /profile</code> behind <code>isLoggedIn</code>, returning the logged-in user from <code>req.user.id</code>. Call it in Postman without a token and confirm you get 401.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-accent"></div><div class="flow-line"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">3 — Add a role</div>
+        <div class="flow-desc">Give one user <code>role: "admin"</code>, add <code>DELETE /products/:id</code> behind <code>allow("admin")</code>, and confirm a normal user gets 403 while the admin gets through.</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-connector"><div class="flow-dot flow-dot-green"></div></div>
+      <div class="flow-content">
+        <div class="flow-title">4 — Break it on purpose</div>
+        <div class="flow-desc">Copy your token into the decoder in section 05, change the role to admin, re-encode it and send it. Watch the server reject it — then explain out loud why.</div>
+      </div>
+    </div>
+  </div>
+
+  <h4>Questions you should be able to answer</h4>
+  <ul>
+    <li>What is the difference between authentication and authorization, and which status code belongs to each?</li>
+    <li>Why is a JWT not secure to put personal data in, even though it is signed?</li>
+    <li>Why do we hash passwords instead of encrypting them?</li>
+    <li>What does a salt do, and why do two identical passwords produce different hashes?</li>
+    <li>What is the difference between <code>jwt.decode()</code> and <code>jwt.verify()</code>?</li>
+    <li>Why can't a stateless JWT be cancelled before it expires?</li>
+  </ul>
+</section>
+
+<footer class="site-footer">
+  <span>Sheryians Coding School · Cohort — Authentication</span>
+  <span>JWT · bcrypt · Express + Mongoose</span>
+</footer>
+
+</main>
+</div>
+
+<script>
+/* ── Copy code ── */
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('.code-pre');
+  const text = pre.innerText;
+  const done = () => { btn.textContent = 'copied'; setTimeout(() => { btn.textContent = 'copy'; }, 1400); };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { /* clipboard unavailable */ }
+  document.body.removeChild(ta);
+}
+
+/* ── Quiz ── */
+function answerQuiz(quizId, btn, isCorrect) {
+  const container = document.getElementById(quizId);
+  const feedback = document.getElementById(quizId + '-feedback');
+
+  container.querySelectorAll('.quiz-option').forEach(b => {
+    b.disabled = true;
+    b.classList.add('cursor-not-allowed');
+    b.style.opacity = '0.6';
+  });
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    feedback.textContent = '✓ Correct!';
+    feedback.className = 'quiz-feedback correct';
+  } else {
+    btn.classList.add('incorrect');
+    feedback.textContent = '✗ Not quite — try reviewing that section.';
+    feedback.className = 'quiz-feedback incorrect';
+  }
+}
+
+/* ── JWT decoder ── */
+const SAMPLES = {
+  valid: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjNhMWM5NGU3YjJkMDAxMmM5YWI0NSIsInJvbGUiOiJzdHVkZW50IiwiaWF0IjoxNzU2NzAzNDAwLCJleHAiOjE3NTczMDgyMDB9.Jz74pc6s1u5dKsQOWBkuKcfGXT4Mz3IVg2GiJBvDaYU',
+  tampered: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZjNhMWM5NGU3YjJkMDAxMmM5YWI0NSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1NjcwMzQwMCwiZXhwIjoxNzU3MzA4MjAwfQ.Jz74pc6s1u5dKsQOWBkuKcfGXT4Mz3IVg2GiJBvDaYU'
+};
+
+function b64urlDecode(str) {
+  let s = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4 !== 0) s += '=';
+  const bin = atob(s);
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function partBlock(title, cls, note, body) {
+  const wrap = document.createElement('div');
+  wrap.className = 'decoder-part';
+  const head = document.createElement('div');
+  head.className = 'decoder-part-head';
+  const left = document.createElement('span');
+  left.className = cls;
+  left.textContent = title;
+  const right = document.createElement('span');
+  right.style.color = 'rgba(255,255,255,0.35)';
+  right.textContent = note || '';
+  head.appendChild(left);
+  head.appendChild(right);
+  const pre = document.createElement('pre');
+  pre.className = 'decoder-part-body';
+  pre.textContent = body;
+  wrap.appendChild(head);
+  wrap.appendChild(pre);
+  return wrap;
+}
+
+function readable(ts) {
+  const d = new Date(ts * 1000);
+  return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function decodeToken() {
+  const out = document.getElementById('jwt-out');
+  const raw = document.getElementById('jwt-input').value.trim();
+  out.innerHTML = '';
+
+  if (!raw) {
+    out.appendChild(partBlock('Nothing to decode', 'part-sig', '', 'Paste a JWT above, or load one of the sample tokens.'));
+    return;
+  }
+
+  const parts = raw.split('.');
+  if (parts.length !== 3) {
+    out.appendChild(partBlock('Not a JWT', 'part-header', '', 'A JWT has exactly three parts separated by two dots. This string has ' + parts.length + '.'));
+    return;
+  }
+
+  try {
+    const header = JSON.parse(b64urlDecode(parts[0]));
+    out.appendChild(partBlock('Header', 'part-header', 'decoded', JSON.stringify(header, null, 2)));
+  } catch (e) {
+    out.appendChild(partBlock('Header', 'part-header', 'error', 'Could not decode this part.'));
+  }
+
+  try {
+    const payload = JSON.parse(b64urlDecode(parts[1]));
+    let body = JSON.stringify(payload, null, 2);
+    const extra = [];
+    if (payload.iat) extra.push('iat  → issued at ' + readable(payload.iat));
+    if (payload.exp) {
+      const expired = payload.exp * 1000 < Date.now();
+      extra.push('exp  → expires ' + readable(payload.exp) + (expired ? '  (already expired)' : ''));
+    }
+    if (extra.length) body += '\n\n' + extra.join('\n');
+    out.appendChild(partBlock('Payload', 'part-payload', 'readable by anyone', body));
+  } catch (e) {
+    out.appendChild(partBlock('Payload', 'part-payload', 'error', 'Could not decode this part.'));
+  }
+
+  out.appendChild(partBlock(
+    'Signature',
+    'part-sig',
+    'needs the secret',
+    parts[2] + '\n\nThe server recomputes this from the header and payload using JWT_SECRET.\nChange one character above and this no longer matches — jwt.verify() throws.'
+  ));
+}
+
+function loadSample(kind) {
+  document.getElementById('jwt-input').value = SAMPLES[kind];
+  decodeToken();
+}
+
+function clearDecoder() {
+  document.getElementById('jwt-input').value = '';
+  document.getElementById('jwt-out').innerHTML = '';
+  document.getElementById('jwt-input').focus();
+}
+
+/* ── Step-through diagram ── */
+const STEPS = [
+  { name: 'Login request', detail: 'The client sends email and password to POST /api/auth/login. This is the only moment the real password travels over the network.', lit: ['n-client', 'n-server', 'a1'] },
+  { name: 'Validate, then find the user', detail: 'The server checks the body is usable, then looks the user up by email — with .select("+password") so the stored hash comes along.', lit: ['n-server', 'n-db', 'a2'] },
+  { name: 'Compare against the hash', detail: 'The database returns the user document. bcrypt.compare() hashes the typed password with the stored salt and checks for a match. No match → 401.', lit: ['n-server', 'n-db', 'a3'] },
+  { name: 'Sign the token', detail: 'Password verified. The server signs a JWT: payload { id, role }, secret from .env, expiresIn 7d. The signature is the hologram.', lit: ['n-server', 'n-token'] },
+  { name: 'Hand over the ID card', detail: 'The token goes back to the client, ideally in an httpOnly cookie. Login is finished — steps 1 to 5 will not run again until the token expires.', lit: ['n-server', 'n-client', 'a4', 'n-token'] },
+  { name: 'Every request after this', detail: 'From now on the token rides along with each request — automatically as a cookie, or manually in an Authorization header.', lit: ['n-client', 'n-mw', 'a5'] },
+  { name: 'The guard checks the card', detail: 'jwt.verify() recomputes the signature and checks the expiry. Valid → req.user = { id, role } and next(). Invalid or missing → 401 and the route never runs.', lit: ['n-mw', 'n-route', 'a6'] }
+];
+
+let stepIndex = 0;
+const STEP_GROUPS = ['n-client', 'n-server', 'n-db', 'n-mw', 'n-route', 'n-token', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6'];
+
+function renderStep() {
+  const step = STEPS[stepIndex];
+  STEP_GROUPS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.setAttribute('class', step.lit.includes(id) ? 'svg-lit' : 'svg-dim');
+  });
+  document.getElementById('step-name').textContent = (stepIndex + 1) + ' · ' + step.name;
+  document.getElementById('step-detail').textContent = step.detail;
+  document.getElementById('step-now').textContent = stepIndex + 1;
+  document.getElementById('step-back').disabled = stepIndex === 0;
+  document.getElementById('step-fwd').disabled = stepIndex === STEPS.length - 1;
+}
+
+function moveStep(delta) {
+  const next = stepIndex + delta;
+  if (next < 0 || next >= STEPS.length) return;
+  stepIndex = next;
+  renderStep();
+}
+
+/* ── Scroll spy ── */
+function initScrollSpy() {
+  const links = Array.from(document.querySelectorAll('.nav-link'));
+  const sections = links
+    .map(l => document.querySelector(l.getAttribute('href')))
+    .filter(Boolean);
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      links.forEach(l => l.classList.remove('active'));
+      const active = links.find(l => l.getAttribute('href') === '#' + entry.target.id);
+      if (active) active.classList.add('active');
+    });
+  }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+
+  sections.forEach(s => observer.observe(s));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  decodeToken();
+  renderStep();
+  initScrollSpy();
+});
+</script>
+</body>
+</html>
